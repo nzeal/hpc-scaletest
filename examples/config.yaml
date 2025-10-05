@@ -1,0 +1,37 @@
+# examples/config.yaml
+# Example YAML configuration (can be loaded via CLI if extended)
+test:
+  name: yaml_benchmark
+  input_file: ./input.dat
+  command:
+    - ./yaml_app
+
+backend:
+  scheduler: slurm
+  launcher: srun
+  module_system: lmod
+  build_system: cmake  # Optional
+
+resources:
+  max_nodes: 16
+  procs_per_node: 128
+  gpus_per_node: 0
+  memory_per_node: 100GB
+  time_limit: 01:00:00
+  partition: compute
+  account: project123
+
+scaling:
+  type: weak
+  max_nodes: 16
+  initial_procs: [2, 2, 2]
+  initial_domain: [10.0, 10.0, 10.0]
+  initial_cells: [256, 256, 256]
+
+modules:
+  - gcc/11.2.0
+  - openmpi/4.1.1
+
+env:
+  OMP_NUM_THREADS: "1"
+  CUDA_VISIBLE_DEVICES: "0,1"  # For GPU if enabled
