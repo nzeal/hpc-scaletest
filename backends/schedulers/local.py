@@ -3,8 +3,8 @@ import subprocess
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
-from ...core.types import JobID, JobStatus
-from ...core.abstracts import AbstractScheduler
+from core.types import JobID, JobStatus
+from core.abstracts import AbstractScheduler
 import logging
 
 logger = logging.getLogger(__name__)

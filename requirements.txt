@@ -1,3 +1,4 @@
 # requirements.txt
 pyyaml==6.0.1
 matplotlib==3.3.4
+dataclasses==0.6

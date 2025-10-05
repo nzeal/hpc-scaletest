@@ -1,19 +1,19 @@
 # core/factory.py
 from typing import Dict, Any
 from .types import SchedulerBackend, LauncherBackend, ModuleBackend, BuildBackend
-from ..backends.schedulers.local import LocalScheduler
-from ..backends.schedulers.slurm import SlurmScheduler
-from ..backends.launchers.srun import SrunLauncher
-from ..backends.launchers.mpirun import MpiRunLauncher
-from ..backends.modules.nomod import NoModBackend
-from ..backends.modules.tmod import TModBackend
-from ..backends.modules.tmod4 import TMod4Backend
-from ..backends.modules.lmod import LModBackend
-from ..backends.builds.make import MakeBackend
-from ..backends.builds.cmake import CMakeBackend
-from ..backends.builds.autotools import AutotoolsBackend
-from ..backends.builds.easybuild import EasyBuildBackend
-from ..backends.builds.spack import SpackBackend
+from backends.schedulers.local import LocalScheduler
+from backends.schedulers.slurm import SlurmScheduler
+from backends.launchers.srun import SrunLauncher
+from backends.launchers.mpirun import MpiRunLauncher
+from backends.modules.nomod import NoModBackend
+from backends.modules.tmod import TModBackend
+from backends.modules.tmod4 import TMod4Backend
+from backends.modules.lmod import LModBackend
+from backends.builds.make import MakeBackend
+from backends.builds.cmake import CMakeBackend
+from backends.builds.autotools import AutotoolsBackend
+from backends.builds.easybuild import EasyBuildBackend
+from backends.builds.spack import SpackBackend
 from .abstracts import AbstractScheduler, AbstractLauncher, AbstractModuleSystem, AbstractBuildSystem
 
 class BackendFactory:

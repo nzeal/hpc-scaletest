@@ -2,12 +2,12 @@
 import subprocess
 import os
 from typing import List
-from ...core.abstracts import AbstractModuleSystem
+from core.abstracts import AbstractModuleSystem
 import logging
 
 logger = logging.getLogger(__name__)
 
-class TModBackend(AbstractModuleSystem):
+class TMod4Backend(AbstractModuleSystem):
     """Backend for TCL-based Environment Modules (version 3.x)."""
 
     def load(self, modules: List[str]) -> None:

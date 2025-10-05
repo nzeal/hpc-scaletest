@@ -1,8 +1,12 @@
 # tests/test_scaling.py
 import unittest
 import math
-from ..engine.scaling import ScalingEngine
-from ..core.types import ScalingConfig, ScalingType
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from engine.scaling import ScalingEngine
+from core.types import ScalingConfig, ScalingType
 
 class TestScaling(unittest.TestCase):
     def setUp(self):

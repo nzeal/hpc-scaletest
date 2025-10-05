@@ -2,7 +2,7 @@
 import subprocess
 import os
 from typing import List
-from ...core.abstracts import AbstractModuleSystem
+from core.abstracts import AbstractModuleSystem
 import logging
 
 logger = logging.getLogger(__name__)

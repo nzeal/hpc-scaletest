@@ -2,11 +2,15 @@
 import unittest
 from unittest.mock import patch, Mock, MagicMock
 import subprocess
-from ..backends.schedulers.local import LocalScheduler
-from ..backends.schedulers.slurm import SlurmScheduler
-from ..backends.launchers.srun import SrunLauncher
-from ..backends.launchers.mpirun import MpiRunLauncher
-from ..core.types import JobID, JobStatus
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backends.schedulers.local import LocalScheduler
+from backends.schedulers.slurm import SlurmScheduler
+from backends.launchers.srun import SrunLauncher
+from backends.launchers.mpirun import MpiRunLauncher
+from core.types import JobID, JobStatus
 
 class TestLocalScheduler(unittest.TestCase):
     def setUp(self):

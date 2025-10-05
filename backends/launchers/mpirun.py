@@ -3,7 +3,7 @@ import subprocess
 import os
 import re
 from typing import List, Dict, Any
-from ...core.abstracts import AbstractLauncher
+from core.abstracts import AbstractLauncher
 import logging
 
 logger = logging.getLogger(__name__)
