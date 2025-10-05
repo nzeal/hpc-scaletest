@@ -17,6 +17,8 @@ from core.types import SchedulerBackend, LauncherBackend, ModuleBackend, BuildBa
 def load_test_file(test_file: str):
     spec = importlib.util.spec_from_file_location("test_module", test_file)
     module = importlib.util.module_from_spec(spec)
+    if spec.loader is None:
+        raise ImportError(f"Cannot load spec from {test_file}")
     spec.loader.exec_module(module)
     # Assume it defines create_test()
     if hasattr(module, 'create_test'):
@@ -31,7 +33,7 @@ def list_backends():
 
 def validate_test(test: Test):
     config = test.get_config()
-    if config.scaling is None:
+    if getattr(config, 'scaling', None) is None:
         raise ValueError("Scaling config required")
     print("Test validation passed.")
 
@@ -54,15 +56,20 @@ def main():
 
     args = parser.parse_args()
 
-    setup_logging(args.verbose if hasattr(args, 'verbose') else False)
+    # Setup logging if verbose flag exists and is True
+    verbose = getattr(args, 'verbose', False)
+    setup_logging(verbose)
 
     if args.command == 'run':
         test = load_test_file(args.test)
         # Override scaling if provided
-        test.set_scaling(args.scaling, args.max_nodes)
-        test.set_backend(args.backend)
+        if hasattr(test, "set_scaling"):
+            test.set_scaling(args.scaling, args.max_nodes)
+        if hasattr(test, "set_backend"):
+            test.set_backend(args.backend)
         runner = TestRunner(test)
-        runner.run(Path(args.output) if args.output else None)
+        output_path = Path(args.output) if args.output else None
+        runner.run(output_path)
 
     elif args.command == 'validate':
         test = load_test_file(args.test)
