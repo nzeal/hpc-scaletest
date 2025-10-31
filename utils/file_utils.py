@@ -1,20 +1,37 @@
-# utils/file_utils.py
+"""
+File utils.
+"""
+
+import shutil
+import logging
 from pathlib import Path
-from typing import List, Tuple
+from typing import Optional
 
-def modify_file(file_path: Path, replacements: List[Tuple[str, str]]) -> None:
-    """
-    Modify a file by replacing specified lines or patterns (sed-like).
 
-    :param file_path: Path to the file
-    :param replacements: List of (old_text, new_text) tuples
+logger = logging.getLogger(__name__)
+
+
+def create_directory(path: Path, exist_ok: bool = True) -> bool:
     """
-    if not file_path.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
-    
-    content = file_path.read_text(encoding='utf-8')
-    for old, new in replacements:
-        content = content.replace(old, new)
-    
-    file_path.write_text(content, encoding='utf-8')
-    logger.debug(f"Modified file {file_path} with {len(replacements)} replacements")
+    Create dir.
+    """
+    try:
+        path.mkdir(parents=True, exist_ok=exist_ok)
+        logger.debug(f"Created dir: {path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create dir {path}: {e}")
+        return False
+
+
+def write_file(path: Path, content: str) -> bool:
+    """
+    Write file.
+    """
+    try:
+        path.write_text(content)
+        logger.debug(f"Wrote file: {path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to write file {path}: {e}")
+        return False

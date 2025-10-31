@@ -1,105 +1,41 @@
-# backends/modules/lmod.py
+"""
+Lua-based Lmod module system backend.
+"""
+
 import subprocess
-import os
-from typing import List
-from core.abstracts import AbstractModuleSystem
-import logging
+from typing import List, Optional
 
-logger = logging.getLogger(__name__)
+from core.abstracts import ModuleSystemInterface
 
-class LModBackend(AbstractModuleSystem):
-    """Backend for Lua-based Lmod module system."""
 
-    def load(self, modules: List[str]) -> None:
-        """Load modules using 'module load'."""
-        env = dict(os.environ)
-        for module in modules:
-            try:
-                result = subprocess.run(
-                    ['module', 'load', module],
-                    env=env,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-                logger.info(f"LMod: Loaded module {module}")
-                env.update(os.environ)
-            except subprocess.CalledProcessError as e:
-                logger.error(f"LMod: Failed to load module {module}: {e.stderr}")
-                raise
-
-    def unload(self, modules: List[str]) -> None:
-        """Unload modules using 'module unload'."""
-        env = dict(os.environ)
-        for module in modules:
-            try:
-                result = subprocess.run(
-                    ['module', 'unload', module],
-                    env=env,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-                logger.info(f"LMod: Unloaded module {module}")
-                env.update(os.environ)
-            except subprocess.CalledProcessError as e:
-                logger.error(f"LMod: Failed to unload module {module}: {e.stderr}")
-                raise
-
-    def purge(self) -> None:
-        """Purge all modules using 'module purge'."""
+class LModBackend(ModuleSystemInterface):
+    def generate_load_commands(self, modules: List[str]) -> List[str]:
+        return [f"module load {module}" for module in modules]
+    
+    def generate_unload_commands(self, modules: List[str]) -> List[str]:
+        return [f"module unload {module}" for module in modules]
+    
+    def list_available_modules(self, pattern: Optional[str] = None) -> List[str]:
         try:
-            result = subprocess.run(
-                ['module', 'purge'],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            logger.info("LMod: Purged all modules")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"LMod: Failed to purge modules: {e.stderr}")
-            raise
-
-    def list(self) -> List[str]:
-        """List currently loaded modules using 'module list'."""
-        try:
-            result = subprocess.run(
-                ['module', 'list'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            # Lmod output format: parse lines after header
+            cmd = ["module", "-t", "avail"]
+            if pattern:
+                cmd.append(pattern)
+            result = subprocess.run(cmd, capture_output=True, text=True, shell=False)
+            lines = result.stderr.split('\n')
             modules = []
-            in_list = False
-            for line in result.stdout.splitlines():
-                if 'Currently' in line:
-                    in_list = True
-                    continue
-                if in_list and line.strip():
-                    modules.append(line.strip().split()[0])  # First word is module name
-            logger.debug(f"LMod: Listed {len(modules)} modules")
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('-') and not line.endswith(':'):
+                    line = line.replace('(default)', '').strip()
+                    if line:
+                        modules.append(line)
             return modules
-        except subprocess.CalledProcessError as e:
-            logger.error(f"LMod: Failed to list modules: {e.stderr}")
+        except Exception:
             return []
-
-    def spider(self, query: str) -> List[str]:
-        """Search for modules using 'module spider' (Lmod-specific)."""
+    
+    def is_module_available(self, module: str) -> bool:
         try:
-            result = subprocess.run(
-                ['module', 'spider', query],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            # Parse spider output for matching modules
-            modules = []
-            for line in result.stdout.splitlines():
-                if query.lower() in line.lower() and 'No' not in line:
-                    modules.append(line.strip())
-            logger.info(f"LMod: Spider search for '{query}' found {len(modules)} results")
-            return modules
-        except subprocess.CalledProcessError as e:
-            logger.error(f"LMod: Spider search failed: {e.stderr}")
-            return []
+            result = subprocess.run(["module", "is-avail", module], capture_output=True)
+            return result.returncode == 0
+        except Exception:
+            return False

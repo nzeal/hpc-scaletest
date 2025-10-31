@@ -1,92 +1,86 @@
-# engine/scaling.py
-import math
-from typing import Dict, Tuple, Any
-from core.types import ScalingType
-from core.config import ScalingConfig
+"""
+Scaling generator.
+"""
+
+import logging
+from typing import List
+
+from core.config import ScalingConfig, JobConfig, ResourceConfig
+from core.types import ScalingType, ProcsDecomposition, DomainSize, CellCount
+
+
+logger = logging.getLogger(__name__)
+
 
 class ScalingEngine:
-    """
-    Engine for generating scaling configurations for strong and weak scaling tests.
-    Supports 3D domain decomposition with alternating dimension doubling.
-    """
-
-    def generate_scaling_configs(
-        self, 
-        config: ScalingConfig, 
-        procs_per_node: int = 128
-    ) -> Dict[int, Dict[str, Any]]:
-        """
-        Generate scaling configurations for node counts up to max_nodes.
-
-        :param config: ScalingConfig with initial parameters
-        :param procs_per_node: Processes per node for node calculation
-        :return: Dict of {actual_nodes: config_dict}
-        """
-        configs = {}
-        # Initial values
-        xproc, yproc, zproc = config.initial_procs
-        lx, ly, lz = config.initial_domain
-        nxc, nyc, nzc = config.initial_cells
-        
-        # Generate node list: 1, 2, 4, ..., up to <= max_nodes
-        max_log = int(math.log2(config.max_nodes))
-        nodes_list = [1] + [2**i for i in range(1, max_log + 1) if 2**i <= config.max_nodes]
-
-        initial_total_procs = xproc * yproc * zproc
-        initial_nodes = math.ceil(initial_total_procs / procs_per_node)
-        if initial_nodes > 1:
-            nodes_list = [initial_nodes] + nodes_list  # Adjust if initial >1
-        nodes_list = sorted(set(nodes_list))  # Unique sorted
-
-        current_x, current_y, current_z = xproc, yproc, zproc
-        current_lx, current_ly, current_lz = lx, ly, lz
-        current_nxc, current_nyc, current_nzc = nxc, nyc, nzc
-
-        for j, target_nodes in enumerate(nodes_list):
-            # Calculate required total_procs for target_nodes
-            target_total_procs = target_nodes * procs_per_node
-            # Scale procs from initial, preserving aspect ratio roughly
-            scale_procs = target_total_procs / initial_total_procs
-            # Alternate doubling: for simplicity, double x then y repeatedly
-            while current_x * current_y * current_z < target_total_procs:
-                if (j % 2 == 0):
-                    current_x = min(current_x * 2, target_total_procs // (current_y * current_z))
+    def __init__(self, scaling_config: ScalingConfig, resource_config: ResourceConfig):
+        self.scaling_config = scaling_config
+        self.resource_config = resource_config
+    
+    def generate_job_configs(self) -> List[JobConfig]:
+        node_sequence = self.scaling_config.get_node_sequence()
+        if self.scaling_config.scaling_type == ScalingType.STRONG:
+            return self._generate_strong_scaling(node_sequence)
+        return self._generate_weak_scaling(node_sequence)
+    
+    def _generate_strong_scaling(self, node_sequence: List[int]) -> List[JobConfig]:
+        configs = []
+        base_px, base_py, base_pz = self.scaling_config.initial_procs
+        for num_nodes in node_sequence:
+            # Start from initial decomposition for each node count
+            px, py, pz = base_px, base_py, base_pz
+            total_procs = num_nodes * self.resource_config.procs_per_node
+            current_procs = px * py * pz
+            while current_procs < total_procs:
+                if px <= py:
+                    px *= 2
                 else:
-                    current_y = min(current_y * 2, target_total_procs // (current_x * current_z))
-                # Ensure exact
-                current_x = max(1, target_total_procs // (current_y * current_z))
-            
-            actual_total_procs = current_x * current_y * current_z
-            actual_nodes = math.ceil(actual_total_procs / procs_per_node)
-
-            # Adjust sizes based on scaling type
-            if config.scaling_type == ScalingType.STRONG:
-                # Constant problem size
-                pass
-            elif config.scaling_type == ScalingType.WEAK:
-                # Scale problem size proportionally to procs
-                scale_factor = (actual_total_procs / initial_total_procs) ** (1/3)  # Cubic root for 3D
-                current_lx = lx * scale_factor
-                current_ly = ly * scale_factor
-                current_lz = lz * scale_factor
-                current_nxc = int(nxc * scale_factor)
-                current_nyc = int(nyc * scale_factor)
-                current_nzc = int(nzc * scale_factor)
-
-            configs[actual_nodes] = {
-                'n_nodes': actual_nodes,
-                'xproc': current_x,
-                'yproc': current_y,
-                'zproc': current_z,
-                'lx': current_lx,
-                'ly': current_ly,
-                'lz': current_lz,
-                'nxc': current_nxc,
-                'nyc': current_nyc,
-                'nzc': current_nzc,
-                'total_procs': actual_total_procs
-            }
-
-            # Reset for next if needed, but since progressive, carry over
-
+                    py *= 2
+                current_procs = px * py * pz
+            configs.append(JobConfig(
+                job_id=f"nodes_{num_nodes}",
+                num_nodes=num_nodes,
+                num_procs=total_procs,
+                procs_decomposition=(px, py, pz),
+                domain_size=self.scaling_config.initial_domain,
+                cell_count=self.scaling_config.initial_cells
+            ))
+            logger.debug(f"Strong: {num_nodes} nodes, procs=({px},{py},{pz})")
+        return configs
+    
+    def _generate_weak_scaling(self, node_sequence: List[int]) -> List[JobConfig]:
+        configs = []
+        base_px, base_py, base_pz = self.scaling_config.initial_procs
+        initial_domain = self.scaling_config.initial_domain
+        initial_cells = self.scaling_config.initial_cells
+        initial_total = base_px * base_py * base_pz
+        for num_nodes in node_sequence:
+            # Start from initial decomposition for each node count
+            px, py, pz = base_px, base_py, base_pz
+            total_procs = num_nodes * self.resource_config.procs_per_node
+            scale_factor = total_procs / initial_total
+            current_procs = px * py * pz
+            while current_procs < total_procs:
+                if px <= py:
+                    px *= 2
+                else:
+                    py *= 2
+                current_procs = px * py * pz
+            scaled_domain = None
+            scaled_cells = None
+            if initial_domain:
+                dx, dy, dz = initial_domain
+                scaled_domain = (dx * scale_factor, dy * scale_factor, dz * scale_factor)
+            if initial_cells:
+                nx, ny, nz = initial_cells
+                scaled_cells = (int(nx * scale_factor), int(ny * scale_factor), int(nz * scale_factor))
+            configs.append(JobConfig(
+                job_id=f"nodes_{num_nodes}",
+                num_nodes=num_nodes,
+                num_procs=total_procs,
+                procs_decomposition=(px, py, pz),
+                domain_size=scaled_domain,
+                cell_count=scaled_cells
+            ))
+            logger.debug(f"Weak: {num_nodes} nodes, procs=({px},{py},{pz})")
         return configs

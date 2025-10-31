@@ -1,32 +1,21 @@
-# backends/modules/nomod.py
-from typing import List
-from core.abstracts import AbstractModuleSystem
-import logging
+"""
+No-op module system backend.
+"""
 
-logger = logging.getLogger(__name__)
+from typing import List, Optional
 
-class NoModBackend(AbstractModuleSystem):
-    """No-op backend for systems without module support."""
+from core.abstracts import ModuleSystemInterface
 
-    def load(self, modules: List[str]) -> None:
-        """Log load action without executing."""
-        if modules:
-            logger.info(f"NoMod: Would load modules: {', '.join(modules)}")
-        else:
-            logger.info("NoMod: No modules to load")
 
-    def unload(self, modules: List[str]) -> None:
-        """Log unload action without executing."""
-        if modules:
-            logger.info(f"NoMod: Would unload modules: {', '.join(modules)}")
-        else:
-            logger.info("NoMod: No modules to unload")
-
-    def purge(self) -> None:
-        """Log purge action without executing."""
-        logger.info("NoMod: Would purge all modules")
-
-    def list(self) -> List[str]:
-        """Return empty list as no modules are managed."""
-        logger.debug("NoMod: Listing modules (empty)")
+class NoModBackend(ModuleSystemInterface):
+    def generate_load_commands(self, modules: List[str]) -> List[str]:
         return []
+    
+    def generate_unload_commands(self, modules: List[str]) -> List[str]:
+        return []
+    
+    def list_available_modules(self, pattern: Optional[str] = None) -> List[str]:
+        return []
+    
+    def is_module_available(self, module: str) -> bool:
+        return False

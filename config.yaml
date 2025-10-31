@@ -1,0 +1,61 @@
+# Example YAML configuration for HPC-ScaleTest
+# This can be loaded and converted to a Test object
+
+test:
+  name: my_benchmark
+  command:
+    - ./my_app
+    - --input
+    - data.in
+  input_file: ./data.in
+  output_dir: ./results
+
+backend:
+  scheduler: slurm
+  launcher: srun
+  module_system: lmod
+  build_system: cmake
+
+resources:
+  max_nodes: 64
+  procs_per_node: 128
+  gpus_per_node: 0
+  memory_per_node: 100GB
+  time_limit: "02:00:00"
+  partition: compute
+  account: myproject
+  qos: normal
+
+scaling:
+  scaling_type: strong
+  max_nodes: 64
+  initial_procs: [2, 2, 2]
+  initial_domain: [10.0, 10.0, 10.0]
+  initial_cells: [256, 256, 256]
+  # Optional: custom node sequence
+  # node_sequence: [1, 2, 4, 8, 16, 32, 64]
+
+environment:
+  modules:
+    - gcc/11.2.0
+    - openmpi/4.1.1
+    - cmake/3.22.0
+  env_vars:
+    OMP_NUM_THREADS: "1"
+    OMP_PROC_BIND: close
+    OMP_PLACES: cores
+  pre_commands:
+    - echo "Starting test"
+    - ulimit -s unlimited
+  post_commands:
+    - echo "Test completed"
+
+build:
+  source_dir: ./src
+  build_dir: ./build
+  install_dir: ./install
+  parallel_jobs: 8
+  build_flags:
+    CMAKE_BUILD_TYPE: Release
+    CMAKE_C_COMPILER: gcc
+    CMAKE_CXX_COMPILER: g++

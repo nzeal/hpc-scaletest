@@ -2,15 +2,42 @@
 
 A modular Python framework for running benchmark scaling tests on heterogeneous HPC systems with support for CPU and GPU resources.
 
-## Features
+## 🚀 NEW: Automated End-to-End Workflow
+
+**Run complete HPC scaling tests with a single command!**
+
+```bash
+# Simple strong scaling test
+python hpc_auto.py /path/to/code --scaling strong --nodes 8
+
+# Clone from Git and test
+python hpc_auto.py https://github.com/user/hpc-app.git --scaling weak --nodes 16
+```
+
+**Features:**
+- ✅ **Minimal Input**: Just provide code path or Git URL
+- ✅ **Intelligent Analysis**: Auto-detect dependencies from README
+- ✅ **Auto-Compilation**: Handles CMake, Make, Autotools automatically
+- ✅ **Scaling Tests**: Automated strong/weak scaling configurations
+- ✅ **CPU & GPU Support**: Seamless heterogeneous workloads
+- ✅ **Efficiency Reports**: Publication-ready performance analysis
+
+➡️ **[See Full Automated Workflow Documentation](docs/AUTOMATED_WORKFLOW.md)**
+
+---
+
+## Core Features
 
 - **Layered Architecture**: Clean separation between user-facing API and backend implementations
 - **Scheduler Agnostic**: Write tests once, run on any system (Local, Slurm, PBS, etc.)
 - **Pluggable Backends**: Easily swap schedulers, launchers, module systems, and build tools
+- **System Configuration**: Define custom launchers and HPC system configurations (ReFrame-style)
 - **Scaling Tests**: Built-in support for strong and weak scaling studies
 - **Heterogeneous Support**: Handle mixed CPU/GPU resources
 - **Automatic Job Generation**: Generate and submit jobs with proper resource allocations
+- **Flexible Job Submission**: Control whether jobs are submitted automatically or manually
 - **Result Aggregation**: Collect and analyze performance metrics
+- **Intelligent Automation**: AI-driven dependency detection and build configuration
 
 ## Architecture
 
@@ -42,77 +69,71 @@ chmod +x scaletest.py
 
 ## Quick Start
 
-### 1. Define a Test
+### Option 1: Automated Workflow (Recommended)
 
-Create `my_test.py`:
+**Simplest way to run scaling tests:**
+
+```bash
+# Command-line interface
+python hpc_auto.py /path/to/code --scaling strong --nodes 8
+
+# Python API
+from engine.orchestrator import create_simple_workflow
+
+orchestrator = create_simple_workflow(
+    source="/path/to/code",
+    scaling_type="strong",
+    max_nodes=8
+)
+orchestrator.run()
+```
+
+**What happens automatically:**
+1. ✅ Code acquired (local or Git clone)
+2. ✅ Dependencies detected from README
+3. ✅ Code compiled with proper environment
+4. ✅ Scaling tests generated and submitted
+5. ✅ Efficiency reports created
+
+➡️ **[Full Automated Workflow Guide](docs/AUTOMATED_WORKFLOW.md)**
+
+---
+
+### Option 2: Manual Test Definition (Advanced)
+
+**For fine-grained control:**
 
 ```python
 from pathlib import Path
 from core.test_definition import Test
 
-def create_test():
-    test = Test(
-        name="my_benchmark",
-        input_file=Path("./input.dat"),
-        command=["./my_app"]
-    )
-    
-    test.set_backend(
-        scheduler="slurm",
-        launcher="srun"
-    )
-    
-    test.set_resources(
-        max_nodes=64,
-        procs_per_node=128,
-        time_limit="01:00:00"
-    )
-    
-    test.set_scaling(
-        scaling_type="strong",
-        max_nodes=64,
-        initial_procs=(2, 2, 2),
-        initial_domain=(10.0, 10.0, 10.0),
-        initial_cells=(256, 256, 256)
-    )
-    
-    return test
+# Create test
+test = Test(
+    name="my_benchmark",
+    input_file=Path("input.dat"),
+    command=["./my_app", "--input", "input.dat"]
+)
 
-test = create_test()
-```
+# Configure backend
+test.set_backend(
+    scheduler="slurm",
+    launcher="srun",
+    module_system="lmod"
+)
 
-### 2. Run the Test
+# Configure resources
+test.set_resources(
+    max_nodes=64,
+    procs_per_node=128,
+    time_limit="02:00:00"
+)
 
-```bash
-# Run with Slurm
-python scaletest.py run --test my_test.py --scaling strong --max-nodes 64
-
-# Run locally for debugging
-python scaletest.py run --test my_test.py --backend local --max-nodes 4
-
-# Validate test definition
-python scaletest.py validate --test my_test.py
-
-# List available backends
-python scaletest.py list-backends
-```
-
-### 3. Check Results
-
-Results are organized in timestamped directories:
-
-```
-output/
-└── my_benchmark_strong_20250104_143022/
-    ├── nodes_1/
-    │   ├── job.sh
-    │   ├── slurm-12345.out
-    │   └── results.json
-    ├── nodes_2/
-    ├── nodes_4/
-    ├── ...
-    ├── summary.json
-    └── efficiency_report.txt
+# Configure scaling
+test.set_scaling(
+    scaling_type="strong",
+    max_nodes=64,
+    initial_procs=(2, 2, 2)
+)
 ```
 
 ## Configuration
@@ -151,6 +172,10 @@ test.set_scaling(
 # Environment Setup
 test.set_modules(["gcc/11.2.0", "openmpi/4.1.1"])
 test.set_env({"OMP_NUM_THREADS": "1"})
+
+# Control job submission behavior
+test.set_auto_submit(True)  # Default: automatically submit jobs
+# test.set_auto_submit(False)  # Only generate job scripts, don't submit
 ```
 
 ## Scaling Tests
@@ -184,6 +209,117 @@ test.set_scaling(
     initial_procs=(2, 2, 2),
     # Domain and cells scale proportionally
 )
+```
+
+## System Configuration
+
+**NEW**: Define custom launchers and system configurations (similar to ReFrame):
+
+```python
+# In your leonardo_system.py
+from core.registry import register_launcher, JobLauncher
+
+@register_launcher('mpirun-mapby')
+class MpirunMapbyLauncher(JobLauncher):
+    def command(self, job, resource_config):
+        return [
+            'mpirun', '-np', str(job.num_procs),
+            '--map-by', 'socket:PE=8',
+            '--report-bindings'
+        ]
+
+# Define system information
+site_configuration = {
+    "systems": [{
+        "name": "leonardo",
+        "partitions": [{
+            "name": "booster",
+            "scheduler": "slurm",
+            "launcher": "mpirun-mapby",  # Use custom launcher
+            "processor": {
+                "num_cpus": 32,
+                "num_sockets": 1
+            },
+            "devices": [{
+                "type": "gpu",
+                "model": "A100",
+                "num_devices": 4
+            }]
+        }]
+    }],
+    "environments": [{
+        "name": "gcc-openmpi",
+        "modules": ["gcc/11.2.0", "openmpi/4.1.1"],
+        "features": ["mpi", "openmp"]
+    }]
+}
+```
+
+**Benefits:**
+- ✅ **Auto-detection**: System detected by hostname matching
+- ✅ **Validation**: Ensure procs_per_node matches actual hardware
+- ✅ **Custom Launchers**: Define MPI commands with specific binding
+- ✅ **Environment Management**: Organize compiler/MPI combinations
+
+➡️ **[Full System Configuration Guide](SYSTEM_CONFIG_GUIDE.md)**
+
+**Quick Example:**
+
+```python
+from utils.system_loader import SystemConfigLoader
+
+# Load system configuration
+loader = SystemConfigLoader(Path("leonardo_system.py"))
+
+# Auto-create resource config from partition info
+resource_config = loader.create_resource_config(
+    partition_name="booster",
+    max_nodes=16
+)
+# Automatically sets correct procs_per_node, gpus_per_node, etc.
+```
+
+## Job Submission Control
+
+HPC-ScaleTest provides flexible control over job submission:
+
+### Automatic Submission (Default)
+
+Jobs are automatically submitted after script generation:
+
+```python
+test.set_auto_submit(True)  # This is the default behavior
+```
+
+### Manual Submission
+
+Only generate job scripts, submit manually later:
+
+```python
+test.set_auto_submit(False)
+
+# Run the test to generate job scripts
+# python scaletest.py run --test my_test.py
+
+# Later, submit the jobs manually:
+# python submit_jobs.py output/my_test_strong_20251019_120000
+```
+
+### Submitting Prepared Jobs
+
+Use the provided utility script to submit prepared jobs:
+
+```bash
+# Submit all prepared jobs in an output directory
+python submit_jobs.py output/my_test_strong_20251019_120000
+
+# Or submit a single job script
+python -c "
+from pathlib import Path
+from utils.job_submitter import submit_single_job
+job_id = submit_single_job(Path('output/my_test_strong_20251019_120000/nodes_1/job.sh'))
+print(f'Submitted job: {job_id}')
+"
 ```
 
 ## Advanced Features
@@ -250,133 +386,12 @@ build_path = builder.build(
 
 ## Testing
 
-Run unit tests:
-
 ```bash
-# Test scaling engine
-python -m unittest tests.test_scaling
+# Run unit tests
+make test
 
-# Test backends
-python -m unittest tests.test_backends
-
-# Run all tests
-python -m unittest discover tests
-```
-
-## Project Structure
-
-```
-hpc_scaletest/
-├── scaletest.py              # Main CLI entry point
-├── core/
-│   ├── abstracts.py          # Abstract base classes
-│   ├── types.py              # Type definitions and enums
-│   ├── config.py             # Configuration dataclasses
-│   ├── factory.py            # Backend factory
-│   └── test_definition.py    # User-facing Test class
-├── backends/
-│   ├── schedulers/
-│   │   ├── local.py
-│   │   └── slurm.py
-│   ├── launchers/
-│   │   ├── srun.py
-│   │   └── mpirun.py
-│   ├── modules/
-│   │   ├── nomod.py
-│   │   ├── tmod.py
-│   │   ├── tmod4.py
-│   │   └── lmod.py
-│   └── builds/
-│       ├── make.py
-│       ├── cmake.py
-│       ├── autotools.py
-│       ├── easybuild.py
-│       └── spack.py
-├── engine/
-│   ├── scaling.py            # Scaling configuration generator
-│   └── runner.py             # Test execution engine
-├── utils/
-│   ├── file_utils.py         # File manipulation utilities
-│   └── logging_config.py     # Logging setup
-├── tests/
-│   ├── test_scaling.py
-│   └── test_backends.py
-└── examples/
-    ├── example_test.py
-    └── config.yaml
-```
-
-## CLI Reference
-
-### Commands
-
-```bash
-# Run a test
-scaletest.py run --test <file> [options]
-
-# Validate test definition
-scaletest.py validate --test <file>
-
-# List available backends
-scaletest.py list-backends
-```
-
-### Options
-
-```
---test <file>           Test definition file (required)
---scaling <type>        Scaling type: strong or weak
---max-nodes <n>         Maximum nodes to scale to
---backend <name>        Scheduler backend
---output <dir>          Output directory
--v, --verbose           Enable verbose logging
-```
-
-## Examples
-
-### Example 1: Local Testing
-
-```python
-from pathlib import Path
-from core.test_definition import Test
-
-test = Test("simple_test", Path("input.dat"), ["./app"])
-test.set_backend(scheduler="local", launcher="mpirun")
-test.set_resources(max_nodes=2, procs_per_node=4)
-test.set_scaling(scaling_type="strong", max_nodes=2, 
-                 initial_procs=(1, 1, 1))
-```
-
-Run: `python scaletest.py run --test simple_test.py`
-
-### Example 2: Slurm Cluster
-
-```python
-test = Test("hpc_test", Path("input.dat"), ["./hpc_app"])
-test.set_modules(["gcc/11.2", "openmpi/4.1"])
-test.set_backend(scheduler="slurm", launcher="srun", 
-                 module_system="lmod")
-test.set_resources(max_nodes=128, procs_per_node=128, 
-                   time_limit="04:00:00", partition="compute")
-test.set_scaling(scaling_type="weak", max_nodes=128,
-                 initial_procs=(2, 2, 2),
-                 initial_domain=(10, 10, 10),
-                 initial_cells=(256, 256, 256))
-```
-
-Run: `python scaletest.py run --test hpc_test.py --max-nodes 128`
-
-### Example 3: GPU Application
-
-```python
-test = Test("gpu_benchmark", Path("input.dat"), ["./gpu_app"])
-test.set_modules(["cuda/11.7", "openmpi/4.1"])
-test.set_backend(scheduler="slurm", launcher="srun")
-test.set_resources(max_nodes=16, procs_per_node=4, 
-                   gpus_per_node=4, partition="gpu")
-test.set_scaling(scaling_type="strong", max_nodes=16,
-                 initial_procs=(1, 1, 1))
-test.set_env({"CUDA_VISIBLE_DEVICES": "0,1,2,3"})
+# Run specific test
+python -m pytest tests/test_scaling.py -v
 ```
 
 ## Extending the Framework
@@ -416,87 +431,3 @@ class MyScheduler(AbstractScheduler):
 ### Adding a New Build System
 
 Similar process for launchers, module systems, and build systems.
-
-## Performance Analysis
-
-The framework generates efficiency reports for strong scaling tests:
-
-```
-Strong Scaling Efficiency Report
-==================================================
-
-Nodes      Procs      Time(s)      Speedup      Efficiency
-------------------------------------------------------------
-1          128        100.00       1.00         100.0%
-2          256        52.00        1.92         96.2%
-4          512        28.00        3.57         89.3%
-8          1024       16.00        6.25         78.1%
-16         2048       10.00        10.00        62.5%
-```
-
-Access results programmatically:
-
-```python
-import json
-from pathlib import Path
-
-# Load summary
-with open('output/test_strong_*/summary.json') as f:
-    summary = json.load(f)
-
-# Process results
-for n_nodes, result in summary['results'].items():
-    print(f"{n_nodes} nodes: {result['runtime']}s")
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Module not found**: Ensure modules are available on your system
-   ```bash
-   module avail  # Check available modules
-   ```
-
-2. **Job submission fails**: Check scheduler configuration
-   ```bash
-   scaletest.py validate --test mytest.py
-   ```
-
-3. **Permission denied**: Make sure scripts are executable
-   ```bash
-   chmod +x scaletest.py
-   ```
-
-4. **Import errors**: Ensure project structure is correct and Python path is set
-
-### Debug Mode
-
-Enable verbose logging:
-
-```bash
-python scaletest.py run --test mytest.py --verbose
-```
-
-## Contributing
-
-1. Follow PEP 8 style guidelines
-2. Add docstrings to all classes and methods
-3. Write unit tests for new features
-4. Update documentation
-
-## License
-
-[Your License Here]
-
-## Contact
-
-[Your Contact Information]
-
-## Acknowledgments
-
-This framework was designed for HPC scaling studies with emphasis on:
-- Portability across different HPC systems
-- Ease of use for researchers
-- Extensibility for new backends
-- Reproducible performance testing

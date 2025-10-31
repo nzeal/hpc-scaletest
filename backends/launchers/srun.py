@@ -1,64 +1,47 @@
-# backends/launchers/srun.py
-import subprocess
-import os
-import re
-from typing import List, Dict, Any
-from core.abstracts import AbstractLauncher
-import logging
+"""
+Slurm srun launcher backend with GPU binding support.
+"""
 
-logger = logging.getLogger(__name__)
+from typing import List
 
-class SrunLauncher(AbstractLauncher):
-    def launch(self, command: List[str], nodes: int, procs_per_node: int, env: Dict[str, str] = None) -> Dict[str, Any]:
-        """Launch parallel job using srun."""
-        total_ntasks = nodes * procs_per_node
-        cmd = [
-            'srun',
-            f'--nodes={nodes}',
-            f'--ntasks={total_ntasks}',
-            f'--ntasks-per-node={procs_per_node}',
-            '--cpu-bind=cores'  # Basic binding; can be extended for GPUs
-        ] + command
-
-        full_env = dict(os.environ)
-        if env:
-            full_env.update(env)
-
-        # Wrap with time to capture runtime
-        timed_cmd = ['/usr/bin/time', '-f', '%e'] + cmd
-
-        try:
-            result = subprocess.run(
-                timed_cmd,
-                capture_output=True,
-                text=True,
-                env=full_env,
-                check=True
-            )
-            runtime = self._parse_runtime(result.stderr)
-            logger.info(f"srun launch completed with runtime {runtime}s")
-            return {
-                'runtime': runtime,
-                'stdout': result.stdout,
-                'stderr': result.stderr,
-                'returncode': result.returncode
-            }
-        except subprocess.CalledProcessError as e:
-            logger.error(f"srun launch failed: {e.stderr}")
-            return {
-                'runtime': 0.0,
-                'stdout': e.stdout,
-                'stderr': e.stderr,
-                'returncode': e.returncode,
-                'status': 'FAILED'
-            }
-
-    def _parse_runtime(self, output: str) -> float:
-        """Parse wall-clock time from /usr/bin/time output."""
-        match = re.search(r'(\d+\.?\d*)', output.strip())
-        if match:
-            return float(match.group(1))
-        logger.warning("Could not parse runtime from output")
-        return 0.0
+from core.abstracts import LauncherInterface
+from core.config import JobConfig, ResourceConfig
 
 
+class SrunLauncher(LauncherInterface):
+    """Slurm srun MPI launcher."""
+    
+    def generate_launch_command(
+        self,
+        job_config: JobConfig,
+        executable: List[str],
+        resource_config: ResourceConfig
+    ) -> List[str]:
+        """Generate srun launch command."""
+        cmd = ["srun"]
+        
+        # Resource specification
+        cmd.extend(["--ntasks-per-node", str(resource_config.procs_per_node)])
+        
+        # GPU binding
+        if resource_config.gpus_per_node > 0:
+            cmd.extend(["--gpus-per-node", str(resource_config.gpus_per_node)])
+            cmd.append("--gpu-bind=closest")
+        
+        # CPU binding
+        cmd.append("--cpu-bind=cores")
+        
+        # Custom options
+        for key, value in self.options.items():
+            if value is True:
+                cmd.append(f"--{key}")
+            elif value is not False:
+                cmd.extend([f"--{key}", str(value)])
+        
+        # Executable
+        cmd.extend(executable)
+        
+        return cmd
+    
+    def supports_gpu_binding(self) -> bool:
+        return True
