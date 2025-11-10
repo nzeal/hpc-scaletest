@@ -30,15 +30,7 @@ class SlurmScheduler(SchedulerInterface):
     ) -> str:
         """Generate Slurm batch script matching user template."""
         script = """#!/bin/bash
-
-echo "======================================"
-echo "======================================"
-echo "This is my script"
-cat $0
-echo "======================================"
-echo "======================================"
-
-"""
+        """
         
         # Slurm directives
         script += f"#SBATCH --nodes={job_config.num_nodes}\n"
