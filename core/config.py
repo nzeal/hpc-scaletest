@@ -39,6 +39,7 @@ class ResourceConfig:
     time_limit: str = DEFAULT_TIME_LIMIT
     exclusive: bool = False
     qos: Optional[str] = None
+    qos_mapping: Optional[Dict[str, Dict]] = None  # QoS selection based on node count
     
     # Optional scheduler-specific settings
     partition: Optional[str] = None
@@ -46,6 +47,39 @@ class ResourceConfig:
     constraint: Optional[str] = None
     reservation: Optional[str] = None
     mail_user: Optional[str] = None
+    
+    def get_qos_for_nodes(self, num_nodes: int) -> Optional[str]:
+        """
+        Select appropriate QoS based on node count and QoS mapping.
+        
+        Args:
+            num_nodes: Number of nodes for the job
+            
+        Returns:
+            QoS string to use, or None if no mapping applies
+            
+        Example mapping:
+            {
+                "small": {"max_nodes": 16, "qos": "normal"},
+                "large": {"min_nodes": 17, "qos": "dcgp_qos_bprod"}
+            }
+        """
+        if not self.qos_mapping:
+            # No mapping defined, return default QoS
+            return self.qos
+        
+        # Find matching QoS tier based on node count
+        for tier_name, tier_config in self.qos_mapping.items():
+            max_nodes_allowed = tier_config.get('max_nodes', float('inf'))
+            min_nodes_allowed = tier_config.get('min_nodes', 0)
+            
+            if min_nodes_allowed <= num_nodes <= max_nodes_allowed:
+                selected_qos = tier_config.get('qos')
+                if selected_qos:
+                    return selected_qos
+        
+        # No matching tier found, return default
+        return self.qos
 
 
 @dataclass
@@ -58,9 +92,35 @@ class ScalingConfig:
     initial_procs: ProcsDecomposition = (1, 1, 1)
     initial_domain: Optional[DomainSize] = None
     initial_cells: Optional[CellCount] = None
+    particles_per_cell: Optional[ProcsDecomposition] = None  # (npcelx, npcely, npcelz)
     
-    # Node progression (default: powers of 2)
+    # Scaling factor (if defined, enables full weak scaling mode)
+    scaling_factor: Optional[float] = None  # e.g., 2 (doubles per step)
+    
+    # Scaling dimensions: 2 for 2D (X→Y→X→Y), 3 for 3D (X→Y→Z→X→Y→Z)
+    scaling_dimensions: int = 2  # Default to 2D scaling
+    
+    # Scaling factors (if defined, overrides node_sequence)
+    weak_scaling_factors: Optional[List[float]] = None  # e.g., [1, 2, 4, 8]
+    strong_scaling_factors: Optional[List[float]] = None  # e.g., [1, 2, 4, 8]
+    
+    # Node progression (default: powers of 2) - used only if scaling_factors not defined
     node_sequence: Optional[List[int]] = None
+    
+    # GENERIC: Variable mapping for input file parsing
+    variable_map: Optional[Dict[str, Dict[str, str]]] = None  # e.g., {"length": {"x": "Lx", "y": "Ly", "z": "Lz"}}
+    
+    def get_scaling_factors(self) -> List[float]:
+        """Get the scaling factors based on scaling type."""
+        if self.scaling_type == ScalingType.WEAK:
+            if self.weak_scaling_factors:
+                return self.weak_scaling_factors
+        elif self.scaling_type == ScalingType.STRONG:
+            if self.strong_scaling_factors:
+                return self.strong_scaling_factors
+        
+        # No scaling factors defined - return [1] for baseline mode
+        return [1]
     
     def get_node_sequence(self) -> List[int]:
         """Get the sequence of node counts for scaling."""

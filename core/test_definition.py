@@ -42,6 +42,12 @@ class Test:
         
         # New attribute to control automatic job submission
         self.auto_submit_jobs = True  # By default, submit jobs automatically
+        
+        # LLM configuration for intelligent parameter mapping
+        self.use_llm_discovery = False
+        self.openai_api_key: Optional[str] = None
+        self.llm_model = "gpt-4"
+        self.parameter_mapping: Optional[Dict[str, List[str]]] = None
     
     def set_backend(
         self,
@@ -65,6 +71,7 @@ class Test:
         partition: str = "X_usr_prod",
         account: str = "cin_X",
         qos: Optional[str] = None,
+        qos_mapping: Optional[Dict] = None,
         exclusive: bool = False,
         mail_user: Optional[str] = None
     ) -> 'Test':
@@ -76,6 +83,7 @@ class Test:
         self.resource_config.partition = partition
         self.resource_config.account = account
         self.resource_config.qos = qos
+        self.resource_config.qos_mapping = qos_mapping
         self.resource_config.exclusive = exclusive
         self.resource_config.mail_user = mail_user
         return self

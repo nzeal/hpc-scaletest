@@ -14,6 +14,12 @@ from core.abstracts import SchedulerInterface
 from core.config import JobConfig, ResourceConfig
 from core.types import JobStatus, LARGE_JOB_THRESHOLD
 
+# Try to import SlurmDetector for partition auto-selection
+try:
+    from utils.slurm_detector import get_slurm_detector
+    HAS_SLURM_DETECTOR = True
+except ImportError:
+    HAS_SLURM_DETECTOR = False
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +35,46 @@ class SlurmScheduler(SchedulerInterface):
         env_setup: List[str]
     ) -> str:
         """Generate Slurm batch script matching user template."""
+        
+        # Use configured partition if provided, otherwise auto-select
+        partition = resource_config.partition or 'X_usr_prod'
+        
+        # Only auto-select partition if none explicitly configured
+        if not resource_config.partition and HAS_SLURM_DETECTOR:
+            try:
+                detector = get_slurm_detector()
+                if detector:
+                    best_partition = detector.select_best_partition(
+                        job_config.num_nodes,
+                        resource_config.procs_per_node,
+                        int(resource_config.time_limit.split(':')[0]) * 60 + int(resource_config.time_limit.split(':')[1])
+                    )
+                    if best_partition:
+                        partition = best_partition
+                        logger.debug(f"Auto-selected partition '{partition}' for {job_config.num_nodes} nodes")
+            except Exception as e:
+                logger.debug(f"Partition auto-selection failed: {e}, using configured partition")
+        
         script = """#!/bin/bash
-        """
+
+"""
         
         # Slurm directives
         script += f"#SBATCH --nodes={job_config.num_nodes}\n"
-        script += f"#SBATCH --partition={resource_config.partition or 'X_usr_prod'}\n"
+        script += f"#SBATCH --partition={partition}\n"
         if resource_config.qos:
-            script += f"###SBATCH --qos={resource_config.qos}\n"
+            script += f"#SBATCH --qos={resource_config.qos}\n"
+        # Use --ntasks for total MPI ranks (total procs across all nodes)
+        # This allows Slurm to distribute ranks efficiently and avoids "Node count specification invalid" errors
+        total_tasks = job_config.num_nodes * resource_config.procs_per_node
+        script += f"#SBATCH --ntasks={total_tasks}\n"
         script += f"#SBATCH --ntasks-per-node={resource_config.procs_per_node}\n"
         script += "#SBATCH --cpus-per-task=1\n"
+        # Add gres/tmpfs specification to avoid sbatch warning
         if resource_config.gpus_per_node > 0:
-            script += f"#SBATCH --gres=gpu:{resource_config.gpus_per_node}\n"
+            script += f"#SBATCH --gres=gpu:{resource_config.gpus_per_node},tmpfs:10g\n"
+        else:
+            script += "#SBATCH --gres=tmpfs:10g\n"
         if resource_config.exclusive:
             script += "###SBATCH --exclusive\n"
         script += f"#SBATCH -A {resource_config.account or 'cin_X'}\n"

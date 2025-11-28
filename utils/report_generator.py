@@ -335,3 +335,108 @@ class ReportGenerator:
         
         logger.info(f"Generated comparison report: {output_path}")
         return str(output_path)
+
+
+def main():
+    """CLI entry point for standalone report generation."""
+    import argparse
+    import sys
+    
+    parser = argparse.ArgumentParser(
+        description='Generate HPC scaling reports from completed test runs',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Auto-detect scaling type from directory name
+  python -m utils.report_generator output/test_weak_20251025_163227
+  
+  # Explicitly specify scaling type
+  python -m utils.report_generator output/test_strong_20251025_120000 --scaling strong
+  
+  # Generate report with verbose output
+  python -m utils.report_generator output/test_weak_20251025_120000 --verbose
+"""
+    )
+    
+    parser.add_argument(
+        'run_directory',
+        type=Path,
+        help='Path to the test run directory'
+    )
+    
+    parser.add_argument(
+        '--scaling',
+        choices=['weak', 'strong'],
+        help='Scaling type (auto-detected from directory name if not specified)'
+    )
+    
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Enable verbose output'
+    )
+    
+    args = parser.parse_args()
+    
+    # Set logging level
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    
+    # Validate run directory
+    run_dir = args.run_directory.resolve()
+    if not run_dir.exists():
+        logger.error(f"Run directory not found: {run_dir}")
+        sys.exit(1)
+    
+    if not run_dir.is_dir():
+        logger.error(f"Not a directory: {run_dir}")
+        sys.exit(1)
+    
+    # Auto-detect scaling type from directory name
+    scaling_type = args.scaling
+    if not scaling_type:
+        dir_name = run_dir.name.lower()
+        if '_weak_' in dir_name:
+            scaling_type = 'weak'
+        elif '_strong_' in dir_name:
+            scaling_type = 'strong'
+        else:
+            logger.error("Could not auto-detect scaling type from directory name.")
+            logger.error("Please specify --scaling weak or --scaling strong")
+            sys.exit(1)
+        logger.info(f"Auto-detected scaling type: {scaling_type}")
+    
+    logger.info(f"{'='*60}")
+    logger.info(f"REPORT GENERATION")
+    logger.info(f"{'='*60}")
+    logger.info(f"Run directory: {run_dir}")
+    logger.info(f"Scaling type: {scaling_type}")
+    logger.info(f"{'='*60}\n")
+    
+    # Generate report
+    try:
+        logger.info("Generating report...\n")
+        generator = ReportGenerator(run_dir)
+        report_path = generator.generate_scaling_report(scaling_type=scaling_type)
+        
+        logger.info(f"\n{'='*60}")
+        logger.info("✅ REPORT GENERATED SUCCESSFULLY")
+        logger.info(f"{'='*60}")
+        logger.info(f"Text report: {report_path}")
+        
+        # Check if JSON report exists
+        json_report = run_dir / f"{scaling_type}_scaling_report.json"
+        if json_report.exists():
+            logger.info(f"JSON report: {json_report}")
+        
+        logger.info(f"{'='*60}\n")
+        return 0
+        
+    except Exception as e:
+        logger.error(f"\n❌ Report generation failed: {e}", exc_info=args.verbose)
+        return 1
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main())

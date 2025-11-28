@@ -14,6 +14,8 @@ from engine.runner import TestRunner
 from utils.code_acquisition import CodeAcquisition
 from utils.readme_analyzer import ReadmeAnalyzer, BuildInfo
 from utils.report_generator import ReportGenerator
+from utils.parameter_suggestion import ParameterSuggestion, suggest_parameters
+from utils.system_info import get_partition_info
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +35,30 @@ class OrchestratorConfig:
     initial_procs: tuple = (2, 2, 2)
     initial_domain: Optional[tuple] = None
     initial_cells: Optional[tuple] = None
+    particles_per_cell: Optional[tuple] = None  # (npcelx, npcely, npcelz)
+    
+    # Scaling factor (if defined, enables full weak scaling mode)
+    scaling_factor: Optional[float] = None  # e.g., 2 (doubles per step)
+    
+    # Scaling dimensions: 1 for 1D (X only), 2 for 2D (X→Y→X→Y), 3 for 3D (X→Y→Z→X→Y→Z)
+    scaling_dimensions: int = 2  # Default to 2D scaling
+    
+    # Scaling factors (if defined, overrides node-based scaling)
+    weak_scaling_factors: Optional[List[float]] = None  # e.g., [1, 2, 4, 8]
+    strong_scaling_factors: Optional[List[float]] = None  # e.g., [1, 2, 4, 8]
+    
+    # GENERIC: Variable mapping for application-agnostic input parsing
+    variable_map: Optional[Dict] = None  # Maps parameter types to variable names
     
     # Resource configuration
     procs_per_node: int = 128
     gpus_per_node: int = 0
+    memory_per_node_gb: float = 256.0  # Memory in GB
     time_limit: str = "02:00:00"
     partition: str = "X_usr_prod"
+    qos: Optional[str] = None  # QoS specification for job submission
+    qos_mapping: Optional[Dict[str, Dict]] = None  # QoS threshold mapping by node count
+    # Example: {"small": {"max_nodes": 16, "qos": "normal"}, "large": {"min_nodes": 17, "qos": "dcgp_qos_bprod"}}
     account: str = "cin_X"
     
     # Backend configuration (auto-detected if None)
@@ -65,6 +85,12 @@ class OrchestratorConfig:
     output_dir: Path = Path("output")
     workspace_dir: Path = Path("workspace")
     test_name: Optional[str] = None
+    
+    # LLM configuration (for intelligent parameter mapping)
+    use_llm_discovery: bool = False
+    openai_api_key: Optional[str] = None
+    llm_model: str = "gpt-4"
+    parameter_mapping: Optional[Dict[str, List[str]]] = None  # Custom parameter name mappings
 
 
 class HPCOrchestrator:
@@ -260,6 +286,8 @@ class HPCOrchestrator:
             gpus_per_node=gpus,
             time_limit=self.config.time_limit,
             partition=self.config.partition,
+            qos=self.config.qos,
+            qos_mapping=self.config.qos_mapping,
             account=self.config.account
         )
         
@@ -271,6 +299,37 @@ class HPCOrchestrator:
             initial_domain=self.config.initial_domain,
             initial_cells=self.config.initial_cells
         )
+        
+        # Set variable mapping (for generic input parsing)
+        if self.config.variable_map:
+            self.test.scaling_config.variable_map = self.config.variable_map
+            logger.info(f"  Variable mapping configured for generic input parsing")
+        
+        # Set scaling factor if defined (enables full weak scaling mode)
+        if self.config.scaling_factor:
+            self.test.scaling_config.scaling_factor = self.config.scaling_factor
+            logger.info(f"  Scaling factor: {self.config.scaling_factor} (full weak scaling enabled)")
+        
+        # Set scaling dimensions (1D, 2D, or 3D scaling pattern)
+        if hasattr(self.config, 'scaling_dimensions'):
+            self.test.scaling_config.scaling_dimensions = self.config.scaling_dimensions
+            mode_str = {1: "1D (X only)", 2: "2D (X→Y→X→Y, Z constant)", 3: "3D (X→Y→Z cycling)"}
+            logger.info(f"  Scaling dimensions: {mode_str.get(self.config.scaling_dimensions, self.config.scaling_dimensions)}")
+        
+        # Set scaling factors if defined
+        if self.config.weak_scaling_factors:
+            self.test.scaling_config.weak_scaling_factors = self.config.weak_scaling_factors
+            logger.info(f"  Weak scaling factors: {self.config.weak_scaling_factors}")
+        
+        if self.config.strong_scaling_factors:
+            self.test.scaling_config.strong_scaling_factors = self.config.strong_scaling_factors
+            logger.info(f"  Strong scaling factors: {self.config.strong_scaling_factors}")
+        
+        # Set particles per cell if specified
+        if self.config.particles_per_cell:
+            # Store in scaling config for use during input generation
+            self.test.scaling_config.particles_per_cell = self.config.particles_per_cell
+            logger.info(f"  Particles per cell: {self.config.particles_per_cell}")
         
         # Set modules
         if self.config.modules:
@@ -316,11 +375,29 @@ class HPCOrchestrator:
         # Set auto-submit behavior
         self.test.set_auto_submit(self.config.auto_submit_jobs)
         
+        # Set LLM configuration for intelligent parameter mapping
+        self.test.use_llm_discovery = self.config.use_llm_discovery
+        self.test.openai_api_key = self.config.openai_api_key
+        self.test.llm_model = self.config.llm_model
+        self.test.parameter_mapping = self.config.parameter_mapping
+        
+        if self.config.use_llm_discovery:
+            logger.info(f"  LLM parameter discovery: ENABLED")
+            logger.info(f"  LLM model: {self.config.llm_model}")
+        if self.config.parameter_mapping:
+            logger.info(f"  Custom parameter mappings: {len(self.config.parameter_mapping)} types")
+        
         logger.info(f"Test configured: {self.test.name}")
         logger.info(f"  Backend: {self.config.scheduler}/{launcher}")
         logger.info(f"  Resources: {self.config.max_nodes} nodes × {self.config.procs_per_node} procs/node")
         logger.info(f"  Scaling: {self.config.scaling_type}")
         logger.info(f"  Auto-submit: {self.config.auto_submit_jobs}")
+        
+        # Show parameter suggestions
+        self._show_parameter_suggestions()
+        
+        # Show partition hardware info
+        self._show_partition_info()
     
     def _setup_input_files(self) -> Optional[Path]:
         """Detect and prepare input files for the test."""
@@ -373,6 +450,98 @@ class HPCOrchestrator:
             logger.info("No input files detected (application may not need them)")
         
         return None
+    
+    def _show_parameter_suggestions(self):
+        """Display dynamically computed parameter suggestions."""
+        try:
+            logger.info("\n" + "="*60)
+            logger.info("PARAMETER SUGGESTIONS (based on detected hardware)")
+            logger.info("="*60)
+            
+            # Create parameter suggester
+            is_gpu_run = self.config.hardware_type.lower() == 'gpu'
+            suggester = ParameterSuggestion(
+                cores_per_node=self.config.procs_per_node,
+                memory_gb=float(self.config.memory_per_node_gb) if hasattr(self.config, 'memory_per_node_gb') else 256.0,
+                gpus_per_node=self.config.gpus_per_node,
+                is_gpu_run=is_gpu_run
+            )
+            
+            # Get suggestions for scaling test
+            suggestions = suggester.get_scaling_suggestions(
+                max_nodes=self.config.max_nodes,
+                scaling_type=self.config.scaling_type
+            )
+            
+            # Display suggestion for single node
+            single_node_params = suggestions[1]
+            logger.info(f"")
+            logger.info(f"Optimal configuration for SINGLE NODE:")
+            logger.info(f"  Grid resolution:    nx={single_node_params.nx}, ny={single_node_params.ny}, nz={single_node_params.nz}")
+            logger.info(f"  Particles/cell:     px={single_node_params.npcelx}, py={single_node_params.npcely}, pz={single_node_params.npcelz}")
+            logger.info(f"  Decomposition:      {single_node_params.core_x}×{single_node_params.core_y}×{single_node_params.core_z} = {single_node_params.cores_used} cores")
+            logger.info(f"  Memory estimate:    {single_node_params.estimated_memory_gb:.1f} GB / {single_node_params.memory_available_gb:.1f} GB")
+            logger.info(f"  Core utilization:   {single_node_params.cores_used}/{single_node_params.cores_available} ({100*single_node_params.cores_used/single_node_params.cores_available:.0f}%)")
+            
+            # Show scaling progression if multi-node
+            if self.config.max_nodes > 1:
+                logger.info(f"\nScaling progression ({self.config.scaling_type.upper()})")
+                logger.info(f"{'Nodes':<8} {'Grid (nx×ny×nz)':<20} {'Decomp (cx×cy×cz)':<20} {'Cores':<10} {'Memory (GB)':<15}")
+                logger.info(f"-" * 75)
+                
+                for num_nodes in sorted(suggestions.keys()):
+                    params = suggestions[num_nodes]
+                    grid_str = f"{params.nx}×{params.ny}×{params.nz}"
+                    decomp_str = f"{params.core_x}×{params.core_y}×{params.core_z}"
+                    logger.info(f"{num_nodes:<8} {grid_str:<20} {decomp_str:<20} {params.cores_used:<10} {params.estimated_memory_gb:<15.1f}")
+            
+            logger.info("="*60)
+            logger.info("💡 TIP: Use these values in your run.yaml or input files for optimal performance")
+            logger.info("="*60)
+            
+        except Exception as e:
+            logger.warning(f"Could not generate parameter suggestions: {e}")
+    
+    def _show_partition_info(self):
+        """Display detailed partition hardware information."""
+        try:
+            # Only show if partition is specified and not a placeholder
+            if self.config.partition and self.config.partition != 'X_usr_prod':
+                logger.info("\n" + "="*60)
+                logger.info(f"PARTITION HARDWARE SPECIFICATIONS")
+                logger.info("="*60)
+                
+                partition_info = get_partition_info(self.config.partition)
+                
+                logger.info(f"Partition Name:     {self.config.partition}")
+                logger.info(f"Partition Type:     {partition_info['partition_type']}")
+                logger.info(f"Total Nodes:        {partition_info['total_nodes']}")
+                logger.info(f"CPUs per Node:      {partition_info['cores_per_node']} cores")
+                
+                if partition_info['gpus_per_node'] > 0:
+                    logger.info(f"GPUs per Node:      {partition_info['gpus_per_node']}")
+                else:
+                    logger.info(f"GPUs per Node:      0 (CPU-only partition)")
+                
+                logger.info(f"Memory per Node:    {partition_info['memory_per_node_gb']:.1f} GB")
+                logger.info(f"Scheduler:          {partition_info['scheduler']}")
+                
+                # Calculate and show totals
+                total_cores = partition_info['total_nodes'] * partition_info['cores_per_node']
+                total_memory = partition_info['total_nodes'] * partition_info['memory_per_node_gb']
+                
+                logger.info(f"\nTotal Partition Resources:")
+                logger.info(f"  Total CPU Cores:  {total_cores:,}")
+                
+                if partition_info['gpus_per_node'] > 0:
+                    total_gpus = partition_info['total_nodes'] * partition_info['gpus_per_node']
+                    logger.info(f"  Total GPUs:       {total_gpus:,}")
+                
+                logger.info(f"  Total Memory:     {total_memory:,.1f} GB")
+                logger.info("="*60)
+                
+        except Exception as e:
+            logger.debug(f"Could not retrieve partition info: {e}")
     
     def _run_tests(self) -> bool:
         """Step 4: Run scaling tests."""

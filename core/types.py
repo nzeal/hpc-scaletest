@@ -62,8 +62,8 @@ DomainSize = Tuple[float, float, float]    # (dx, dy, dz)
 CellCount = Tuple[int, int, int]           # (nx, ny, nz)
 
 
-# Constants
-DEFAULT_PROCS_PER_NODE = 128
+# Constants (used as fallbacks when auto-detection fails)
+DEFAULT_PROCS_PER_NODE = 128  # Fallback only - auto-detected from system
 DEFAULT_TIME_LIMIT = "01:00:00"
 DEFAULT_OUTPUT_DIR = "output"
 LARGE_JOB_THRESHOLD = 64  # Nodes threshold for special handling

@@ -1,0 +1,161 @@
+# ============================================================================
+# HPC-ScaleTest Configuration File (run.yaml)
+# ============================================================================
+# This YAML file provides a cleaner alternative to long command-line arguments.
+# Usage: python hpc_auto.py --config run.yaml
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# SOURCE CONFIGURATION (REQUIRED)
+# ----------------------------------------------------------------------------
+# Specify either a local path or a Git repository URL
+repository: https://github.com/thenitinshukla/iPIC3D-CPU-NS.git
+# repository: /path/to/local/code
+
+# ----------------------------------------------------------------------------
+# SCALING CONFIGURATION
+# ----------------------------------------------------------------------------
+# Type of scaling test: 'strong' or 'weak'
+scaling: strong
+
+# Maximum number of nodes to test
+# The framework will generate a power-of-2 sequence: 1, 2, 4, 8, ..., up to this value
+# For larger-scale runs, use 32, 64, 128 (requires dcgp_qos_bprod QOS)
+nodes: 128
+scaling_factor: 2.0  # Scaling factor for weak scaling - generates 1,2,4,8,16,32,64,128
+scaling_dimensions: 2  # 2D scaling (X→Y pattern), Z remains constant
+
+# Initial processor decomposition (px, py, pz)
+# This defines the MPI rank distribution in 3D space
+initial_procs: [14, 8, 1]
+
+# Initial domain size (Lx, Ly, Lz) - required for weak scaling
+# Defines the physical domain dimensions
+initial_domain: [84.0, 48.0, 1.0]
+
+# Initial cell count (nx, ny, nz) - grid resolution
+# Defines the number of grid cells in each dimension
+initial_cells: [840, 480, 1]
+
+# Particles per cell in each direction
+# NOTE: From your input file, particles are defined per species
+# Using first species values: npcelx=20, npcely=20, npcelz=1
+particles_per_cell:
+  x: 20
+  y: 20
+  z: 1
+
+# ----------------------------------------------------------------------------
+# VARIABLE MAPPING (CRITICAL FOR GENERIC INPUT PARSING)
+# ----------------------------------------------------------------------------
+# Maps framework parameters to input file variable names
+# This tells the parser which variables to modify in your input file
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nxc"
+    y: "nyc"
+    z: "nzc"
+  mpi_decomposition:
+    x: "XLEN"
+    y: "YLEN"
+    z: "ZLEN"
+  particles:
+    x: "npcelx"
+    y: "npcely"
+    z: "npcelz"
+
+# ----------------------------------------------------------------------------
+# HARDWARE CONFIGURATION
+# ----------------------------------------------------------------------------
+# Hardware type: 'cpu' or 'gpu'
+hardware: cpu
+
+# Processors per node (must match your hardware)
+procs_per_node: 112  # 14 × 8 × 1 = 112 for baseline
+
+# ----------------------------------------------------------------------------
+# RESOURCE CONFIGURATION
+# ----------------------------------------------------------------------------
+# Partition/queue name for job submission
+partition: dcgp_usr_prod
+
+# QoS specification - default QoS if node count doesn't match qos_mapping tiers
+# For Leonardo: dcgp_qos_bprod (17-128 nodes) is handled via qos_mapping below
+qos: dcgp_qos_bprod
+
+# Multi-tier QoS mapping for automatic QoS selection based on node count
+# This enables the framework to automatically switch QoS policies based on job requirements
+# Leonardo example: 'normal' QoS for small runs (≤16 nodes), 'dcgp_qos_bprod' for large runs (≥17 nodes)
+qos_mapping:
+  small:
+    max_nodes: 16
+    qos: "normal"
+  large:
+    min_nodes: 17
+    max_nodes: 128
+    qos: "dcgp_qos_bprod"
+
+# Account/project allocation
+account: cin_staff
+
+# Time limit for each job (HH:MM:SS format)
+time_limit: "02:00:00"
+
+# ----------------------------------------------------------------------------
+# ENVIRONMENT & MODULES
+# ----------------------------------------------------------------------------
+# List of modules to load before compilation and execution
+modules:
+  - hdf5/1.14.3--intel-oneapi-mpi--2021.12.1--oneapi--2024.1.0
+
+# ----------------------------------------------------------------------------
+# BUILD CONFIGURATION
+# ----------------------------------------------------------------------------
+# Build system: 'cmake', 'make', 'autotools'
+# If not specified, auto-detected from source repository
+# build_system: cmake
+
+# Skip building if executable already exists
+# no_build: false
+
+# ----------------------------------------------------------------------------
+# INPUT FILE CONFIGURATION
+# ----------------------------------------------------------------------------
+# Path to input file or directory containing input files
+# Supports relative paths from repository root
+input_file: inputfiles/os-stdin
+
+# Specific input file name (if input_file is a directory)
+# input_name: os-stdin
+
+# ----------------------------------------------------------------------------
+# SCHEDULER & LAUNCHER CONFIGURATION
+# ----------------------------------------------------------------------------
+# Job scheduler: 'slurm', 'pbs', 'local'
+# Auto-detected if not specified
+scheduler: slurm
+
+# MPI launcher: 'srun', 'mpirun', 'mpiexec'
+# Auto-selected based on scheduler if not specified
+launcher: srun
+
+# Module system: 'lmod', 'tmod', 'tmod4', 'nomod'
+# Auto-detected if not specified
+module_system: lmod
+
+# ----------------------------------------------------------------------------
+# BEHAVIOR CONFIGURATION
+# ----------------------------------------------------------------------------
+# Enable verbose logging
+verbose: true
+
+# Automatically submit jobs after generation
+# Set to false to only generate job scripts without submission
+auto_submit: true  # Dry run - don't submit jobs
+
+# Disable LLM-based discovery (use generic parser only)
+use_llm_discovery: false

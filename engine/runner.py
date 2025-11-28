@@ -18,6 +18,9 @@ from core.types import JobStatus, SchedulerBackend, LauncherBackend, ModuleBacke
 from core.abstracts import DefaultResultParser
 from engine.scaling import ScalingEngine
 from utils.file_utils import create_directory, write_file
+from utils.input_analyzer import InputFileAnalyzer, validate_and_adapt_input
+from utils.generic_input_parser import GenericInputParser  # NEW: Generic parser
+from utils.validators import validate_job_config, ValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -93,7 +96,28 @@ class TestRunner:
             self.test.command[0] = str((self.install_dir / exe_name).resolve())
             logger.info(f"Using binary: {self.test.command[0]}")
         
-        self.scaling_engine = ScalingEngine(test.scaling_config, test.resource_config)
+        # Create node sequence from scaling config
+        node_sequence = test.scaling_config.get_node_sequence()
+        
+        # Extract initial values from scaling config
+        initial_domain = test.scaling_config.initial_domain
+        initial_cells = test.scaling_config.initial_cells
+        initial_procs = test.scaling_config.initial_procs
+        
+        # For standalone scaling engine, we need to provide the required parameters
+        # We'll create a temporary input file for the scaling engine
+        self.scaling_engine = ScalingEngine(
+            input_file=str(test.input_file) if test.input_file else "input.yaml",
+            output_dir=str(self.run_dir / "scaling_configs"),
+            nodes=node_sequence,
+            procs_per_node=test.resource_config.procs_per_node,
+            scale_factor=int(test.scaling_config.scaling_factor or 2.0),
+            dims=test.scaling_config.scaling_dimensions,
+            initial_domain=initial_domain,
+            initial_cells=initial_cells,
+            initial_procs=initial_procs,
+            scaling_type=test.scaling_config.scaling_type.value
+        )
     
     def _load_modules_for_build(self):
         """Load modules reliably on login node (bash -l for profile)."""
@@ -440,6 +464,21 @@ class TestRunner:
         
         logger.debug(f"_submit_job called for {job_config.job_id}")
         
+        # PRE-EXECUTION VALIDATION
+        logger.info(f"\n{'='*60}")
+        logger.info(f"VALIDATING: {job_config.job_id}")
+        logger.info(f"{'='*60}")
+        
+        is_valid, errors = validate_job_config(job_config, self.test)
+        if not is_valid:
+            error_msg = f"\n❌ Configuration validation failed for {job_config.job_id}:\n"
+            error_msg += "\n".join(f"  • {err}" for err in errors)
+            logger.error(error_msg)
+            raise ValidationError(error_msg)
+        
+        logger.info("✓ Validation passed")
+        logger.info(f"  Decomposition: {job_config.procs_decomposition[0]}×{job_config.procs_decomposition[1]}×{job_config.procs_decomposition[2]} = {job_config.num_procs} procs")
+        
         job_dir = (self.run_dir / job_config.job_id).resolve()  # Convert to absolute path
         create_directory(job_dir)
         job_config.working_dir = job_dir  # Now absolute path
@@ -448,28 +487,208 @@ class TestRunner:
         job_command = self.test.command.copy()
         
         if self.test.input_file:
-            original_name = self.test.input_file.name
-            input_path = job_dir / original_name
-            content = self.test.get_input_content(job_config)
-            write_file(input_path, content)
-            # If the last argument already looks like an input file, replace it; otherwise append
-            if job_command:
-                last_arg = job_command[-1]
-                if isinstance(last_arg, str) and last_arg.lower().endswith((".inp", ".in", ".dat", ".txt", "stdin")):
-                    job_command[-1] = original_name
+            # Handle directory vs file input
+            if self.test.input_file.is_dir():
+                # Input_file is a directory - copy all files from it
+                import shutil
+                logger.info(f"Copying input directory: {self.test.input_file} -> {job_dir}/")
+                
+                # Find the main input file for validation
+                input_files = sorted([f for f in self.test.input_file.iterdir() if f.is_file()])
+                main_input = input_files[0] if input_files else None
+                
+                # Validate and adapt main input file if found
+                if main_input:
+                    logger.info(f"Validating and adapting input file: {main_input.name}")
+                    adapted_input_path = job_dir / main_input.name
+                    
+                    # Perform validation and adaptation
+                    base_procs = (self.test.scaling_config.initial_procs[0] * 
+                                  self.test.scaling_config.initial_procs[1] * 
+                                  self.test.scaling_config.initial_procs[2])
+                    scale_factor = job_config.num_procs / base_procs if base_procs > 0 else 1.0
+                    
+                    try:
+                        is_valid, output_file = validate_and_adapt_input(
+                            input_file=main_input,
+                            num_procs=job_config.num_procs,
+                            procs_decomp=None,  # Auto-compute intelligent decomposition
+                            scaling_type=self.test.scaling_config.scaling_type.value,
+                            scale_factor=scale_factor,
+                            output_file=adapted_input_path,
+                            use_llm=self.test.use_llm_discovery,
+                            llm_api_key=self.test.openai_api_key,
+                            llm_model=self.test.llm_model,
+                            custom_param_map=self.test.parameter_mapping
+                        )
+                        
+                        if not is_valid:
+                            logger.error(f"Input validation failed for {job_config.job_id}")
+                            raise ValueError("Input file validation failed - see logs for details")
+                        
+                        logger.info(f"✓ Input file validated and adapted successfully")
+                        
+                    except Exception as e:
+                        logger.warning(f"Input adaptation failed: {e}. Using original file.")
+                        # Fall back to copying original
+                        shutil.copy2(main_input, adapted_input_path)
+                    
+                    # Copy other files in directory
+                    for item in input_files[1:]:
+                        dest = job_dir / item.name
+                        shutil.copy2(item, dest)
+                        logger.debug(f"  Copied: {item.name}")
+                    
+                    input_name = main_input.name
                 else:
-                    job_command.append(original_name)
+                    # No files found, just copy directory
+                    for item in self.test.input_file.iterdir():
+                        if item.is_file():
+                            dest = job_dir / item.name
+                            shutil.copy2(item, dest)
+                            logger.debug(f"  Copied: {item.name}")
+                    input_name = input_files[0].name if input_files else "input.txt"
+                
+                # Update command with input filename
+                if job_command:
+                    last_arg = job_command[-1]
+                    if isinstance(last_arg, str) and last_arg.lower().endswith((".inp", ".in", ".dat", ".txt", "stdin")):
+                        job_command[-1] = input_name
+                    else:
+                        job_command.append(input_name)
+                else:
+                    job_command = [input_name]
             else:
-                # Should not happen due to validation, but be safe
-                job_command = [original_name]
+                # Input_file is a single file - validate and adapt it
+                original_name = self.test.input_file.name
+                input_path = job_dir / original_name
+                
+                # Node 1 baseline: Use exact values from run.yaml to override placeholders
+                if job_config.job_id == "node1":
+                    logger.info("""╔═══════════════════════════════════════════════════════════════╗
+║  NODE 1: Applying run.yaml values to input file           ║
+╚═══════════════════════════════════════════════════════════════╝""")
+                    
+                    # Use generic input parser to apply run.yaml values
+                    if self.test.scaling_config.variable_map:
+                        logger.info("Using generic input parser for Node 1 (YAML-driven variable mapping)")
+                        parser = GenericInputParser(self.test.scaling_config.variable_map)
+                        
+                        # Apply Node 1 values from run.yaml
+                        success = parser.generate_scaled_input(
+                            base_input=self.test.input_file,
+                            output_file=input_path,
+                            domain_size=self.test.scaling_config.initial_domain,
+                            cell_count=self.test.scaling_config.initial_cells,
+                            mpi_decomp=self.test.scaling_config.initial_procs,
+                            particles_per_cell=self.test.scaling_config.particles_per_cell
+                        )
+                        
+                        if success:
+                            logger.info(f"✓ Node 1 input file generated with run.yaml values")
+                        else:
+                            logger.error("Failed to generate Node 1 input file, falling back to copy")
+                            import shutil
+                            shutil.copy2(self.test.input_file, input_path)
+                    else:
+                        # Fall back to copying if no variable map
+                        import shutil
+                        shutil.copy2(self.test.input_file, input_path)
+                        logger.info(f"✓ Input file copied unchanged: {original_name}")
+                
+                else:
+                    # For all other nodes: apply scaling/modifications
+                    logger.info(f"Validating and adapting input file: {original_name}")
+                    
+                    # Calculate scale factor for weak scaling
+                    base_procs = (self.test.scaling_config.initial_procs[0] * 
+                                  self.test.scaling_config.initial_procs[1] * 
+                                  self.test.scaling_config.initial_procs[2])
+                    scale_factor = job_config.num_procs / base_procs if base_procs > 0 else 1.0
+                    
+                    # GENERIC PATH: Use GenericInputParser if variable_map is provided
+                    if self.test.scaling_config.variable_map:
+                        logger.info("Using generic input parser (YAML-driven variable mapping)")
+                        parser = GenericInputParser(self.test.scaling_config.variable_map)
+                        
+                        try:
+                            success = parser.generate_scaled_input(
+                                base_input=self.test.input_file,
+                                output_file=input_path,
+                                domain_size=job_config.domain_size,
+                                cell_count=job_config.cell_count,
+                                mpi_decomp=job_config.procs_decomposition,
+                                particles_per_cell=self.test.scaling_config.particles_per_cell
+                            )
+                            
+                            if success:
+                                logger.info(f"✓ Input file generated with generic parser")
+                            else:
+                                raise ValueError("Generic parser failed")
+                        
+                        except Exception as e:
+                            logger.error(f"Generic parser failed: {e}")
+                            # Fall back to copying original
+                            import shutil
+                            shutil.copy2(self.test.input_file, input_path)
+                            logger.warning("Using unmodified input file as fallback")
+                    
+                    else:
+                        # LLM-BASED PATH: Use existing LLM-based validation (if configured)
+                        try:
+                            is_valid, output_file = validate_and_adapt_input(
+                                input_file=self.test.input_file,
+                                num_procs=job_config.num_procs,
+                                procs_decomp=None,  # Auto-compute intelligent decomposition
+                                scaling_type=self.test.scaling_config.scaling_type.value,
+                                scale_factor=scale_factor,
+                                output_file=input_path,
+                                use_llm=self.test.use_llm_discovery,
+                                llm_api_key=self.test.openai_api_key,
+                                llm_model=self.test.llm_model,
+                                custom_param_map=self.test.parameter_mapping
+                            )
+                            
+                            if not is_valid:
+                                logger.error(f"Input validation failed for {job_config.job_id}")
+                                raise ValueError("Input file validation failed - see logs for details")
+                            
+                            logger.info(f"✓ Input file validated and adapted successfully")
+                            
+                        except Exception as e:
+                            logger.warning(f"Input adaptation failed: {e}. Using basic method.")
+                            # Fall back to basic method
+                            content = self.test.get_input_content(job_config)
+                            write_file(input_path, content)
+                
+                # Update command with input filename
+                if job_command:
+                    last_arg = job_command[-1]
+                    if isinstance(last_arg, str) and last_arg.lower().endswith((".inp", ".in", ".dat", ".txt", "stdin")):
+                        job_command[-1] = original_name
+                    else:
+                        job_command.append(original_name)
+                else:
+                    # Should not happen due to validation, but be safe
+                    job_command = [original_name]
         
         env_setup = self._generate_env_setup()
         launch_cmd = self.launcher.generate_launch_command(
             job_config, job_command, self.test.resource_config
         )
         
+        # Apply QoS mapping based on node count for this specific job
+        resource_config_for_job = self.test.resource_config
+        selected_qos = resource_config_for_job.get_qos_for_nodes(job_config.num_nodes)
+        if selected_qos and selected_qos != resource_config_for_job.qos:
+            # Create a copy of resource config with the selected QoS
+            import copy
+            resource_config_for_job = copy.copy(resource_config_for_job)
+            resource_config_for_job.qos = selected_qos
+            logger.info(f"  QoS selected for {job_config.num_nodes} nodes: {selected_qos}")
+        
         script_content = self.scheduler.generate_job_script(
-            job_config, self.test.resource_config, launch_cmd, env_setup
+            job_config, resource_config_for_job, launch_cmd, env_setup
         )
         
         # Use appropriate file extension based on platform and scheduler
@@ -596,14 +815,46 @@ class TestRunner:
                 'job_id': config.job_id,
                 'num_nodes': config.num_nodes,
                 'num_procs': config.num_procs,
+                'procs_decomposition': list(config.procs_decomposition),  # Add decomposition
                 'status': results.get(config.job_id, JobStatus.UNKNOWN).value
             }
-            out_files = list(job_dir.glob("out_*.out"))
-            if out_files:
-                metrics = parser.parse_output(out_files[0])
-                job_info['metrics'] = metrics
-                if 'wall_time' in metrics:
-                    job_info['wall_time'] = metrics['wall_time']
+            
+            # Try multiple output file patterns (in priority order)
+            out_files = (
+                list(job_dir.glob("job.out")) or
+                list(job_dir.glob("slurm-*.out")) or
+                list(job_dir.glob("out_*.out")) or
+                list(job_dir.glob("*.out"))
+            )
+            
+            # Also check for timing.json
+            timing_json = job_dir / "timing.json"
+            if timing_json.exists():
+                try:
+                    with open(timing_json, 'r') as f:
+                        timing_data = json.load(f)
+                    if 'wall_time' in timing_data:
+                        job_info['wall_time'] = timing_data['wall_time']
+                        job_info['metrics'] = timing_data
+                        logger.info(f"  Loaded timing from {timing_json.name}: {timing_data.get('wall_time')}s")
+                except Exception as e:
+                    logger.warning(f"  Failed to parse timing.json in {job_dir.name}: {e}")
+            
+            # Fallback: parse from output files
+            if 'wall_time' not in job_info and out_files:
+                logger.debug(f"  Parsing timing from output file: {out_files[0].name}")
+                try:
+                    metrics = parser.parse_output(out_files[0])
+                    job_info['metrics'] = metrics
+                    if 'wall_time' in metrics:
+                        job_info['wall_time'] = metrics['wall_time']
+                        logger.info(f"  Extracted timing from {out_files[0].name}: {metrics['wall_time']}s")
+                except Exception as e:
+                    logger.warning(f"  Failed to parse output file {out_files[0].name}: {e}")
+            
+            if 'wall_time' not in job_info:
+                logger.warning(f"  No timing data found for {config.job_id} in {job_dir}")
+            
             summary['jobs'].append(job_info)
         
         summary_path = self.run_dir / "summary.json"
