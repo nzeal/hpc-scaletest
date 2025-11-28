@@ -16,7 +16,7 @@ repository: https://github.com/thenitinshukla/iPIC3D-CPU-NS.git
 # SCALING CONFIGURATION
 # ----------------------------------------------------------------------------
 # Type of scaling test: 'strong' or 'weak'
-scaling: strong
+scaling: weak
 
 # Maximum number of nodes to test
 # The framework will generate a power-of-2 sequence: 1, 2, 4, 8, ..., up to this value

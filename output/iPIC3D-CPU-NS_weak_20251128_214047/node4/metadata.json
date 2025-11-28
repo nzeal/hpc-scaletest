@@ -1,0 +1,13 @@
+{
+  "job_id": "27181154",
+  "num_nodes": 4,
+  "num_procs": 448,
+  "procs_decomposition": [
+    28,
+    16,
+    1
+  ],
+  "submitted_at": "2025-11-28T21:41:10.564936",
+  "script_path": "/leonardo_scratch/large/userinternal/nshukla1/finalhpc/hpc-scaletest/output/iPIC3D-CPU-NS_weak_20251128_214047/node4/job.sh",
+  "status": "submitted"
+}
