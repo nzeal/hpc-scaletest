@@ -1,0 +1,229 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backends Module &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Utils Module" href="utils.html" />
+    <link rel="prev" title="Engine Module" href="engine.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">Engine Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Backends Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#schedulers">Schedulers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#launchers">Launchers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-system">Module System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-systems">Build Systems</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api_reference.html">API Reference</a></li>
+      <li class="breadcrumb-item active">Backends Module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/backends.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="backends-module">
+<h1>Backends Module<a class="headerlink" href="#backends-module" title="Link to this heading"></a></h1>
+<p>The backends module provides interfaces to various HPC system components.</p>
+<section id="schedulers">
+<h2>Schedulers<a class="headerlink" href="#schedulers" title="Link to this heading"></a></h2>
+<p>Job scheduling system interfaces.</p>
+<p><strong>Supported Schedulers:</strong></p>
+<ul class="simple">
+<li><p><strong>SLURM</strong>: Most common HPC scheduler</p></li>
+<li><p><strong>PBS/Torque</strong>: Traditional HPC scheduler</p></li>
+<li><p><strong>Local</strong>: For local testing without a scheduler</p></li>
+</ul>
+<p><strong>Usage Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">backends.schedulers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SlurmScheduler</span>
+
+<span class="n">scheduler</span> <span class="o">=</span> <span class="n">SlurmScheduler</span><span class="p">()</span>
+<span class="n">job_id</span> <span class="o">=</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="s2">&quot;job_script.sh&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="launchers">
+<h2>Launchers<a class="headerlink" href="#launchers" title="Link to this heading"></a></h2>
+<p>MPI job launcher interfaces.</p>
+<p><strong>Supported Launchers:</strong></p>
+<ul class="simple">
+<li><p><strong>srun</strong>: SLURM launcher</p></li>
+<li><p><strong>mpirun</strong>: OpenMPI/MPICH launcher</p></li>
+<li><p><strong>mpiexec</strong>: Standard MPI launcher</p></li>
+<li><p><strong>simple</strong>: Direct execution (for testing)</p></li>
+</ul>
+<p><strong>Usage Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">backends.launchers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SrunLauncher</span>
+
+<span class="n">launcher</span> <span class="o">=</span> <span class="n">SrunLauncher</span><span class="p">()</span>
+<span class="n">launcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">num_procs</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">executable</span><span class="o">=</span><span class="s2">&quot;./myapp&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="module-system">
+<h2>Module System<a class="headerlink" href="#module-system" title="Link to this heading"></a></h2>
+<p>Environment module system interfaces.</p>
+<p><strong>Supported Systems:</strong></p>
+<ul class="simple">
+<li><p><strong>Lmod</strong>: Modern Lua-based module system</p></li>
+<li><p><strong>Tmod</strong>: Traditional Tcl module system</p></li>
+<li><p><strong>Tmod4</strong>: Environment Modules 4.x</p></li>
+<li><p><strong>nomod</strong>: No module system (manual environment)</p></li>
+</ul>
+<p><strong>Usage Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">backends.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">LmodModules</span>
+
+<span class="n">modules</span> <span class="o">=</span> <span class="n">LmodModules</span><span class="p">()</span>
+<span class="n">modules</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;gcc/11.2.0&quot;</span><span class="p">)</span>
+<span class="n">modules</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;openmpi/4.1.0&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="build-systems">
+<h2>Build Systems<a class="headerlink" href="#build-systems" title="Link to this heading"></a></h2>
+<p>Application build system interfaces.</p>
+<p><strong>Supported Systems:</strong></p>
+<ul class="simple">
+<li><p><strong>CMake</strong>: Modern build system</p></li>
+<li><p><strong>Make</strong>: Traditional make-based builds</p></li>
+<li><p><strong>Autotools</strong>: GNU autotools (configure/make)</p></li>
+<li><p><strong>Spack</strong>: HPC package manager</p></li>
+<li><p><strong>EasyBuild</strong>: HPC software build framework</p></li>
+</ul>
+<p><strong>Usage Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">backends.builds</span><span class="w"> </span><span class="kn">import</span> <span class="n">CMakeBuilder</span>
+
+<span class="n">builder</span> <span class="o">=</span> <span class="n">CMakeBuilder</span><span class="p">()</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">source_dir</span><span class="o">=</span><span class="s2">&quot;/path/to/source&quot;</span><span class="p">)</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="engine.html" class="btn btn-neutral float-left" title="Engine Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utils Module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

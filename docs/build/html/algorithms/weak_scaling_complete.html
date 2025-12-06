@@ -1,0 +1,1495 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weak Scaling Algorithm: Complete Technical Reference &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]]}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Strong Scaling Algorithm: Complete Technical Reference" href="strong_scaling_complete.html" />
+    <link rel="prev" title="Troubleshooting" href="../troubleshooting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Weak Scaling Algorithm: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction-for-non-technical-readers">Introduction for Non-Technical Readers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-this-document-about">What is This Document About?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#who-should-read-this">Who Should Read This?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reading-guide">Reading Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#weak-scaling-definition">1.1 Weak Scaling Definition</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mathematical-formulation">Mathematical Formulation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#domain-decomposition-mathematics">1.2 Domain Decomposition Mathematics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#d-grid-decomposition">3D Grid Decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physical-domain-scaling">Physical Domain Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#scaling-factor-mathematics">1.3 Scaling Factor Mathematics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#definition">Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dimension-specific-scaling">Dimension-Specific Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dimension-rotation-strategy">2.1 Dimension Rotation Strategy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-problem">The Problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-solution-rotation">The Solution: Rotation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Mathematical Formulation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation-algorithm">2.2 Implementation Algorithm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pseudocode">Pseudocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#detailed-implementation-with-real-code">Detailed Implementation with Real Code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-structure-design">2.3 Data Structure Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-dictionary">Configuration Dictionary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#invariants">Invariants</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#complete-3d-weak-scaling-example">3.1 Complete 3D Weak Scaling Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#problem-setup">Problem Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#node-1-baseline-configuration">Node 1: Baseline Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#node-2-first-scaling-step-x">Node 2: First Scaling Step (X)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#node-4-second-scaling-step-y">Node 4: Second Scaling Step (Y)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#complete-configuration-table">3.2 Complete Configuration Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#algorithmic-complexity">4.1 Algorithmic Complexity</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#time-complexity">Time Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#space-complexity">Space Complexity</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#numerical-stability">4.2 Numerical Stability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#floating-point-considerations">Floating Point Considerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integer-arithmetic">Integer Arithmetic</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#unit-tests">5.1 Unit Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#test-constant-work-per-process">Test: Constant Work Per Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-constant-grid-resolution">Test: Constant Grid Resolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-dimension-rotation-pattern">Test: Dimension Rotation Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-tests">5.2 Integration Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#end-to-end-test">End-to-End Test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#command-line-usage">6.1 Command-Line Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-3d-weak-scaling">Basic 3D Weak Scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#d-weak-scaling-fixed-z">2D Weak Scaling (Fixed Z)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#python-api-usage">6.2 Python API Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#detailed-example">Detailed Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#proof-constant-work-per-process">Proof: Constant Work Per Process</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Weak Scaling Algorithm: Complete Technical Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/algorithms/weak_scaling_complete.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="weak-scaling-algorithm-complete-technical-reference">
+<h1>Weak Scaling Algorithm: Complete Technical Reference<a class="headerlink" href="#weak-scaling-algorithm-complete-technical-reference" title="Link to this heading"></a></h1>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#introduction-for-non-technical-readers" id="id3">Introduction for Non-Technical Readers</a></p>
+<ul>
+<li><p><a class="reference internal" href="#what-is-this-document-about" id="id4">What is This Document About?</a></p></li>
+<li><p><a class="reference internal" href="#who-should-read-this" id="id5">Who Should Read This?</a></p></li>
+<li><p><a class="reference internal" href="#what-you-ll-learn" id="id6">What You’ll Learn</a></p></li>
+<li><p><a class="reference internal" href="#reading-guide" id="id7">Reading Guide</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#weak-scaling-definition" id="id8">1.1 Weak Scaling Definition</a></p>
+<ul>
+<li><p><a class="reference internal" href="#mathematical-formulation" id="id9">Mathematical Formulation</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#domain-decomposition-mathematics" id="id10">1.2 Domain Decomposition Mathematics</a></p>
+<ul>
+<li><p><a class="reference internal" href="#d-grid-decomposition" id="id11">3D Grid Decomposition</a></p></li>
+<li><p><a class="reference internal" href="#physical-domain-scaling" id="id12">Physical Domain Scaling</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#scaling-factor-mathematics" id="id13">1.3 Scaling Factor Mathematics</a></p>
+<ul>
+<li><p><a class="reference internal" href="#definition" id="id14">Definition</a></p></li>
+<li><p><a class="reference internal" href="#dimension-specific-scaling" id="id15">Dimension-Specific Scaling</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#dimension-rotation-strategy" id="id16">2.1 Dimension Rotation Strategy</a></p>
+<ul>
+<li><p><a class="reference internal" href="#the-problem" id="id17">The Problem</a></p></li>
+<li><p><a class="reference internal" href="#the-solution-rotation" id="id18">The Solution: Rotation</a></p></li>
+<li><p><a class="reference internal" href="#id2" id="id19">Mathematical Formulation</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#implementation-algorithm" id="id20">2.2 Implementation Algorithm</a></p>
+<ul>
+<li><p><a class="reference internal" href="#pseudocode" id="id21">Pseudocode</a></p></li>
+<li><p><a class="reference internal" href="#detailed-implementation-with-real-code" id="id22">Detailed Implementation with Real Code</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#data-structure-design" id="id23">2.3 Data Structure Design</a></p>
+<ul>
+<li><p><a class="reference internal" href="#configuration-dictionary" id="id24">Configuration Dictionary</a></p></li>
+<li><p><a class="reference internal" href="#invariants" id="id25">Invariants</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#complete-3d-weak-scaling-example" id="id26">3.1 Complete 3D Weak Scaling Example</a></p>
+<ul>
+<li><p><a class="reference internal" href="#problem-setup" id="id27">Problem Setup</a></p></li>
+<li><p><a class="reference internal" href="#node-1-baseline-configuration" id="id28">Node 1: Baseline Configuration</a></p></li>
+<li><p><a class="reference internal" href="#node-2-first-scaling-step-x" id="id29">Node 2: First Scaling Step (X)</a></p></li>
+<li><p><a class="reference internal" href="#node-4-second-scaling-step-y" id="id30">Node 4: Second Scaling Step (Y)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#complete-configuration-table" id="id31">3.2 Complete Configuration Table</a></p></li>
+<li><p><a class="reference internal" href="#algorithmic-complexity" id="id32">4.1 Algorithmic Complexity</a></p>
+<ul>
+<li><p><a class="reference internal" href="#time-complexity" id="id33">Time Complexity</a></p></li>
+<li><p><a class="reference internal" href="#space-complexity" id="id34">Space Complexity</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#numerical-stability" id="id35">4.2 Numerical Stability</a></p>
+<ul>
+<li><p><a class="reference internal" href="#floating-point-considerations" id="id36">Floating Point Considerations</a></p></li>
+<li><p><a class="reference internal" href="#integer-arithmetic" id="id37">Integer Arithmetic</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#unit-tests" id="id38">5.1 Unit Tests</a></p>
+<ul>
+<li><p><a class="reference internal" href="#test-constant-work-per-process" id="id39">Test: Constant Work Per Process</a></p></li>
+<li><p><a class="reference internal" href="#test-constant-grid-resolution" id="id40">Test: Constant Grid Resolution</a></p></li>
+<li><p><a class="reference internal" href="#test-dimension-rotation-pattern" id="id41">Test: Dimension Rotation Pattern</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#integration-tests" id="id42">5.2 Integration Tests</a></p>
+<ul>
+<li><p><a class="reference internal" href="#end-to-end-test" id="id43">End-to-End Test</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#command-line-usage" id="id44">6.1 Command-Line Usage</a></p>
+<ul>
+<li><p><a class="reference internal" href="#basic-3d-weak-scaling" id="id45">Basic 3D Weak Scaling</a></p></li>
+<li><p><a class="reference internal" href="#d-weak-scaling-fixed-z" id="id46">2D Weak Scaling (Fixed Z)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#python-api-usage" id="id47">6.2 Python API Usage</a></p>
+<ul>
+<li><p><a class="reference internal" href="#detailed-example" id="id48">Detailed Example</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#proof-constant-work-per-process" id="id49">Proof: Constant Work Per Process</a></p></li>
+</ul>
+</nav>
+<section id="introduction-for-non-technical-readers">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Introduction for Non-Technical Readers</a><a class="headerlink" href="#introduction-for-non-technical-readers" title="Link to this heading"></a></h2>
+<section id="what-is-this-document-about">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">What is This Document About?</a><a class="headerlink" href="#what-is-this-document-about" title="Link to this heading"></a></h3>
+<p>This document explains <strong>how HPC-ScaleTest automatically calculates the right settings</strong>
+for running your scientific application on multiple computers (called “nodes”) at the same time.</p>
+<p>Think of it like this:</p>
+<p><strong>Scenario</strong>: You have a weather simulation program that takes 1 hour to run on 1 computer.
+You want to simulate a bigger area (2x bigger), but you don’t want it to take 2 hours.</p>
+<p><strong>Solution</strong>: Use 2 computers at the same time! HPC-ScaleTest figures out exactly how to
+split the work so each computer still takes about 1 hour.</p>
+<p><strong>That’s “weak scaling”</strong> - making the problem bigger while keeping the time the same by
+using more computers.</p>
+</section>
+<section id="who-should-read-this">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Who Should Read This?</a><a class="headerlink" href="#who-should-read-this" title="Link to this heading"></a></h3>
+<p>This document is for:</p>
+<ol class="arabic simple">
+<li><p><strong>Users</strong> - Learn how HPC-ScaleTest works (no coding required!)</p></li>
+<li><p><strong>Developers</strong> - Understand the algorithms to modify or extend them</p></li>
+<li><p><strong>Researchers</strong> - See the mathematical foundations for publications</p></li>
+<li><p><strong>Students</strong> - Study parallel computing with real-world examples</p></li>
+</ol>
+<p>You don’t need programming experience to understand the concepts - we explain everything!</p>
+</section>
+<section id="what-you-ll-learn">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">What You’ll Learn</a><a class="headerlink" href="#what-you-ll-learn" title="Link to this heading"></a></h3>
+<p>After reading this document, you’ll understand:</p>
+<p>✅ <strong>What weak scaling means</strong> (in plain English)
+✅ <strong>Why it’s useful</strong> (save time on big simulations!)
+✅ <strong>How HPC-ScaleTest calculates it</strong> (the math, explained simply)
+✅ <strong>How to use it</strong> (practical examples)
+✅ <strong>How to verify it works</strong> (check your results)</p>
+</section>
+<section id="reading-guide">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Reading Guide</a><a class="headerlink" href="#reading-guide" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><strong>If you’re new to HPC</strong>:</dt><dd><p>Start with “Conceptual Foundation” - it explains everything from scratch.</p>
+</dd>
+<dt><strong>If you’re a developer</strong>:</dt><dd><p>Jump to “Algorithm Design” for implementation details.</p>
+</dd>
+<dt><strong>If you’re a researcher</strong>:</dt><dd><p>See “Mathematical Foundations” for formal definitions and proofs.</p>
+</dd>
+<dt><strong>If you just want to use it</strong>:</dt><dd><p>Skip to “Practical Usage” for command-line examples.</p>
+</dd>
+</dl>
+<p><strong>A comprehensive deep-dive into the weak scaling algorithm implementation</strong></p>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1: MATHEMATICAL FOUNDATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+<section id="weak-scaling-definition">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">1.1 Weak Scaling Definition</a><a class="headerlink" href="#weak-scaling-definition" title="Link to this heading"></a></h2>
+<p>Weak scaling maintains <strong>constant work per processor</strong> while increasing the total problem size proportionally.</p>
+<section id="mathematical-formulation">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Mathematical Formulation</a><a class="headerlink" href="#mathematical-formulation" title="Link to this heading"></a></h3>
+<p>Given:
+- W = Work (computational load)
+- P = Number of processors
+- T = Execution time</p>
+<p><strong>Strong Scaling</strong>: W = constant, P increases → T should decrease proportionally
+<strong>Weak Scaling</strong>: W/P = constant, both W and P increase → T should stay constant</p>
+<p>For grid-based simulations:</p>
+<div class="math notranslate nohighlight">
+\[W \propto N_{cells} \times N_{timesteps}\]</div>
+<p>In weak scaling:</p>
+<div class="math notranslate nohighlight">
+\[\frac{N_{cells}}{P} = \text{constant}\]</div>
+<p>This means:</p>
+<div class="math notranslate nohighlight">
+\[N_{cells}(P) = N_{cells}(P_0) \times \frac{P}{P_0}\]</div>
+<p>Where P₀ is the baseline processor count.</p>
+</section>
+</section>
+<section id="domain-decomposition-mathematics">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">1.2 Domain Decomposition Mathematics</a><a class="headerlink" href="#domain-decomposition-mathematics" title="Link to this heading"></a></h2>
+<section id="d-grid-decomposition">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">3D Grid Decomposition</a><a class="headerlink" href="#d-grid-decomposition" title="Link to this heading"></a></h3>
+<p>A 3D computational domain is decomposed across P processors in three dimensions:</p>
+<div class="math notranslate nohighlight">
+\[P = P_x \times P_y \times P_z\]</div>
+<p>Where Pₓ, Pᵧ, Pᵤ are the number of processes in each dimension.</p>
+<p>The global grid size is:</p>
+<div class="math notranslate nohighlight">
+\[N_{total} = N_x \times N_y \times N_z\]</div>
+<p>Each processor owns a subdomain:</p>
+<div class="math notranslate nohighlight">
+\[n_{local} = \frac{N_x}{P_x} \times \frac{N_y}{P_y} \times \frac{N_z}{P_z}\]</div>
+<p>For weak scaling, n_local must remain constant:</p>
+<div class="math notranslate nohighlight">
+\[n_{local} = \frac{N_x(P)}{P_x(P)} \times \frac{N_y(P)}{P_y(P)} \times \frac{N_z(P)}{P_z(P)} = \text{constant}\]</div>
+</section>
+<section id="physical-domain-scaling">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Physical Domain Scaling</a><a class="headerlink" href="#physical-domain-scaling" title="Link to this heading"></a></h3>
+<p>The physical domain size L also scales proportionally:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+L_x(P) &amp;= L_x(P_0) \times \frac{P_x(P)}{P_x(P_0)} \\
+L_y(P) &amp;= L_y(P_0) \times \frac{P_y(P)}{P_y(P_0)} \\
+L_z(P) &amp;= L_z(P_0) \times \frac{P_z(P)}{P_z(P_0)}
+\end{aligned}\end{split}\]</div>
+<p>This ensures grid resolution (Δx, Δy, Δz) remains constant:</p>
+<div class="math notranslate nohighlight">
+\[\Delta x = \frac{L_x}{N_x} = \text{constant}\]</div>
+</section>
+</section>
+<section id="scaling-factor-mathematics">
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">1.3 Scaling Factor Mathematics</a><a class="headerlink" href="#scaling-factor-mathematics" title="Link to this heading"></a></h2>
+<section id="definition">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Definition</a><a class="headerlink" href="#definition" title="Link to this heading"></a></h3>
+<p>A scaling factor s determines how aggressively the problem grows:</p>
+<div class="math notranslate nohighlight">
+\[P_i = P_0 \times s^i\]</div>
+<p>where i is the scaling step number.</p>
+<p>Common choices:
+- s = 2 (doubling, most common)
+- s = 4 (quadrupling)
+- s = √2 (fine-grained)</p>
+<p>For doubling (s = 2):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Step 0: P₀ processors
+Step 1: 2P₀ processors (doubled)
+Step 2: 4P₀ processors (quadrupled)
+Step 3: 8P₀ processors
+Step i: 2ⁱP₀ processors
+</pre></div>
+</div>
+</section>
+<section id="dimension-specific-scaling">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Dimension-Specific Scaling</a><a class="headerlink" href="#dimension-specific-scaling" title="Link to this heading"></a></h3>
+<p>When scaling in dimension d with factor s:</p>
+<div class="math notranslate nohighlight">
+\[P_d^{new} = P_d^{old} \times s\]</div>
+<p>The corresponding grid and domain also scale:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+N_d^{new} &amp;= N_d^{old} \times s \\
+L_d^{new} &amp;= L_d^{old} \times s
+\end{aligned}\end{split}\]</div>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2: ALGORITHM DESIGN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+<section id="dimension-rotation-strategy">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">2.1 Dimension Rotation Strategy</a><a class="headerlink" href="#dimension-rotation-strategy" title="Link to this heading"></a></h2>
+<section id="the-problem">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">The Problem</a><a class="headerlink" href="#the-problem" title="Link to this heading"></a></h3>
+<p>Naïve weak scaling might scale all dimensions equally:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># WRONG: Isotropic scaling
+Pₓ, Pᵧ, Pᵤ = 2, 2, 2  # Start
+# Scale all equally
+Pₓ, Pᵧ, Pᵤ = 4, 4, 4  # 64× increase (too aggressive!)
+</pre></div>
+</div>
+<p>This causes <strong>exponential growth</strong> and is impractical.</p>
+</section>
+<section id="the-solution-rotation">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">The Solution: Rotation</a><a class="headerlink" href="#the-solution-rotation" title="Link to this heading"></a></h3>
+<p>Scale ONE dimension at a time in a rotating pattern:</p>
+<p><strong>3D Pattern</strong> (X → Y → Z → X → Y → Z …):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>i=0: (2,2,2) → 8 procs   [baseline]
+i=1: (4,2,2) → 16 procs  [scale X]
+i=2: (4,4,2) → 32 procs  [scale Y]
+i=3: (4,4,4) → 64 procs  [scale Z]
+i=4: (8,4,4) → 128 procs [scale X again]
+i=5: (8,8,4) → 256 procs [scale Y again]
+</pre></div>
+</div>
+<p><strong>2D Pattern</strong> (X → Y → X → Y …):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>i=0: (2,2,2) → 8 procs   [baseline, Z fixed]
+i=1: (4,2,2) → 16 procs  [scale X]
+i=2: (4,4,2) → 32 procs  [scale Y]
+i=3: (8,4,2) → 64 procs  [scale X]
+i=4: (8,8,2) → 128 procs [scale Y]
+</pre></div>
+</div>
+<p><strong>1D Pattern</strong> (X only):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>i=0: (2,2,2) → 8 procs   [baseline, Y,Z fixed]
+i=1: (4,2,2) → 16 procs  [scale X]
+i=2: (8,2,2) → 32 procs  [scale X]
+i=3: (16,2,2) → 64 procs [scale X]
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Mathematical Formulation</a><a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>For 3D scaling with factor s=2:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+P_x(i) &amp;= P_x(0) \times 2^{\lfloor (i+2)/3 \rfloor} \\
+P_y(i) &amp;= P_y(0) \times 2^{\lfloor (i+1)/3 \rfloor} \\
+P_z(i) &amp;= P_z(0) \times 2^{\lfloor i/3 \rfloor}
+\end{aligned}\end{split}\]</div>
+<p>More generally, for dimension d at step i:</p>
+<div class="math notranslate nohighlight">
+\[P_d(i) = P_d(0) \times s^{n_d(i)}\]</div>
+<p>where n_d(i) is the number of times dimension d has been scaled up to step i.</p>
+<p>For 3D with rotation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">num_scalings_for_dim</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">total_dims</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;How many times has this dimension been scaled?&quot;&quot;&quot;</span>
+    <span class="c1"># dim: 0=X, 1=Y, 2=Z</span>
+    <span class="c1"># Rotation pattern: X(0), Y(1), Z(2), X(0), Y(1), Z(2), ...</span>
+
+    <span class="n">full_cycles</span> <span class="o">=</span> <span class="n">step</span> <span class="o">//</span> <span class="n">total_dims</span>
+    <span class="n">remainder</span> <span class="o">=</span> <span class="n">step</span> <span class="o">%</span> <span class="n">total_dims</span>
+
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">&lt;</span> <span class="n">remainder</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">full_cycles</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">full_cycles</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="implementation-algorithm">
+<h2><a class="toc-backref" href="#id20" role="doc-backlink">2.2 Implementation Algorithm</a><a class="headerlink" href="#implementation-algorithm" title="Link to this heading"></a></h2>
+<section id="pseudocode">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Pseudocode</a><a class="headerlink" href="#pseudocode" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_weak_scaling_configuration</span><span class="p">(</span>
+    <span class="n">baseline</span><span class="p">,</span>        <span class="c1"># Baseline configuration (node 1)</span>
+    <span class="n">target_procs</span><span class="p">,</span>    <span class="c1"># Target number of processes</span>
+    <span class="n">scale_factor</span><span class="p">,</span>    <span class="c1"># Scaling factor (e.g., 2)</span>
+    <span class="n">dimensions</span>       <span class="c1"># 1, 2, or 3</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute weak scaling configuration for target process count.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        baseline: dict with &#39;Px&#39;, &#39;Py&#39;, &#39;Pz&#39;, &#39;Lx&#39;, &#39;Ly&#39;, &#39;Lz&#39;, &#39;Nx&#39;, &#39;Ny&#39;, &#39;Nz&#39;</span>
+<span class="sd">        target_procs: Target total processes</span>
+<span class="sd">        scale_factor: Scaling factor per step</span>
+<span class="sd">        dimensions: Number of dimensions to scale (1, 2, or 3)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Scaled configuration</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Step 1: Calculate number of scaling steps</span>
+    <span class="n">baseline_procs</span> <span class="o">=</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;Px&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;Py&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;Pz&#39;</span><span class="p">]</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">target_procs</span> <span class="o">/</span> <span class="n">baseline_procs</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">log_base</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Initialize from baseline</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">baseline</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Step 3: Apply rotational scaling</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="c1"># Determine which dimension to scale</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">step</span> <span class="o">%</span> <span class="n">dimensions</span>  <span class="c1"># 0=X, 1=Y, 2=Z</span>
+
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Scale X</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Px&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Nx&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+        <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># Scale Y</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Py&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Ny&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+        <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Scale Z (only if 3D)</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Pz&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Lz&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Nz&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale_factor</span>
+
+    <span class="k">return</span> <span class="n">config</span>
+</pre></div>
+</div>
+</section>
+<section id="detailed-implementation-with-real-code">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Detailed Implementation with Real Code</a><a class="headerlink" href="#detailed-implementation-with-real-code" title="Link to this heading"></a></h3>
+<p>From <code class="docutils literal notranslate"><span class="pre">engine/scaling.py</span></code>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>def _compute_mpi_topology_3d(self, node_count, target_procs):
+<span class="linenos"> 2</span>    &quot;&quot;&quot;
+<span class="linenos"> 3</span>    Compute 3D MPI topology using dimension rotation.
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span>    This implements the core weak scaling algorithm for 3D problems.
+<span class="linenos"> 6</span>    Dimensions are scaled in rotation (X→Y→Z→X...) to maintain
+<span class="linenos"> 7</span>    balanced decomposition while achieving target process count.
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span>    Args:
+<span class="linenos">10</span>        node_count: Current node number (for logging)
+<span class="linenos">11</span>        target_procs: Target total number of MPI processes
+<span class="linenos">12</span>
+<span class="linenos">13</span>    Returns:
+<span class="linenos">14</span>        tuple: (nproc_x, nproc_y, nproc_z) MPI topology
+<span class="hll"><span class="linenos">15</span>    &quot;&quot;&quot;
+</span><span class="hll"><span class="linenos">16</span>    # Extract baseline configuration
+</span><span class="hll"><span class="linenos">17</span>    baseline_x = self.base_config[&#39;nproc_x&#39;]
+</span><span class="linenos">18</span>    baseline_y = self.base_config[&#39;nproc_y&#39;]
+<span class="linenos">19</span>    baseline_z = self.base_config[&#39;nproc_z&#39;]
+<span class="linenos">20</span>    baseline_procs = baseline_x * baseline_y * baseline_z
+<span class="linenos">21</span>
+<span class="linenos">22</span>    # Calculate scaling ratio and steps
+<span class="linenos">23</span>    if target_procs == baseline_procs:
+<span class="linenos">24</span>        # Node 1: return baseline exactly
+<span class="linenos">25</span>        return (baseline_x, baseline_y, baseline_z)
+<span class="linenos">26</span>
+<span class="linenos">27</span>    # Calculate number of doublings (assuming scale_factor=2)
+<span class="linenos">28</span>    ratio = target_procs / baseline_procs
+<span class="hll"><span class="linenos">29</span>    doublings = int(round(math.log2(ratio)))
+</span><span class="hll"><span class="linenos">30</span>
+</span><span class="hll"><span class="linenos">31</span>    logger.debug(f&quot;  3D Scaling: {baseline_procs} → {target_procs}&quot;)
+</span><span class="linenos">32</span>    logger.debug(f&quot;    Ratio: {ratio}, Doublings: {doublings}&quot;)
+<span class="linenos">33</span>
+<span class="linenos">34</span>    # Apply rotational scaling
+<span class="linenos">35</span>    nproc_x, nproc_y, nproc_z = baseline_x, baseline_y, baseline_z
+<span class="linenos">36</span>
+<span class="linenos">37</span>    for i in range(doublings):
+<span class="linenos">38</span>        # Determine dimension to scale: i % 3
+<span class="linenos">39</span>        # 0 → X, 1 → Y, 2 → Z, 3 → X, ...
+<span class="linenos">40</span>        dim_index = i % 3
+<span class="linenos">41</span>
+<span class="linenos">42</span>        logger.debug(f&quot;    Step {i}: dim={dim_index} &quot;, end=&quot;&quot;)
+<span class="linenos">43</span>
+<span class="linenos">44</span>        if dim_index == 0:  # Scale X
+<span class="linenos">45</span>            nproc_x *= self.scale_factor
+<span class="linenos">46</span>            logger.debug(f&quot;X: {nproc_x//self.scale_factor}→{nproc_x}&quot;)
+<span class="linenos">47</span>        elif dim_index == 1:  # Scale Y
+<span class="linenos">48</span>            nproc_y *= self.scale_factor
+<span class="linenos">49</span>            logger.debug(f&quot;Y: {nproc_y//self.scale_factor}→{nproc_y}&quot;)
+<span class="linenos">50</span>        elif dim_index == 2:  # Scale Z
+<span class="linenos">51</span>            nproc_z *= self.scale_factor
+<span class="linenos">52</span>            logger.debug(f&quot;Z: {nproc_z//self.scale_factor}→{nproc_z}&quot;)
+<span class="linenos">53</span>
+<span class="linenos">54</span>    # Verify we hit the target
+<span class="linenos">55</span>    final_procs = nproc_x * nproc_y * nproc_z
+<span class="linenos">56</span>    if final_procs != target_procs:
+<span class="linenos">57</span>        logger.warning(
+<span class="linenos">58</span>            f&quot;  MPI topology mismatch: &quot;
+<span class="linenos">59</span>            f&quot;computed {final_procs} != target {target_procs}&quot;
+<span class="linenos">60</span>        )
+<span class="linenos">61</span>
+<span class="linenos">62</span>    return (int(nproc_x), int(nproc_y), int(nproc_z))
+</pre></div>
+</div>
+</section>
+</section>
+<section id="data-structure-design">
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">2.3 Data Structure Design</a><a class="headerlink" href="#data-structure-design" title="Link to this heading"></a></h2>
+<section id="configuration-dictionary">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">Configuration Dictionary</a><a class="headerlink" href="#configuration-dictionary" title="Link to this heading"></a></h3>
+<p>The algorithm uses a configuration dictionary:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Node information</span>
+    <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>              <span class="c1"># Number of compute nodes</span>
+    <span class="s1">&#39;total_procs&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>       <span class="c1"># Total MPI processes</span>
+
+    <span class="c1"># MPI topology</span>
+    <span class="s1">&#39;nproc_x&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>            <span class="c1"># Processes in X dimension</span>
+    <span class="s1">&#39;nproc_y&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>            <span class="c1"># Processes in Y dimension</span>
+    <span class="s1">&#39;nproc_z&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>            <span class="c1"># Processes in Z dimension</span>
+
+    <span class="c1"># Physical domain (simulation space)</span>
+    <span class="s1">&#39;Lx&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>              <span class="c1"># Domain length in X (meters, km, etc.)</span>
+    <span class="s1">&#39;Ly&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>              <span class="c1"># Domain length in Y</span>
+    <span class="s1">&#39;Lz&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>              <span class="c1"># Domain length in Z</span>
+
+    <span class="c1"># Computational grid</span>
+    <span class="s1">&#39;nx&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>               <span class="c1"># Grid cells in X</span>
+    <span class="s1">&#39;ny&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>               <span class="c1"># Grid cells in Y</span>
+    <span class="s1">&#39;nz&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>               <span class="c1"># Grid cells in Z</span>
+
+    <span class="c1"># Particles per cell (for particle codes)</span>
+    <span class="s1">&#39;num_particles_x&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>  <span class="c1"># Particles in X per cell</span>
+    <span class="s1">&#39;num_particles_y&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>  <span class="c1"># Particles in Y per cell</span>
+    <span class="s1">&#39;num_particles_z&#39;</span><span class="p">:</span> <span class="mi">100</span>   <span class="c1"># Particles in Z per cell</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="invariants">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Invariants</a><a class="headerlink" href="#invariants" title="Link to this heading"></a></h3>
+<p>The configuration must satisfy these invariants:</p>
+<ol class="arabic">
+<li><p><strong>Process Count Match</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;total_procs&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nproc_x&#39;</span><span class="p">]</span> <span class="o">*</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nproc_y&#39;</span><span class="p">]</span> <span class="o">*</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nproc_z&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Constant Work Per Process</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cells_per_proc</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nx&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;ny&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nz&#39;</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;total_procs&#39;</span><span class="p">]</span>
+
+<span class="c1"># Must be constant across all configurations</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">cells_per_proc</span> <span class="o">-</span> <span class="n">BASELINE_CELLS_PER_PROC</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Constant Grid Resolution</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">delta_x</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nx&#39;</span><span class="p">]</span>
+<span class="n">delta_y</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;ny&#39;</span><span class="p">]</span>
+<span class="n">delta_z</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Lz&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nz&#39;</span><span class="p">]</span>
+
+<span class="c1"># Must match baseline resolution</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">delta_x</span> <span class="o">-</span> <span class="n">BASELINE_DELTA_X</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3: WORKED EXAMPLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+<section id="complete-3d-weak-scaling-example">
+<h2><a class="toc-backref" href="#id26" role="doc-backlink">3.1 Complete 3D Weak Scaling Example</a><a class="headerlink" href="#complete-3d-weak-scaling-example" title="Link to this heading"></a></h2>
+<section id="problem-setup">
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Problem Setup</a><a class="headerlink" href="#problem-setup" title="Link to this heading"></a></h3>
+<p><strong>Hardware Configuration</strong>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">hardware</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">procs_per_node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w">    </span><span class="c1"># 8 MPI ranks per node</span>
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># Test these node counts</span>
+</pre></div>
+</div>
+<p><strong>Initial Configuration</strong> (Node 1):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">scaling</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">initial_procs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">]</span><span class="w">          </span><span class="c1"># 2×2×2 = 8 processes</span>
+<span class="w">  </span><span class="nt">initial_domain</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">10.0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">10.0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">10.0</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="c1"># 10×10×10 physical domain</span>
+<span class="w">  </span><span class="nt">initial_cells</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">128</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">128</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">128</span><span class="p p-Indicator">]</span><span class="w">     </span><span class="c1"># 128³ computational cells</span>
+<span class="w">  </span><span class="nt">scale_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">                    </span><span class="c1"># Double each step</span>
+<span class="w">  </span><span class="nt">scaling_dimensions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w">              </span><span class="c1"># 3D scaling</span>
+</pre></div>
+</div>
+</section>
+<section id="node-1-baseline-configuration">
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Node 1: Baseline Configuration</a><a class="headerlink" href="#node-1-baseline-configuration" title="Link to this heading"></a></h3>
+<p><strong>Input</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>node_count = 1
+target_procs = 1 × 8 = 8
+</pre></div>
+</div>
+<p><strong>Calculation</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is the baseline - no scaling applied</span>
+<span class="n">config_n1</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s1">&#39;total_procs&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+
+    <span class="c1"># MPI topology (from YAML)</span>
+    <span class="s1">&#39;nproc_x&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s1">&#39;nproc_y&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s1">&#39;nproc_z&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+
+    <span class="c1"># Domain (from YAML)</span>
+    <span class="s1">&#39;Lx&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+    <span class="s1">&#39;Ly&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+    <span class="s1">&#39;Lz&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+
+    <span class="c1"># Grid (from YAML)</span>
+    <span class="s1">&#39;nx&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+    <span class="s1">&#39;ny&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+    <span class="s1">&#39;nz&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Verification</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Total processes
+total = 2 × 2 × 2 = 8 ✓
+
+# Cells per process
+total_cells = 128 × 128 × 128 = 2,097,152
+cells_per_proc = 2,097,152 / 8 = 262,144 cells/process
+
+# Cells per process per dimension
+nx_per_proc = 128 / 2 = 64
+ny_per_proc = 128 / 2 = 64
+nz_per_proc = 128 / 2 = 64
+
+# Grid resolution
+Δx = 10.0 / 128 = 0.078125
+Δy = 10.0 / 128 = 0.078125
+Δz = 10.0 / 128 = 0.078125
+</pre></div>
+</div>
+</section>
+<section id="node-2-first-scaling-step-x">
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">Node 2: First Scaling Step (X)</a><a class="headerlink" href="#node-2-first-scaling-step-x" title="Link to this heading"></a></h3>
+<p><strong>Input</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>node_count = 2
+target_procs = 2 × 8 = 16
+</pre></div>
+</div>
+<p><strong>Step-by-Step Calculation</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Step 1: Calculate scaling
+baseline_procs = 8
+ratio = 16 / 8 = 2
+doublings = log2(2) = 1  # One doubling step
+
+# Step 2: Apply rotational scaling
+# Starting point
+nproc_x, nproc_y, nproc_z = 2, 2, 2
+
+# Loop: i = 0 (first doubling)
+i = 0
+dim_index = 0 % 3 = 0  # Scale X dimension
+
+# Scale X
+nproc_x *= 2  # 2 → 4
+# nproc_y unchanged (still 2)
+# nproc_z unchanged (still 2)
+
+# Result after loop
+nproc_x, nproc_y, nproc_z = 4, 2, 2
+
+# Step 3: Calculate scaling factors
+scale_x = 4 / 2 = 2.0  # X doubled
+scale_y = 2 / 2 = 1.0  # Y unchanged
+scale_z = 2 / 2 = 1.0  # Z unchanged
+
+# Step 4: Scale domain
+Lx = 10.0 × 2.0 = 20.0  # Doubled
+Ly = 10.0 × 1.0 = 10.0  # Unchanged
+Lz = 10.0 × 1.0 = 10.0  # Unchanged
+
+# Step 5: Scale grid
+nx = 128 × 2 = 256  # Doubled
+ny = 128 × 1 = 128  # Unchanged
+nz = 128 × 1 = 128  # Unchanged
+</pre></div>
+</div>
+<p><strong>Result</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config_n2</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s1">&#39;total_procs&#39;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+
+    <span class="s1">&#39;nproc_x&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>   <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;nproc_y&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>   <span class="c1"># ← Fixed</span>
+    <span class="s1">&#39;nproc_z&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>   <span class="c1"># ← Fixed</span>
+
+    <span class="s1">&#39;Lx&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>     <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;Ly&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>     <span class="c1"># ← Fixed</span>
+    <span class="s1">&#39;Lz&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>     <span class="c1"># ← Fixed</span>
+
+    <span class="s1">&#39;nx&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>      <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;ny&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>      <span class="c1"># ← Fixed</span>
+    <span class="s1">&#39;nz&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>      <span class="c1"># ← Fixed</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Verification</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Total processes
+total = 4 × 2 × 2 = 16 ✓
+
+# Cells per process
+total_cells = 256 × 128 × 128 = 4,194,304
+cells_per_proc = 4,194,304 / 16 = 262,144 ✓
+# Same as Node 1!
+
+# Cells per process per dimension
+nx_per_proc = 256 / 4 = 64 ✓
+ny_per_proc = 128 / 2 = 64 ✓
+nz_per_proc = 128 / 2 = 64 ✓
+# Same distribution as Node 1!
+
+# Grid resolution
+Δx = 20.0 / 256 = 0.078125 ✓
+Δy = 10.0 / 128 = 0.078125 ✓
+Δz = 10.0 / 128 = 0.078125 ✓
+# Same resolution as Node 1!
+</pre></div>
+</div>
+</section>
+<section id="node-4-second-scaling-step-y">
+<h3><a class="toc-backref" href="#id30" role="doc-backlink">Node 4: Second Scaling Step (Y)</a><a class="headerlink" href="#node-4-second-scaling-step-y" title="Link to this heading"></a></h3>
+<p><strong>Input</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>node_count = 4
+target_procs = 4 × 8 = 32
+</pre></div>
+</div>
+<p><strong>Step-by-Step Calculation</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Step 1: Calculate scaling
+baseline_procs = 8
+ratio = 32 / 8 = 4
+doublings = log2(4) = 2  # Two doubling steps
+
+# Step 2: Apply rotational scaling
+nproc_x, nproc_y, nproc_z = 2, 2, 2  # Start from baseline
+
+# Loop iteration 1: i = 0
+dim_index = 0 % 3 = 0  # Scale X
+nproc_x *= 2  # 2 → 4
+# After i=0: (4, 2, 2)
+
+# Loop iteration 2: i = 1
+dim_index = 1 % 3 = 1  # Scale Y
+nproc_y *= 2  # 2 → 4
+# After i=1: (4, 4, 2)
+
+# Result
+nproc_x, nproc_y, nproc_z = 4, 4, 2
+
+# Step 3: Scaling factors
+scale_x = 4 / 2 = 2.0
+scale_y = 4 / 2 = 2.0  # Now Y also scales
+scale_z = 2 / 2 = 1.0
+
+# Step 4: Scale domain
+Lx = 10.0 × 2.0 = 20.0
+Ly = 10.0 × 2.0 = 20.0  # Now Y scales
+Lz = 10.0 × 1.0 = 10.0
+
+# Step 5: Scale grid
+nx = 128 × 2 = 256
+ny = 128 × 2 = 256  # Now Y scales
+nz = 128 × 1 = 128
+</pre></div>
+</div>
+<p><strong>Result</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config_n4</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s1">&#39;total_procs&#39;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+
+    <span class="s1">&#39;nproc_x&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>   <span class="c1"># ← Scaled (step 0)</span>
+    <span class="s1">&#39;nproc_y&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>   <span class="c1"># ← Scaled (step 1)</span>
+    <span class="s1">&#39;nproc_z&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>   <span class="c1"># ← Still fixed</span>
+
+    <span class="s1">&#39;Lx&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>     <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;Ly&#39;</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span>     <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;Lz&#39;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>     <span class="c1"># ← Still fixed</span>
+
+    <span class="s1">&#39;nx&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>      <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;ny&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>      <span class="c1"># ← Scaled</span>
+    <span class="s1">&#39;nz&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>      <span class="c1"># ← Still fixed</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Verification</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Total processes
+total = 4 × 4 × 2 = 32 ✓
+
+# Cells per process
+total_cells = 256 × 256 × 128 = 8,388,608
+cells_per_proc = 8,388,608 / 32 = 262,144 ✓
+# STILL same as baseline!
+
+# Per-dimension distribution
+nx_per_proc = 256 / 4 = 64 ✓
+ny_per_proc = 256 / 4 = 64 ✓
+nz_per_proc = 128 / 2 = 64 ✓
+# STILL (64, 64, 64) per process!
+
+# Grid resolution
+Δx = 20.0 / 256 = 0.078125 ✓
+Δy = 20.0 / 256 = 0.078125 ✓
+Δz = 10.0 / 128 = 0.078125 ✓
+# STILL constant!
+</pre></div>
+</div>
+<p>[Content continues with Node 8 calculation and complete verification…]</p>
+</section>
+</section>
+<section id="complete-configuration-table">
+<h2><a class="toc-backref" href="#id31" role="doc-backlink">3.2 Complete Configuration Table</a><a class="headerlink" href="#complete-configuration-table" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>╔══════╦═════════╦═══════════════════╦════════════════════════╦═══════════════════════╗
+║ Node ║  Procs  ║  MPI Topology     ║  Domain Size           ║  Grid Cells           ║
+║  #   ║  Total  ║  (Px × Py × Pz)   ║  (Lx, Ly, Lz)          ║  (nx, ny, nz)         ║
+╠══════╬═════════╬═══════════════════╬════════════════════════╬═══════════════════════╣
+║  1   ║    8    ║   2 ×  2 ×  2     ║  10.0, 10.0, 10.0      ║  128,  128,  128      ║
+║      ║         ║                   ║  Δ=0.078125            ║  64×64×64 per proc    ║
+╠══════╬═════════╬═══════════════════╬════════════════════════╬═══════════════════════╣
+║  2   ║   16    ║   4 ×  2 ×  2     ║  20.0, 10.0, 10.0      ║  256,  128,  128      ║
+║      ║         ║   [X scaled]      ║  [X doubled]           ║  [X doubled]          ║
+║      ║         ║                   ║  Δ=0.078125 ✓          ║  64×64×64 per proc ✓  ║
+╠══════╬═════════╬═══════════════════╬════════════════════════╬═══════════════════════╣
+║  4   ║   32    ║   4 ×  4 ×  2     ║  20.0, 20.0, 10.0      ║  256,  256,  128      ║
+║      ║         ║   [X,Y scaled]    ║  [X,Y doubled]         ║  [X,Y doubled]        ║
+║      ║         ║                   ║  Δ=0.078125 ✓          ║  64×64×64 per proc ✓  ║
+╠══════╬═════════╬═══════════════════╬════════════════════════╬═══════════════════════╣
+║  8   ║   64    ║   4 ×  4 ×  4     ║  20.0, 20.0, 20.0      ║  256,  256,  256      ║
+║      ║         ║   [X,Y,Z scaled]  ║  [X,Y,Z doubled]       ║  [X,Y,Z doubled]      ║
+║      ║         ║                   ║  Δ=0.078125 ✓          ║  64×64×64 per proc ✓  ║
+╠══════╬═════════╬═══════════════════╬════════════════════════╬═══════════════════════╣
+║  16  ║  128    ║   8 ×  4 ×  4     ║  40.0, 20.0, 20.0      ║  512,  256,  256      ║
+║      ║         ║   [X scaled 2×]   ║  [X quadrupled]        ║  [X quadrupled]       ║
+║      ║         ║                   ║  Δ=0.078125 ✓          ║  64×64×64 per proc ✓  ║
+╚══════╩═════════╩═══════════════════╩════════════════════════╩═══════════════════════╝
+</pre></div>
+</div>
+<p><strong>Observations</strong>:</p>
+<ol class="arabic simple">
+<li><p>Grid resolution Δ <strong>constant</strong> ✓</p></li>
+<li><p>Cells per process <strong>constant</strong> (64×64×64 = 262,144) ✓</p></li>
+<li><p>MPI topology follows rotation pattern (X→Y→Z→X) ✓</p></li>
+<li><p>Domain scales proportionally with processes ✓</p></li>
+</ol>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 4: PERFORMANCE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+<section id="algorithmic-complexity">
+<h2><a class="toc-backref" href="#id32" role="doc-backlink">4.1 Algorithmic Complexity</a><a class="headerlink" href="#algorithmic-complexity" title="Link to this heading"></a></h2>
+<section id="time-complexity">
+<h3><a class="toc-backref" href="#id33" role="doc-backlink">Time Complexity</a><a class="headerlink" href="#time-complexity" title="Link to this heading"></a></h3>
+<p>For computing a single configuration:</p>
+<p><strong>MPI Topology Calculation</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Number of iterations = log₂(target_procs / baseline_procs)
+T_topology = O(log₂(P/P₀))
+
+# For P = 512, P₀ = 8:
+T_topology = O(log₂(64)) = O(6) iterations
+</pre></div>
+</div>
+<p><strong>Domain Scaling</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Three multiplications (Lx, Ly, Lz)</span>
+<span class="n">T_domain</span> <span class="o">=</span> <span class="n">O</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Grid Scaling</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Three multiplications (nx, ny, nz)</span>
+<span class="n">T_grid</span> <span class="o">=</span> <span class="n">O</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Input File Generation</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Regex replacements = O(M × K)
+# M = input file size, K = number of parameters
+T_input = O(M × K)
+
+# Typically: M ~ 1000 lines, K ~ 10 parameters
+T_input = O(10,000) operations
+</pre></div>
+</div>
+<p><strong>Total Per Configuration</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>T_total = O(log P + M×K)
+
+# Usually dominated by input file generation
+T_total ≈ O(M×K)
+</pre></div>
+</div>
+<p>For N node configurations:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>T_complete = N × O(log P + M×K)
+
+# Example: N=7 configurations, M=1000, K=10
+T_complete ≈ 7 × 10,000 = 70,000 operations
+
+# On modern CPU: &lt; 1 second
+</pre></div>
+</div>
+</section>
+<section id="space-complexity">
+<h3><a class="toc-backref" href="#id34" role="doc-backlink">Space Complexity</a><a class="headerlink" href="#space-complexity" title="Link to this heading"></a></h3>
+<p><strong>Configuration Storage</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Each config: ~15 numeric values
+S_config = O(1) ≈ 15 × 8 bytes = 120 bytes
+
+# N configurations
+S_total = N × 120 bytes
+
+# Example: 10 configs = 1.2 KB (negligible)
+</pre></div>
+</div>
+<p><strong>Input File Storage</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># M lines × ~80 chars/line
+S_input = O(M) ≈ M × 80 bytes
+
+# Example: 1000 lines = 80 KB per file
+# N files = N × 80 KB
+# 10 files = 800 KB (negligible)
+</pre></div>
+</div>
+<p><strong>Conclusion</strong>: Memory usage is <strong>negligible</strong> for typical use cases.</p>
+</section>
+</section>
+<section id="numerical-stability">
+<h2><a class="toc-backref" href="#id35" role="doc-backlink">4.2 Numerical Stability</a><a class="headerlink" href="#numerical-stability" title="Link to this heading"></a></h2>
+<section id="floating-point-considerations">
+<h3><a class="toc-backref" href="#id36" role="doc-backlink">Floating Point Considerations</a><a class="headerlink" href="#floating-point-considerations" title="Link to this heading"></a></h3>
+<p>The algorithm uses floating point arithmetic for domain sizes:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Lx_new = Lx_baseline × scale_factor^i
+</pre></div>
+</div>
+<p><strong>Potential Issue</strong>: Accumulated rounding errors</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Baseline
+Lx = 10.0
+scale_factor = 2.0
+
+# After 10 doublings
+Lx_10 = 10.0 × (2.0 ** 10) = 10240.0
+
+# Floating point representation
+actual = 10240.000000000000  # Exact in float64
+
+# Error: 0.0 ✓ (no error for powers of 2)
+</pre></div>
+</div>
+<p><strong>However</strong>, for non-power-of-2 factors:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># scale_factor = 1.5
+Lx_10 = 10.0 × (1.5 ** 10) = 576.650390625
+
+# Actual float64
+actual ≈ 576.6503906250001
+
+# Relative error
+error = |576.650390625 - 576.6503906250001| / 576.650390625
+    ≈ 1.7e-16 (negligible)
+</pre></div>
+</div>
+</section>
+<section id="integer-arithmetic">
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">Integer Arithmetic</a><a class="headerlink" href="#integer-arithmetic" title="Link to this heading"></a></h3>
+<p>Grid cell counts use integer arithmetic:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>nx_new = nx_baseline × scale_factor^i
+</pre></div>
+</div>
+<p><strong>Guaranteed Exact</strong> for integer scale factors (2, 4, etc.):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>nx = 128
+scale = 2
+
+# After 10 doublings
+nx_10 = 128 × (2 ** 10) = 131072
+
+# Exact in Python integers ✓
+</pre></div>
+</div>
+<p><strong>Issue with Non-Integer Factors</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>nx = 128
+scale = 1.5
+
+# After 1 step
+nx_1 = int(128 × 1.5) = 192  # Truncation
+
+# After 2 steps (two separate scalings)
+nx_2 = int(192 × 1.5) = 288  # OK
+
+# Direct calculation
+nx_2_direct = int(128 × 1.5^2) = int(288.0) = 288 ✓
+</pre></div>
+</div>
+<p><strong>Recommendation</strong>: Use integer scale factors (2, 4, 8) for exact results.</p>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 5: TESTING &amp; VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+<section id="unit-tests">
+<h2><a class="toc-backref" href="#id38" role="doc-backlink">5.1 Unit Tests</a><a class="headerlink" href="#unit-tests" title="Link to this heading"></a></h2>
+<section id="test-constant-work-per-process">
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">Test: Constant Work Per Process</a><a class="headerlink" href="#test-constant-work-per-process" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">def</span><span class="w"> </span><span class="nf">test_weak_scaling_constant_work</span><span class="p">():</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify weak scaling maintains constant work per process.&quot;&quot;&quot;</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span>    <span class="c1"># Setup</span>
+<span class="linenos"> 5</span>    <span class="n">engine</span> <span class="o">=</span> <span class="n">ScalingEngine</span><span class="p">(</span>
+<span class="linenos"> 6</span>        <span class="n">input_file</span><span class="o">=</span><span class="s2">&quot;test_input.inp&quot;</span><span class="p">,</span>
+<span class="linenos"> 7</span>        <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/test_output&quot;</span><span class="p">,</span>
+<span class="linenos"> 8</span>        <span class="n">nodes</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">],</span>
+<span class="linenos"> 9</span>        <span class="n">procs_per_node</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="linenos">10</span>        <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos">11</span>        <span class="n">dims</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="linenos">12</span>        <span class="n">initial_procs</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="linenos">13</span>        <span class="n">initial_cells</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+<span class="linenos">14</span>        <span class="n">scaling_type</span><span class="o">=</span><span class="s2">&quot;weak&quot;</span>
+<span class="linenos">15</span>    <span class="p">)</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span>    <span class="c1"># Generate configurations</span>
+<span class="linenos">18</span>    <span class="n">configs</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">generate_scaling_configs</span><span class="p">()</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span>    <span class="c1"># Calculate baseline cells per process</span>
+<span class="linenos">21</span>    <span class="n">baseline</span> <span class="o">=</span> <span class="n">configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">22</span>    <span class="n">baseline_cells_per_proc</span> <span class="o">=</span> <span class="p">(</span>
+<span class="linenos">23</span>        <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nx&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;ny&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nz&#39;</span><span class="p">]</span>
+<span class="linenos">24</span>    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+<span class="linenos">25</span>        <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nproc_x&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nproc_y&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nproc_z&#39;</span><span class="p">]</span>
+<span class="linenos">26</span>    <span class="p">)</span>
+<span class="linenos">27</span>
+<span class="linenos">28</span>    <span class="c1"># Verify all configurations have same work</span>
+<span class="linenos">29</span>    <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+<span class="linenos">30</span>        <span class="n">total_cells</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nx&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;ny&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nz&#39;</span><span class="p">]</span>
+<span class="linenos">31</span>        <span class="n">total_procs</span> <span class="o">=</span> <span class="p">(</span>
+<span class="linenos">32</span>            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nproc_x&#39;</span><span class="p">]</span> <span class="o">*</span>
+<span class="linenos">33</span>            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nproc_y&#39;</span><span class="p">]</span> <span class="o">*</span>
+<span class="linenos">34</span>            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nproc_z&#39;</span><span class="p">]</span>
+<span class="linenos">35</span>        <span class="p">)</span>
+<span class="linenos">36</span>        <span class="n">cells_per_proc</span> <span class="o">=</span> <span class="n">total_cells</span> <span class="o">/</span> <span class="n">total_procs</span>
+<span class="linenos">37</span>
+<span class="linenos">38</span>        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">cells_per_proc</span> <span class="o">-</span> <span class="n">baseline_cells_per_proc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="p">,</span> \
+<span class="linenos">39</span>            <span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: &quot;</span> \
+<span class="linenos">40</span>            <span class="sa">f</span><span class="s2">&quot;cells_per_proc=</span><span class="si">{</span><span class="n">cells_per_proc</span><span class="si">}</span><span class="s2"> != &quot;</span> \
+<span class="linenos">41</span>            <span class="sa">f</span><span class="s2">&quot;baseline=</span><span class="si">{</span><span class="n">baseline_cells_per_proc</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="test-constant-grid-resolution">
+<h3><a class="toc-backref" href="#id40" role="doc-backlink">Test: Constant Grid Resolution</a><a class="headerlink" href="#test-constant-grid-resolution" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">def</span><span class="w"> </span><span class="nf">test_weak_scaling_constant_resolution</span><span class="p">():</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify grid resolution stays constant.&quot;&quot;&quot;</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span>    <span class="n">engine</span> <span class="o">=</span> <span class="n">ScalingEngine</span><span class="p">(</span>
+<span class="linenos"> 5</span>        <span class="n">input_file</span><span class="o">=</span><span class="s2">&quot;test_input.inp&quot;</span><span class="p">,</span>
+<span class="linenos"> 6</span>        <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/test_output&quot;</span><span class="p">,</span>
+<span class="linenos"> 7</span>        <span class="n">nodes</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+<span class="linenos"> 8</span>        <span class="n">procs_per_node</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="linenos"> 9</span>        <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos">10</span>        <span class="n">dims</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="linenos">11</span>        <span class="n">initial_procs</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="linenos">12</span>        <span class="n">initial_domain</span><span class="o">=</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>
+<span class="linenos">13</span>        <span class="n">initial_cells</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+<span class="linenos">14</span>        <span class="n">scaling_type</span><span class="o">=</span><span class="s2">&quot;weak&quot;</span>
+<span class="linenos">15</span>    <span class="p">)</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span>    <span class="n">configs</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">generate_scaling_configs</span><span class="p">()</span>
+<span class="linenos">18</span>
+<span class="linenos">19</span>    <span class="c1"># Calculate baseline resolution</span>
+<span class="linenos">20</span>    <span class="n">baseline</span> <span class="o">=</span> <span class="n">configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">21</span>    <span class="n">dx_baseline</span> <span class="o">=</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nx&#39;</span><span class="p">]</span>
+<span class="linenos">22</span>    <span class="n">dy_baseline</span> <span class="o">=</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;ny&#39;</span><span class="p">]</span>
+<span class="linenos">23</span>    <span class="n">dz_baseline</span> <span class="o">=</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;Lz&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">baseline</span><span class="p">[</span><span class="s1">&#39;nz&#39;</span><span class="p">]</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span>    <span class="c1"># Verify all configurations</span>
+<span class="linenos">26</span>    <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+<span class="linenos">27</span>        <span class="n">dx</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Lx&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nx&#39;</span><span class="p">]</span>
+<span class="linenos">28</span>        <span class="n">dy</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Ly&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;ny&#39;</span><span class="p">]</span>
+<span class="linenos">29</span>        <span class="n">dz</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;Lz&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;nz&#39;</span><span class="p">]</span>
+<span class="linenos">30</span>
+<span class="linenos">31</span>        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dx</span> <span class="o">-</span> <span class="n">dx_baseline</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">,</span> \
+<span class="linenos">32</span>            <span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: dx changed&quot;</span>
+<span class="linenos">33</span>        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dy</span> <span class="o">-</span> <span class="n">dy_baseline</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">,</span> \
+<span class="linenos">34</span>            <span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: dy changed&quot;</span>
+<span class="linenos">35</span>        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dz</span> <span class="o">-</span> <span class="n">dz_baseline</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">,</span> \
+<span class="linenos">36</span>            <span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: dz changed&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="test-dimension-rotation-pattern">
+<h3><a class="toc-backref" href="#id41" role="doc-backlink">Test: Dimension Rotation Pattern</a><a class="headerlink" href="#test-dimension-rotation-pattern" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>def test_3d_dimension_rotation():
+<span class="linenos"> 2</span>    &quot;&quot;&quot;Verify correct X→Y→Z rotation in 3D.&quot;&quot;&quot;
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span>    engine = ScalingEngine(
+<span class="linenos"> 5</span>        input_file=&quot;test_input.inp&quot;,
+<span class="linenos"> 6</span>        output_dir=&quot;/tmp/test_output&quot;,
+<span class="linenos"> 7</span>        nodes=[1, 2, 4, 8, 16, 32, 64],  # 7 steps
+<span class="linenos"> 8</span>        procs_per_node=8,
+<span class="linenos"> 9</span>        scale_factor=2,
+<span class="linenos">10</span>        dims=3,
+<span class="linenos">11</span>        initial_procs=(2, 2, 2),
+<span class="linenos">12</span>        initial_cells=(128, 128, 128),
+<span class="linenos">13</span>        scaling_type=&quot;weak&quot;
+<span class="linenos">14</span>    )
+<span class="linenos">15</span>
+<span class="linenos">16</span>    configs = engine.generate_scaling_configs()
+<span class="linenos">17</span>
+<span class="linenos">18</span>    # Expected pattern: X, Y, Z, X, Y, Z
+<span class="linenos">19</span>    expected_topologies = [
+<span class="linenos">20</span>        (2, 2, 2),  # Node 1: baseline
+<span class="linenos">21</span>        (4, 2, 2),  # Node 2: X scaled
+<span class="linenos">22</span>        (4, 4, 2),  # Node 4: Y scaled
+<span class="linenos">23</span>        (4, 4, 4),  # Node 8: Z scaled
+<span class="linenos">24</span>        (8, 4, 4),  # Node 16: X scaled again
+<span class="linenos">25</span>        (8, 8, 4),  # Node 32: Y scaled again
+<span class="linenos">26</span>        (8, 8, 8),  # Node 64: Z scaled again
+<span class="linenos">27</span>    ]
+<span class="linenos">28</span>
+<span class="linenos">29</span>    for i, config in enumerate(configs):
+<span class="linenos">30</span>        actual = (
+<span class="linenos">31</span>            config[&#39;nproc_x&#39;],
+<span class="linenos">32</span>            config[&#39;nproc_y&#39;],
+<span class="linenos">33</span>            config[&#39;nproc_z&#39;]
+<span class="linenos">34</span>        )
+<span class="linenos">35</span>        expected = expected_topologies[i]
+<span class="linenos">36</span>
+<span class="linenos">37</span>        assert actual == expected, \
+<span class="linenos">38</span>            f&quot;Node {config[&#39;nodes&#39;]}: &quot; \
+<span class="linenos">39</span>            f&quot;topology={actual} != expected={expected}&quot;
+</pre></div>
+</div>
+</section>
+</section>
+<section id="integration-tests">
+<h2><a class="toc-backref" href="#id42" role="doc-backlink">5.2 Integration Tests</a><a class="headerlink" href="#integration-tests" title="Link to this heading"></a></h2>
+<section id="end-to-end-test">
+<h3><a class="toc-backref" href="#id43" role="doc-backlink">End-to-End Test</a><a class="headerlink" href="#end-to-end-test" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">def</span><span class="w"> </span><span class="nf">test_complete_weak_scaling_workflow</span><span class="p">():</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test complete weak scaling workflow.&quot;&quot;&quot;</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span>    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="linenos"> 5</span>    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span>    <span class="c1"># Create temporary directories</span>
+<span class="linenos"> 8</span>    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
+<span class="linenos"> 9</span>        <span class="n">input_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;input&quot;</span>
+<span class="linenos">10</span>        <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;output&quot;</span>
+<span class="linenos">11</span>        <span class="n">input_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+<span class="linenos">12</span>        <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span>        <span class="c1"># Create test input file</span>
+<span class="linenos">15</span>        <span class="n">input_file</span> <span class="o">=</span> <span class="n">input_dir</span> <span class="o">/</span> <span class="s2">&quot;test.inp&quot;</span>
+<span class="linenos">16</span>        <span class="n">input_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="linenos">17</span><span class="s2">        # Test input file</span>
+<span class="linenos">18</span><span class="s2">        Lx = 10.0</span>
+<span class="linenos">19</span><span class="s2">        Ly = 10.0</span>
+<span class="linenos">20</span><span class="s2">        Lz = 10.0</span>
+<span class="linenos">21</span><span class="s2">        nxc = 128</span>
+<span class="linenos">22</span><span class="s2">        nyc = 128</span>
+<span class="linenos">23</span><span class="s2">        nzc = 128</span>
+<span class="linenos">24</span><span class="s2">        XLEN = 2</span>
+<span class="linenos">25</span><span class="s2">        YLEN = 2</span>
+<span class="linenos">26</span><span class="s2">        ZLEN = 2</span>
+<span class="linenos">27</span><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+<span class="linenos">28</span>
+<span class="linenos">29</span>        <span class="c1"># Run scaling engine</span>
+<span class="linenos">30</span>        <span class="n">engine</span> <span class="o">=</span> <span class="n">ScalingEngine</span><span class="p">(</span>
+<span class="linenos">31</span>            <span class="n">input_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">input_file</span><span class="p">),</span>
+<span class="linenos">32</span>            <span class="n">output_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span><span class="p">),</span>
+<span class="linenos">33</span>            <span class="n">nodes</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+<span class="linenos">34</span>            <span class="n">procs_per_node</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="linenos">35</span>            <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="linenos">36</span>            <span class="n">dims</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="linenos">37</span>            <span class="n">initial_procs</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="linenos">38</span>            <span class="n">initial_domain</span><span class="o">=</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>
+<span class="linenos">39</span>            <span class="n">initial_cells</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+<span class="linenos">40</span>            <span class="n">scaling_type</span><span class="o">=</span><span class="s2">&quot;weak&quot;</span>
+<span class="linenos">41</span>        <span class="p">)</span>
+<span class="linenos">42</span>
+<span class="linenos">43</span>        <span class="n">configs</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">generate_scaling_configs</span><span class="p">()</span>
+<span class="linenos">44</span>
+<span class="linenos">45</span>        <span class="c1"># Verify configurations generated</span>
+<span class="linenos">46</span>        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+<span class="linenos">47</span>
+<span class="linenos">48</span>        <span class="c1"># Verify input files created</span>
+<span class="linenos">49</span>        <span class="k">for</span> <span class="n">node_count</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
+<span class="linenos">50</span>            <span class="n">input_file</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;input_n</span><span class="si">{</span><span class="n">node_count</span><span class="si">}</span><span class="s2">.inp&quot;</span>
+<span class="linenos">51</span>            <span class="k">assert</span> <span class="n">input_file</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> \
+<span class="linenos">52</span>                <span class="sa">f</span><span class="s2">&quot;Input file not created for node </span><span class="si">{</span><span class="n">node_count</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="linenos">53</span>
+<span class="linenos">54</span>            <span class="c1"># Verify content</span>
+<span class="linenos">55</span>            <span class="n">content</span> <span class="o">=</span> <span class="n">input_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+<span class="linenos">56</span>            <span class="k">assert</span> <span class="s2">&quot;Lx&quot;</span> <span class="ow">in</span> <span class="n">content</span>
+<span class="linenos">57</span>            <span class="k">assert</span> <span class="s2">&quot;XLEN&quot;</span> <span class="ow">in</span> <span class="n">content</span>
+<span class="linenos">58</span>
+<span class="linenos">59</span>        <span class="c1"># Verify scaling correctness</span>
+<span class="linenos">60</span>        <span class="c1"># ... (add assertions from previous tests)</span>
+</pre></div>
+</div>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 6: PRACTICAL USAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+<section id="command-line-usage">
+<h2><a class="toc-backref" href="#id44" role="doc-backlink">6.1 Command-Line Usage</a><a class="headerlink" href="#command-line-usage" title="Link to this heading"></a></h2>
+<section id="basic-3d-weak-scaling">
+<h3><a class="toc-backref" href="#id45" role="doc-backlink">Basic 3D Weak Scaling</a><a class="headerlink" href="#basic-3d-weak-scaling" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span>/path/to/code<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling<span class="w"> </span>weak<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--nodes<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling-factor<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling-dimensions<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--initial-procs<span class="w"> </span><span class="m">2</span>,2,2<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--initial-domain<span class="w"> </span><span class="m">10</span>.0,10.0,10.0<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--initial-cells<span class="w"> </span><span class="m">128</span>,128,128
+</pre></div>
+</div>
+</section>
+<section id="d-weak-scaling-fixed-z">
+<h3><a class="toc-backref" href="#id46" role="doc-backlink">2D Weak Scaling (Fixed Z)</a><a class="headerlink" href="#d-weak-scaling-fixed-z" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span>/path/to/code<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling<span class="w"> </span>weak<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling-dimensions<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--initial-procs<span class="w"> </span><span class="m">2</span>,2,2<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--nodes<span class="w"> </span><span class="m">32</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="python-api-usage">
+<h2><a class="toc-backref" href="#id47" role="doc-backlink">6.2 Python API Usage</a><a class="headerlink" href="#python-api-usage" title="Link to this heading"></a></h2>
+<section id="detailed-example">
+<h3><a class="toc-backref" href="#id48" role="doc-backlink">Detailed Example</a><a class="headerlink" href="#detailed-example" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>from pathlib import Path
+<span class="linenos"> 2</span>from engine.scaling import ScalingEngine
+<span class="linenos"> 3</span>from utils.report_generator import ReportGenerator
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span># Configure scaling engine
+<span class="linenos"> 6</span>engine = ScalingEngine(
+<span class="linenos"> 7</span>    input_file=&quot;simulation/input.inp&quot;,
+<span class="linenos"> 8</span>    output_dir=&quot;output/weak_scaling&quot;,
+<span class="linenos"> 9</span>    nodes=[1, 2, 4, 8, 16, 32, 64],  # Powers of 2
+<span class="linenos">10</span>    procs_per_node=128,               # Processes per node
+<span class="linenos">11</span>    scale_factor=2,                   # Double each step
+<span class="linenos">12</span>    dims=3,                           # 3D scaling
+<span class="linenos">13</span>
+<span class="linenos">14</span>    # Initial configuration (Node 1)
+<span class="linenos">15</span>    initial_procs=(4, 4, 4),          # 64 total processes
+<span class="linenos">16</span>    initial_domain=(50.0, 50.0, 50.0),
+<span class="linenos">17</span>    initial_cells=(512, 512, 512),
+<span class="linenos">18</span>    particles_per_cell=(100, 100, 100),
+<span class="linenos">19</span>
+<span class="linenos">20</span>    scaling_type=&quot;weak&quot;
+<span class="linenos">21</span>)
+<span class="linenos">22</span>
+<span class="linenos">23</span># Generate scaling configurations
+<span class="linenos">24</span>print(&quot;Generating weak scaling configurations...&quot;)
+<span class="linenos">25</span>configs = engine.generate_scaling_configs()
+<span class="linenos">26</span>
+<span class="linenos">27</span># Print configuration table
+<span class="linenos">28</span>print(&quot;\\n&quot; + &quot;=&quot;*80)
+<span class="linenos">29</span>print(&quot;Weak Scaling Configuration Table&quot;)
+<span class="linenos">30</span>print(&quot;=&quot;*80)
+<span class="linenos">31</span>print(f&quot;{&#39;Nodes&#39;:&gt;6} {&#39;Procs&#39;:&gt;8} {&#39;MPI Topology&#39;:&gt;20} &quot;
+<span class="linenos">32</span>      f&quot;{&#39;Domain Size&#39;:&gt;25} {&#39;Grid Cells&#39;:&gt;20}&quot;)
+<span class="linenos">33</span>print(&quot;-&quot;*80)
+<span class="linenos">34</span>
+<span class="linenos">35</span>for config in configs:
+<span class="linenos">36</span>    print(f&quot;{config[&#39;nodes&#39;]:&gt;6} &quot;
+<span class="linenos">37</span>          f&quot;{config[&#39;total_procs&#39;]:&gt;8} &quot;
+<span class="linenos">38</span>          f&quot;{config[&#39;nproc_x&#39;]:&gt;6}×{config[&#39;nproc_y&#39;]:&lt;6}×{config[&#39;nproc_z&#39;]:&lt;6} &quot;
+<span class="linenos">39</span>          f&quot;{config[&#39;Lx&#39;]:&gt;7.2f}×{config[&#39;Ly&#39;]:&lt;7.2f}×{config[&#39;Lz&#39;]:&lt;7.2f} &quot;
+<span class="linenos">40</span>          f&quot;{config[&#39;nx&#39;]:&gt;6}×{config[&#39;ny&#39;]:&lt;6}×{config[&#39;nz&#39;]:&lt;6}&quot;)
+<span class="linenos">41</span>
+<span class="linenos">42</span>print(&quot;=&quot;*80)
+<span class="linenos">43</span>
+<span class="linenos">44</span># Verify work is constant
+<span class="linenos">45</span>print(&quot;\\nVerifying constant work per process...&quot;)
+<span class="linenos">46</span>baseline_work = (
+<span class="linenos">47</span>    configs[0][&#39;nx&#39;] * configs[0][&#39;ny&#39;] * configs[0][&#39;nz&#39;]
+<span class="linenos">48</span>) / (
+<span class="linenos">49</span>    configs[0][&#39;nproc_x&#39;] *
+<span class="linenos">50</span>    configs[0][&#39;nproc_y&#39;] *
+<span class="linenos">51</span>    configs[0][&#39;nproc_z&#39;]
+<span class="linenos">52</span>)
+<span class="linenos">53</span>
+<span class="linenos">54</span>for config in configs:
+<span class="linenos">55</span>    work = (config[&#39;nx&#39;] * config[&#39;ny&#39;] * config[&#39;nz&#39;]) / \\
+<span class="linenos">56</span>           (config[&#39;nproc_x&#39;] * config[&#39;nproc_y&#39;] * config[&#39;nproc_z&#39;])
+<span class="linenos">57</span>
+<span class="linenos">58</span>    if abs(work - baseline_work) &gt; 0.01:
+<span class="linenos">59</span>        print(f&quot;  ⚠ Node {config[&#39;nodes&#39;]}: &quot;
+<span class="linenos">60</span>              f&quot;work mismatch ({work} != {baseline_work})&quot;)
+<span class="linenos">61</span>    else:
+<span class="linenos">62</span>        print(f&quot;  ✓ Node {config[&#39;nodes&#39;]}: constant work verified&quot;)
+</pre></div>
+</div>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+APPENDIX A: MATHEMATICAL PROOFS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+<section id="proof-constant-work-per-process">
+<h2><a class="toc-backref" href="#id49" role="doc-backlink">Proof: Constant Work Per Process</a><a class="headerlink" href="#proof-constant-work-per-process" title="Link to this heading"></a></h2>
+<p><strong>Theorem</strong>: The dimension rotation algorithm maintains constant cells per process.</p>
+<p><strong>Proof by Induction</strong>:</p>
+<dl>
+<dt><em>Base Case</em> (i = 0, Node 1):</dt><dd><p>Let baseline cells per process = C₀</p>
+<p>C₀ = (N_x^0 × N_y^0 × N_z^0) / (P_x^0 × P_y^0 × P_z^0)</p>
+</dd>
+<dt><em>Inductive Step</em>:</dt><dd><p>Assume C_{i-1} = C₀</p>
+<p>At step i, one dimension d is scaled by factor s:
+- P_d^i = P_d^{i-1} × s
+- N_d^i = N_d^{i-1} × s
+- All other dimensions unchanged</p>
+<p>Therefore:</p>
+<dl class="simple">
+<dt>C_i = (N_x^i × N_y^i × N_z^i) / (P_x^i × P_y^i × P_z^i)</dt><dd><p>= (N_d^{i-1}×s × ∏_{j≠d} N_j^{i-1}) / (P_d^{i-1}×s × ∏_{j≠d} P_j^{i-1})
+= (N_d^{i-1} × ∏_{j≠d} N_j^{i-1}) / (P_d^{i-1} × ∏_{j≠d} P_j^{i-1})  [s cancels]
+= C_{i-1}
+= C₀  [by inductive hypothesis]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+<p>[1] Source Code: <code class="docutils literal notranslate"><span class="pre">engine/scaling.py</span></code> - Complete implementation
+[2] Test Suite: <code class="docutils literal notranslate"><span class="pre">tests/test_scaling.py</span></code> - Verification tests
+[3] User Guide: <a class="reference internal" href="../user_guide.html"><span class="doc">User Guide</span></a> - High-level usage
+[4] API Reference: <a class="reference internal" href="../api/engine.html"><span class="doc">Engine Module</span></a> - API documentation</p>
+<p>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+END OF DOCUMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../troubleshooting.html" class="btn btn-neutral float-left" title="Troubleshooting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="strong_scaling_complete.html" class="btn btn-neutral float-right" title="Strong Scaling Algorithm: Complete Technical Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

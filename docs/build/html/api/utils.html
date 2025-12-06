@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Utils Module &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="../contributing.html" />
+    <link rel="prev" title="Backends Module" href="backends.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backends Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utils Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-utilities">Configuration Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#input-file-handling">Input File Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ai-assisted-utilities">AI-Assisted Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-acquisition">Code Acquisition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reporting-and-visualization">Reporting and Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system-information">System Information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#job-management">Job Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#validation">Validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#file-utilities">File Utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api_reference.html">API Reference</a></li>
+      <li class="breadcrumb-item active">Utils Module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/utils.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="utils-module">
+<h1>Utils Module<a class="headerlink" href="#utils-module" title="Link to this heading"></a></h1>
+<p>The utils module provides utility functions and helper classes.</p>
+<section id="configuration-utilities">
+<h2>Configuration Utilities<a class="headerlink" href="#configuration-utilities" title="Link to this heading"></a></h2>
+<p><strong>Modules:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.config_parser</span></code>: Parse configuration files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.generic_input_parser</span></code>: Generic input file parsing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.parsers</span></code>: Various parser utilities</p></li>
+</ul>
+</section>
+<section id="input-file-handling">
+<h2>Input File Handling<a class="headerlink" href="#input-file-handling" title="Link to this heading"></a></h2>
+<p><strong>Modules:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.input_generator</span></code>: Generate input files for applications</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.input_file_scaler</span></code>: Scale input files for different process counts</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.input_analyzer</span></code>: Analyze input file structure</p></li>
+</ul>
+<p><strong>Usage Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.input_file_scaler</span><span class="w"> </span><span class="kn">import</span> <span class="n">scale_input_file</span>
+
+<span class="n">scale_input_file</span><span class="p">(</span>
+    <span class="n">input_file</span><span class="o">=</span><span class="s2">&quot;input.in&quot;</span><span class="p">,</span>
+    <span class="n">scale_factor</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">output_file</span><span class="o">=</span><span class="s2">&quot;input_scaled.in&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="ai-assisted-utilities">
+<h2>AI-Assisted Utilities<a class="headerlink" href="#ai-assisted-utilities" title="Link to this heading"></a></h2>
+<p><strong>Modules:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.readme_analyzer</span></code>: Analyze README files for build instructions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.parameter_suggestion</span></code>: Suggest optimal parameters</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.llm_parameter_mapper</span></code>: Use LLM for parameter mapping</p></li>
+</ul>
+</section>
+<section id="code-acquisition">
+<h2>Code Acquisition<a class="headerlink" href="#code-acquisition" title="Link to this heading"></a></h2>
+<p><strong>Module:</strong> <code class="docutils literal notranslate"><span class="pre">utils.code_acquisition</span></code></p>
+<p>Download and manage application source code.</p>
+<p><strong>Functions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">download_from_git(url,</span> <span class="pre">dest)</span></code>: Clone git repository</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">download_from_url(url,</span> <span class="pre">dest)</span></code>: Download tarball</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">verify_checksum(file,</span> <span class="pre">expected)</span></code>: Verify file integrity</p></li>
+</ul>
+</section>
+<section id="reporting-and-visualization">
+<h2>Reporting and Visualization<a class="headerlink" href="#reporting-and-visualization" title="Link to this heading"></a></h2>
+<p><strong>Modules:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.report_generator</span></code>: Generate study reports</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.scaling_visualizer</span></code>: Create scaling plots</p></li>
+</ul>
+<p><strong>Usage Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.report_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_report</span>
+
+<span class="n">generate_report</span><span class="p">(</span>
+    <span class="n">results_dir</span><span class="o">=</span><span class="s2">&quot;results/&quot;</span><span class="p">,</span>
+    <span class="n">output_file</span><span class="o">=</span><span class="s2">&quot;report.pdf&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="system-information">
+<h2>System Information<a class="headerlink" href="#system-information" title="Link to this heading"></a></h2>
+<p><strong>Modules:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.system_info</span></code>: Gather system information</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.system_loader</span></code>: Load system configurations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils.slurm_detector</span></code>: Detect SLURM environment</p></li>
+</ul>
+</section>
+<section id="job-management">
+<h2>Job Management<a class="headerlink" href="#job-management" title="Link to this heading"></a></h2>
+<p><strong>Module:</strong> <code class="docutils literal notranslate"><span class="pre">utils.job_submitter</span></code></p>
+<p>Submit and monitor jobs.</p>
+<p><strong>Functions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">submit_job(script_path)</span></code>: Submit a job</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">check_job_status(job_id)</span></code>: Check job status</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_for_job(job_id)</span></code>: Wait for job completion</p></li>
+</ul>
+</section>
+<section id="validation">
+<h2>Validation<a class="headerlink" href="#validation" title="Link to this heading"></a></h2>
+<p><strong>Module:</strong> <code class="docutils literal notranslate"><span class="pre">utils.validators</span></code></p>
+<p>Validate configurations and inputs.</p>
+<p><strong>Functions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">validate_config(config)</span></code>: Validate configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">validate_topology(topology,</span> <span class="pre">grid)</span></code>: Validate MPI topology</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">validate_paths(paths)</span></code>: Validate file paths</p></li>
+</ul>
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h2>
+<p><strong>Module:</strong> <code class="docutils literal notranslate"><span class="pre">utils.logging_config</span></code></p>
+<p>Configure logging for HPC-ScaleTest.</p>
+</section>
+<section id="file-utilities">
+<h2>File Utilities<a class="headerlink" href="#file-utilities" title="Link to this heading"></a></h2>
+<p><strong>Module:</strong> <code class="docutils literal notranslate"><span class="pre">utils.file_utils</span></code></p>
+<p>File operation utilities.</p>
+<p><strong>Functions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">copy_file(src,</span> <span class="pre">dst)</span></code>: Copy files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">create_directory(path)</span></code>: Create directories</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">find_files(pattern,</span> <span class="pre">directory)</span></code>: Find files matching pattern</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="backends.html" class="btn btn-neutral float-left" title="Backends Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
