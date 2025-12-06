@@ -2,9 +2,9 @@ name: Build and Deploy Documentation
 
 on:
   push:
-    branches: [main]
+    branches: [mainpro]  # This should match your branch name
   pull_request:
-    branches: [main]
+    branches: [mainpro]  # This should match your branch name
 
 jobs:
   build-and-deploy:
@@ -28,7 +28,7 @@ jobs:
       
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/mainpro'  # This should match your branch name
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/build/html
