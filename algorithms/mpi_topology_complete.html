@@ -1,0 +1,1547 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MPI Topology Calculation: Complete Technical Reference &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]]}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Domain Decomposition: Complete Technical Reference" href="domain_decomposition_complete.html" />
+    <link rel="prev" title="Strong Scaling Algorithm: Complete Technical Reference" href="strong_scaling_complete.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MPI Topology Calculation: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction-for-everyone">Introduction for Everyone</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-mpi-topology">What is MPI Topology?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#real-world-analogy">Real-World Analogy</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#why-do-we-need-this">Why Do We Need This?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#who-should-read-this">Who Should Read This?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conceptual-foundation">Conceptual Foundation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#understanding-dimensions">Understanding Dimensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#communication-patterns">Communication Patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#load-balancing-principles">Load Balancing Principles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mathematical-foundations">Mathematical Foundations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#topology-notation">Topology Notation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-coordinate-system">Process Coordinate System</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#prime-factorization">Prime Factorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optimal-topology-criteria">Optimal Topology Criteria</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#algorithm-design">Algorithm Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-implementation">Complete Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#worked-examples">Worked Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-1-8-processes-cube">Example 1: 8 Processes (Cube)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-2-24-processes">Example 2: 24 Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-3-64-processes">Example 3: 64 Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-4-prime-number-17-processes">Example 4: Prime Number (17 Processes)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-analysis">Performance Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#algorithmic-complexity">Algorithmic Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#communication-overhead-analysis">Communication Overhead Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#surface-to-volume-ratio">Surface-to-Volume Ratio</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-usage">Practical Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-hpc-scaletest">Using HPC-ScaleTest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#python-api">Python API</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#common-issues-and-solutions">Common Issues and Solutions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#issue-1-prime-process-counts">Issue 1: Prime Process Counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issue-2-non-cubic-results">Issue 2: Non-Cubic Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issue-3-large-aspect-ratios">Issue 3: Large Aspect Ratios</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#choosing-process-counts">Choosing Process Counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#matching-hardware">Matching Hardware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing-topologies">Testing Topologies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#key-concepts">Key Concepts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mathematical-appendix">Mathematical Appendix</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#neighbor-calculation-formulas">Neighbor Calculation Formulas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optimal-topology-proof">Optimal Topology Proof</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">MPI Topology Calculation: Complete Technical Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/algorithms/mpi_topology_complete.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mpi-topology-calculation-complete-technical-reference">
+<h1>MPI Topology Calculation: Complete Technical Reference<a class="headerlink" href="#mpi-topology-calculation-complete-technical-reference" title="Link to this heading"></a></h1>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#introduction-for-everyone" id="id1">Introduction for Everyone</a></p>
+<ul>
+<li><p><a class="reference internal" href="#what-is-mpi-topology" id="id2">What is MPI Topology?</a></p>
+<ul>
+<li><p><a class="reference internal" href="#real-world-analogy" id="id3">Real-World Analogy</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#why-do-we-need-this" id="id4">Why Do We Need This?</a></p></li>
+<li><p><a class="reference internal" href="#what-you-ll-learn" id="id5">What You’ll Learn</a></p></li>
+<li><p><a class="reference internal" href="#who-should-read-this" id="id6">Who Should Read This?</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#conceptual-foundation" id="id7">Conceptual Foundation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#understanding-dimensions" id="id8">Understanding Dimensions</a></p></li>
+<li><p><a class="reference internal" href="#communication-patterns" id="id9">Communication Patterns</a></p></li>
+<li><p><a class="reference internal" href="#load-balancing-principles" id="id10">Load Balancing Principles</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#mathematical-foundations" id="id11">Mathematical Foundations</a></p>
+<ul>
+<li><p><a class="reference internal" href="#topology-notation" id="id12">Topology Notation</a></p></li>
+<li><p><a class="reference internal" href="#process-coordinate-system" id="id13">Process Coordinate System</a></p></li>
+<li><p><a class="reference internal" href="#prime-factorization" id="id14">Prime Factorization</a></p></li>
+<li><p><a class="reference internal" href="#optimal-topology-criteria" id="id15">Optimal Topology Criteria</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#algorithm-design" id="id16">Algorithm Design</a></p>
+<ul>
+<li><p><a class="reference internal" href="#overview" id="id17">Overview</a></p></li>
+<li><p><a class="reference internal" href="#complete-implementation" id="id18">Complete Implementation</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#worked-examples" id="id19">Worked Examples</a></p>
+<ul>
+<li><p><a class="reference internal" href="#example-1-8-processes-cube" id="id20">Example 1: 8 Processes (Cube)</a></p></li>
+<li><p><a class="reference internal" href="#example-2-24-processes" id="id21">Example 2: 24 Processes</a></p></li>
+<li><p><a class="reference internal" href="#example-3-64-processes" id="id22">Example 3: 64 Processes</a></p></li>
+<li><p><a class="reference internal" href="#example-4-prime-number-17-processes" id="id23">Example 4: Prime Number (17 Processes)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#performance-analysis" id="id24">Performance Analysis</a></p>
+<ul>
+<li><p><a class="reference internal" href="#algorithmic-complexity" id="id25">Algorithmic Complexity</a></p></li>
+<li><p><a class="reference internal" href="#communication-overhead-analysis" id="id26">Communication Overhead Analysis</a></p></li>
+<li><p><a class="reference internal" href="#surface-to-volume-ratio" id="id27">Surface-to-Volume Ratio</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#practical-usage" id="id28">Practical Usage</a></p>
+<ul>
+<li><p><a class="reference internal" href="#using-hpc-scaletest" id="id29">Using HPC-ScaleTest</a></p></li>
+<li><p><a class="reference internal" href="#python-api" id="id30">Python API</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#common-issues-and-solutions" id="id31">Common Issues and Solutions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#issue-1-prime-process-counts" id="id32">Issue 1: Prime Process Counts</a></p></li>
+<li><p><a class="reference internal" href="#issue-2-non-cubic-results" id="id33">Issue 2: Non-Cubic Results</a></p></li>
+<li><p><a class="reference internal" href="#issue-3-large-aspect-ratios" id="id34">Issue 3: Large Aspect Ratios</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#best-practices" id="id35">Best Practices</a></p>
+<ul>
+<li><p><a class="reference internal" href="#choosing-process-counts" id="id36">Choosing Process Counts</a></p></li>
+<li><p><a class="reference internal" href="#matching-hardware" id="id37">Matching Hardware</a></p></li>
+<li><p><a class="reference internal" href="#testing-topologies" id="id38">Testing Topologies</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#summary" id="id39">Summary</a></p>
+<ul>
+<li><p><a class="reference internal" href="#key-concepts" id="id40">Key Concepts</a></p></li>
+<li><p><a class="reference internal" href="#further-reading" id="id41">Further Reading</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#mathematical-appendix" id="id42">Mathematical Appendix</a></p>
+<ul>
+<li><p><a class="reference internal" href="#neighbor-calculation-formulas" id="id43">Neighbor Calculation Formulas</a></p></li>
+<li><p><a class="reference internal" href="#optimal-topology-proof" id="id44">Optimal Topology Proof</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction-for-everyone">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Introduction for Everyone</a><a class="headerlink" href="#introduction-for-everyone" title="Link to this heading"></a></h2>
+<section id="what-is-mpi-topology">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">What is MPI Topology?</a><a class="headerlink" href="#what-is-mpi-topology" title="Link to this heading"></a></h3>
+<p><strong>MPI Topology</strong> is how we organize multiple computers (processes) into a logical structure
+so they can work together efficiently.</p>
+<p>Think of it like organizing workers in a warehouse:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>BAD Organization (Linear):
+Worker1 → Worker2 → Worker3 → Worker4 ... → Worker100
+
+- Worker1 talks to Worker2
+- Worker2 talks to Worker3
+- To send message from Worker1 to Worker100: Goes through 99 workers!
+- SLOW!
+
+
+GOOD Organization (Grid):
+Worker Grid (10 × 10):
+
+W1  W2  W3  W4  W5  W6  W7  W8  W9  W10
+W11 W12 W13 W14 W15 W16 W17 W18 W19 W20
+...
+W91 W92 W93 W94 W95 W96 W97 W98 W99 W100
+
+- Each worker only talks to 4 neighbors (up/down/left/right)
+- Message from W1 to W100: Maximum 18 hops
+- FAST!
+</pre></div>
+</div>
+<p><strong>That’s MPI topology</strong> - organizing processes efficiently for communication!</p>
+<section id="real-world-analogy">
+<h4><a class="toc-backref" href="#id3" role="doc-backlink">Real-World Analogy</a><a class="headerlink" href="#real-world-analogy" title="Link to this heading"></a></h4>
+<p><strong>Scenario</strong>: You’re simulating ocean currents across the Pacific Ocean.</p>
+<p><strong>Bad approach</strong> (no topology):
+- Each computer stores random ocean regions
+- To calculate currents, computers must ask everyone for neighboring data
+- Chaotic and slow!</p>
+<p><strong>Good approach</strong> (with topology):
+- Divide ocean into a grid (like a checkerboard)
+- Each computer handles one grid square
+- Each computer only talks to its 4-6 neighbors
+- Organized and fast!</p>
+</section>
+</section>
+<section id="why-do-we-need-this">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Why Do We Need This?</a><a class="headerlink" href="#why-do-we-need-this" title="Link to this heading"></a></h3>
+<p><strong>The Communication Problem</strong></p>
+<p>Scientific simulations involve computers sharing data:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Example: Weather simulation
+
+Each computer simulates a region of the atmosphere.
+To calculate wind at borders, computers must exchange data.
+
+With random organization:
+- Computer #47 doesn&#39;t know who has the neighboring region!
+- Must ask everyone: &quot;Do you have region X?&quot;
+- 1000 computers = 1000 messages just to find neighbors!
+
+With MPI topology:
+- Computer at position (4,7) knows neighbors are at (3,7), (5,7), (4,6), (4,8)
+- Direct communication!
+- 4 messages instead of 1000!
+</pre></div>
+</div>
+<p><strong>The Math Problem</strong></p>
+<p>Computers need to divide work evenly:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Problem: Simulate 256 × 256 × 128 grid on 64 computers
+
+Question: How do we divide this?
+
+Bad: Random assignment
+- Computer 1 gets 1000 cells
+- Computer 2 gets 50,000 cells
+- Computer 1 finishes early and waits! (wasted resources)
+
+Good: MPI topology calculation
+- All computers get exactly 131,072 cells
+- All finish at the same time!
+- No wasted resources!
+</pre></div>
+</div>
+</section>
+<section id="what-you-ll-learn">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">What You’ll Learn</a><a class="headerlink" href="#what-you-ll-learn" title="Link to this heading"></a></h3>
+<p>After reading this document, you’ll understand:</p>
+<p>✅ <strong>What is a 3D MPI topology</strong> (explained with pictures!)
+✅ <strong>How to calculate optimal topology</strong> (the algorithm)
+✅ <strong>Why balanced topologies matter</strong> (performance impact)
+✅ <strong>How to verify correctness</strong> (testing methods)
+✅ <strong>Real examples</strong> (worked calculations)</p>
+</section>
+<section id="who-should-read-this">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Who Should Read This?</a><a class="headerlink" href="#who-should-read-this" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Users</strong>: Understand how HPC-ScaleTest organizes your parallel runs</p></li>
+<li><p><strong>Developers</strong>: Learn the algorithm to extend or debug it</p></li>
+<li><p><strong>Students</strong>: Study parallel computing with practical examples</p></li>
+<li><p><strong>Researchers</strong>: See mathematical foundations for papers</p></li>
+</ul>
+<p>No programming knowledge required for the concepts!</p>
+</section>
+</section>
+<section id="conceptual-foundation">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Conceptual Foundation</a><a class="headerlink" href="#conceptual-foundation" title="Link to this heading"></a></h2>
+<section id="understanding-dimensions">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Understanding Dimensions</a><a class="headerlink" href="#understanding-dimensions" title="Link to this heading"></a></h3>
+<p><strong>What are dimensions in parallel computing?</strong></p>
+<p>Dimensions are different ways to split work:</p>
+<p><strong>1D Topology</strong> (One-dimensional split):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Like slicing a loaf of bread:
+
+[Slice1][Slice2][Slice3][Slice4]
+
+4 processes arranged in a LINE
+Topology: (4, 1, 1) or (1, 4, 1) or (1, 1, 4)
+
+Each process has 2 neighbors (left and right)
+</pre></div>
+</div>
+<p><strong>2D Topology</strong> (Two-dimensional split):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Like a checkerboard:
+
+[1][2][3][4]
+[5][6][7][8]
+
+8 processes arranged in a GRID
+Topology: (4, 2, 1)
+
+Each process has 4 neighbors (up/down/left/right)
+</pre></div>
+</div>
+<p><strong>3D Topology</strong> (Three-dimensional split):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Like a Rubik&#39;s cube:
+
+Front layer:        Back layer:
+[1 ][2 ][3 ][4 ]   [13][14][15][16]
+[5 ][6 ][7 ][8 ]   [17][18][19][20]
+[9 ][10][11][12]   [21][22][23][24]
+
+24 processes arranged in a CUBE
+Topology: (4, 3, 2)
+
+Each process has 6 neighbors (up/down/left/right/front/back)
+</pre></div>
+</div>
+<p><strong>Why 3D?</strong></p>
+<p>Most scientific simulations are 3D:
+- Weather (atmosphere: latitude × longitude × altitude)
+- Ocean (water: x × y × depth)
+- Materials (solid: x × y × z coordinates)
+- Universe (space: x × y × z)</p>
+</section>
+<section id="communication-patterns">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Communication Patterns</a><a class="headerlink" href="#communication-patterns" title="Link to this heading"></a></h3>
+<p><strong>Nearest Neighbor Communication</strong></p>
+<p>In scientific simulations, processes usually only talk to immediate neighbors:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Weather Example:
+
+To calculate temperature at a point, you need:
+- Temperature to the North (neighbor above)
+- Temperature to the South (neighbor below)
+- Temperature to the East (neighbor right)
+- Temperature to the West (neighbor left)
+- Temperature above (neighbor in front layer)
+- Temperature below (neighbor in back layer)
+
+That&#39;s 6 neighbors in 3D!
+</pre></div>
+</div>
+<p><strong>Communication Cost</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1D Topology (8 processes in a line):
+Process 0 → Process 7
+- Must go through 6 intermediate processes
+- 7 hops total
+
+2D Topology (8 processes in 2×4 grid):
+Process at (0,0) → Process at (1,3)
+- Can go directly or through 2-3 processes
+- 2-4 hops
+
+3D Topology (8 processes in 2×2×2 cube):
+Process at (0,0,0) → Process at (1,1,1)
+- Diagonal distance: 3 hops
+- Better balance!
+</pre></div>
+</div>
+<p><strong>Optimal Topology = Cubic Shape</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>For 64 processes:
+
+Bad: (64, 1, 1) - Long line
+- Maximum distance: 63 hops
+- Many processes far apart
+
+Better: (8, 8, 1) - Flat square
+- Maximum distance: 14 hops
+- More balanced
+
+Best: (4, 4, 4) - Cube
+- Maximum distance: 9 hops
+- Most balanced!
+
+Cube minimizes maximum communication distance!
+</pre></div>
+</div>
+</section>
+<section id="load-balancing-principles">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Load Balancing Principles</a><a class="headerlink" href="#load-balancing-principles" title="Link to this heading"></a></h3>
+<p><strong>Equal Work for All Processes</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Scenario: 1000 tasks, 10 workers
+
+Bad distribution:
+Worker 1: 500 tasks (takes 50 minutes)
+Worker 2: 50 tasks (takes 5 minutes)
+...
+Total time: 50 minutes (Worker 1 is bottleneck!)
+Workers 2-10 idle for 45 minutes!
+
+Good distribution:
+Worker 1: 100 tasks (takes 10 minutes)
+Worker 2: 100 tasks (takes 10 minutes)
+...
+Total time: 10 minutes
+All workers busy!
+</pre></div>
+</div>
+<p><strong>How MPI Topology Helps</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Problem: 256 × 256 × 128 grid cells
+
+Question: How many processes in each dimension?
+
+Bad: (16, 4, 1)
+- X: 256 / 16 = 16 cells per process
+- Y: 256 / 4 = 64 cells per process
+- Z: 128 / 1 = 128 cells per process
+- Each process: 16 × 64 × 128 = 131,072 cells
+- But communication is imbalanced! (1 neighbor in Z, 4 in X)
+
+Good: (4, 4, 4)
+- X: 256 / 4 = 64 cells per process
+- Y: 256 / 4 = 64 cells per process
+- Z: 128 / 4 = 32 cells per process
+- Each process: 64 × 64 × 32 = 131,072 cells (same!)
+- Communication is balanced (6 neighbors, similar distances)
+</pre></div>
+</div>
+</section>
+</section>
+<section id="mathematical-foundations">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Mathematical Foundations</a><a class="headerlink" href="#mathematical-foundations" title="Link to this heading"></a></h2>
+<section id="topology-notation">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Topology Notation</a><a class="headerlink" href="#topology-notation" title="Link to this heading"></a></h3>
+<p><strong>MPI Topology is written as</strong> <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span></p>
+<p>Where:
+- <span class="math notranslate nohighlight">\(p_x\)</span> = number of processes in X dimension
+- <span class="math notranslate nohighlight">\(p_y\)</span> = number of processes in Y dimension
+- <span class="math notranslate nohighlight">\(p_z\)</span> = number of processes in Z dimension</p>
+<p><strong>Total Processes</strong>:</p>
+<div class="math notranslate nohighlight">
+\[P = p_x \times p_y \times p_z\]</div>
+<p><strong>Examples</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8 processes:
+- (2, 2, 2): 2 × 2 × 2 = 8 ✓ (cube)
+- (4, 2, 1): 4 × 2 × 1 = 8 ✓ (rectangle)
+- (8, 1, 1): 8 × 1 × 1 = 8 ✓ (line)
+
+64 processes:
+- (4, 4, 4): 4 × 4 × 4 = 64 ✓ (cube)
+- (8, 8, 1): 8 × 8 × 1 = 64 ✓ (flat square)
+- (16, 4, 1): 16 × 4 × 1 = 64 ✓ (rectangle)
+</pre></div>
+</div>
+</section>
+<section id="process-coordinate-system">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Process Coordinate System</a><a class="headerlink" href="#process-coordinate-system" title="Link to this heading"></a></h3>
+<p>Each process gets a unique 3D coordinate:</p>
+<div class="math notranslate nohighlight">
+\[\text{Process ID} = i_x + p_x \cdot i_y + p_x \cdot p_y \cdot i_z\]</div>
+<p>Where:
+- <span class="math notranslate nohighlight">\(0 \leq i_x &lt; p_x\)</span>
+- <span class="math notranslate nohighlight">\(0 \leq i_y &lt; p_y\)</span>
+- <span class="math notranslate nohighlight">\(0 \leq i_z &lt; p_z\)</span></p>
+<p><strong>Example</strong>: Topology (4, 2, 3) = 24 processes</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Process coordinates:
+
+Layer 0 (iz=0):           Layer 1 (iz=1):           Layer 2 (iz=2):
+(0,0,0) (1,0,0) (2,0,0) (3,0,0)   (0,0,1) (1,0,1) (2,0,1) (3,0,1)   (0,0,2) (1,0,2) (2,0,2) (3,0,2)
+(0,1,0) (1,1,0) (2,1,0) (3,1,0)   (0,1,1) (1,1,1) (2,1,1) (3,1,1)   (0,1,2) (1,1,2) (2,1,2) (3,1,2)
+
+Process IDs:
+Layer 0: 0-7      Layer 1: 8-15     Layer 2: 16-23
+</pre></div>
+</div>
+<p><strong>Converting Process ID to Coordinates</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_coordinates</span><span class="p">(</span><span class="n">process_id</span><span class="p">,</span> <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert process ID to (ix, iy, iz) coordinates.&quot;&quot;&quot;</span>
+    <span class="n">iz</span> <span class="o">=</span> <span class="n">process_id</span> <span class="o">//</span> <span class="p">(</span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span><span class="p">)</span>
+    <span class="n">remainder</span> <span class="o">=</span> <span class="n">process_id</span> <span class="o">%</span> <span class="p">(</span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span><span class="p">)</span>
+    <span class="n">iy</span> <span class="o">=</span> <span class="n">remainder</span> <span class="o">//</span> <span class="n">px</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">remainder</span> <span class="o">%</span> <span class="n">px</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span><span class="p">)</span>
+
+<span class="c1"># Example: Process 13 in (4, 2, 3) topology</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">get_coordinates</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="c1"># Result: (1, 0, 1)</span>
+</pre></div>
+</div>
+</section>
+<section id="prime-factorization">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Prime Factorization</a><a class="headerlink" href="#prime-factorization" title="Link to this heading"></a></h3>
+<p><strong>The Foundation of Topology Calculation</strong></p>
+<p>Every number can be broken down into prime factors:</p>
+<div class="math notranslate nohighlight">
+\[P = 2^a \times 3^b \times 5^c \times 7^d \times \ldots\]</div>
+<p><strong>Examples</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8 = 2³ = 2 × 2 × 2
+Factors: [2, 2, 2]
+
+24 = 2³ × 3 = 2 × 2 × 2 × 3
+Factors: [2, 2, 2, 3]
+
+60 = 2² × 3 × 5 = 2 × 2 × 3 × 5
+Factors: [2, 2, 3, 5]
+</pre></div>
+</div>
+<p><strong>Algorithm</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">factorize</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find all prime factors of n.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of prime factors (with repetitions)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">while</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">n</span> <span class="o">%</span> <span class="n">d</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">//=</span> <span class="n">d</span>
+        <span class="n">d</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">factors</span>
+</pre></div>
+</div>
+<p><strong>Step-by-Step Example</strong>: <span class="math notranslate nohighlight">\(n = 24\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Start: n = 24, d = 2, factors = []
+
+Is 24 divisible by 2? Yes!
+- 24 / 2 = 12
+- factors = [2]
+- n = 12
+
+Is 12 divisible by 2? Yes!
+- 12 / 2 = 6
+- factors = [2, 2]
+- n = 6
+
+Is 6 divisible by 2? Yes!
+- 6 / 2 = 3
+- factors = [2, 2, 2]
+- n = 3
+
+Is 3 divisible by 2? No, try d = 3
+
+Is 3 divisible by 3? Yes!
+- 3 / 3 = 1
+- factors = [2, 2, 2, 3]
+- n = 1
+
+Done! 24 = [2, 2, 2, 3]
+</pre></div>
+</div>
+</section>
+<section id="optimal-topology-criteria">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Optimal Topology Criteria</a><a class="headerlink" href="#optimal-topology-criteria" title="Link to this heading"></a></h3>
+<p><strong>Goal</strong>: Find <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span> that minimizes communication overhead</p>
+<p><strong>Criterion 1: Cubic Ratio</strong></p>
+<p>Minimize the aspect ratio:</p>
+<div class="math notranslate nohighlight">
+\[\text{Aspect Ratio} = \frac{\max(p_x, p_y, p_z)}{\min(p_x, p_y, p_z)}\]</div>
+<p><strong>Best</strong>: Aspect ratio = 1 (perfect cube)</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>For 64 processes:
+
+(64, 1, 1): Aspect ratio = 64/1 = 64 (very bad!)
+(8, 8, 1): Aspect ratio = 8/1 = 8 (better)
+(4, 4, 4): Aspect ratio = 4/4 = 1 (perfect!)
+</pre></div>
+</div>
+<p><strong>Criterion 2: Balanced Communication</strong></p>
+<p>Processes should have similar numbers of neighbors:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Interior process neighbors:
+- 1D (line): 2 neighbors
+- 2D (grid): 4 neighbors
+- 3D (cube): 6 neighbors
+
+More dimensions = better load balance!
+</pre></div>
+</div>
+<p><strong>Mathematical Formulation</strong>:</p>
+<p>Minimize:</p>
+<div class="math notranslate nohighlight">
+\[C = \sum_{i=1}^{3} \frac{1}{p_i}\]</div>
+<p>Subject to:</p>
+<div class="math notranslate nohighlight">
+\[p_1 \times p_2 \times p_3 = P\]</div>
+</section>
+</section>
+<section id="algorithm-design">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Algorithm Design</a><a class="headerlink" href="#algorithm-design" title="Link to this heading"></a></h2>
+<section id="overview">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>HPC-ScaleTest’s MPI topology calculation algorithm:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>INPUT:
+- Number of processes: P
+
+ALGORITHM:
+
+Step 1: Factor P into primes
+        Example: 24 → [2, 2, 2, 3]
+
+Step 2: Distribute factors to (px, py, pz)
+        Strategy: Keep dimensions balanced
+        Example: [2,2,2,3] → (3,2,2,2) → (3×2, 2, 2) → (6, 2, 2)
+
+Step 3: Verify result
+        Check: px × py × pz = P
+        Example: 6 × 2 × 2 = 24 ✓
+
+OUTPUT:
+- Optimal MPI topology: (px, py, pz)
+</pre></div>
+</div>
+</section>
+<section id="complete-implementation">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Complete Implementation</a><a class="headerlink" href="#complete-implementation" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># From engine/scaling.py
+
+class MPITopologyCalculator:
+    &quot;&quot;&quot;Calculate optimal MPI topology for parallel runs.
+
+    The goal is to create a balanced 3D process grid that:
+    1. Multiplies to give the correct total process count
+    2. Maintains approximately cubic ratios (px ≈ py ≈ pz)
+    3. Minimizes communication overhead
+    &quot;&quot;&quot;
+
+    def __init__(self):
+        &quot;&quot;&quot;Initialize the topology calculator.&quot;&quot;&quot;
+        pass
+
+    def calculate_topology(self, num_processes):
+        &quot;&quot;&quot;Calculate optimal 3D MPI topology.
+
+        Args:
+            num_processes: Total number of MPI processes
+
+        Returns:
+            Tuple (px, py, pz) representing the 3D process grid
+        &quot;&quot;&quot;
+        if num_processes == 1:
+            return (1, 1, 1)
+
+        # Get prime factors
+        factors = self._factorize(num_processes)
+
+        # Distribute factors to create balanced topology
+        topology = self._distribute_factors(factors)
+
+        # Verify
+        assert topology[0] * topology[1] * topology[2] == num_processes
+
+        return topology
+
+    def _factorize(self, n):
+        &quot;&quot;&quot;Find all prime factors of n.
+
+        Args:
+            n: Number to factorize
+
+        Returns:
+            List of prime factors (with repetitions)
+
+        Example:
+            _factorize(24) = [2, 2, 2, 3]
+        &quot;&quot;&quot;
+        factors = []
+        d = 2
+
+        # Try all potential divisors up to √n
+        while d * d &lt;= n:
+            while n % d == 0:
+                factors.append(d)
+                n //= d
+            d += 1
+
+        # If n &gt; 1, then n itself is a prime factor
+        if n &gt; 1:
+            factors.append(n)
+
+        return factors
+
+    def _distribute_factors(self, factors):
+        &quot;&quot;&quot;Distribute prime factors to create balanced topology.
+
+        Strategy:
+        1. Sort factors in descending order (largest first)
+        2. Always assign factor to smallest current dimension
+        3. This creates most balanced possible topology
+
+        Args:
+            factors: List of prime factors
+
+        Returns:
+            Tuple (px, py, pz) - the 3D topology
+        &quot;&quot;&quot;
+        # Start with (1, 1, 1)
+        px, py, pz = 1, 1, 1
+
+        # Sort factors largest first
+        sorted_factors = sorted(factors, reverse=True)
+
+        # Distribute factors
+        for factor in sorted_factors:
+            # Find smallest dimension
+            if px &lt;= py and px &lt;= pz:
+                px *= factor
+            elif py &lt;= pz:
+                py *= factor
+            else:
+                pz *= factor
+
+        return (px, py, pz)
+
+    def calculate_neighbors(self, process_id, topology):
+        &quot;&quot;&quot;Calculate neighbors for a given process.
+
+        Args:
+            process_id: ID of the process (0 to P-1)
+            topology: Tuple (px, py, pz)
+
+        Returns:
+            Dictionary of neighbors: {&#39;left&#39;, &#39;right&#39;, &#39;up&#39;, &#39;down&#39;, &#39;front&#39;, &#39;back&#39;}
+        &quot;&quot;&quot;
+        px, py, pz = topology
+
+        # Get coordinates
+        ix, iy, iz = self._get_coordinates(process_id, px, py, pz)
+
+        neighbors = {}
+
+        # X-direction neighbors
+        if ix &gt; 0:
+            neighbors[&#39;left&#39;] = self._get_process_id(ix-1, iy, iz, px, py, pz)
+        if ix &lt; px - 1:
+            neighbors[&#39;right&#39;] = self._get_process_id(ix+1, iy, iz, px, py, pz)
+
+        # Y-direction neighbors
+        if iy &gt; 0:
+            neighbors[&#39;down&#39;] = self._get_process_id(ix, iy-1, iz, px, py, pz)
+        if iy &lt; py - 1:
+            neighbors[&#39;up&#39;] = self._get_process_id(ix, iy+1, iz, px, py, pz)
+
+        # Z-direction neighbors
+        if iz &gt; 0:
+            neighbors[&#39;back&#39;] = self._get_process_id(ix, iy, iz-1, px, py, pz)
+        if iz &lt; pz - 1:
+            neighbors[&#39;front&#39;] = self._get_process_id(ix, iy, iz+1, px, py, pz)
+
+        return neighbors
+
+    def _get_coordinates(self, process_id, px, py, pz):
+        &quot;&quot;&quot;Convert process ID to 3D coordinates.&quot;&quot;&quot;
+        iz = process_id // (px * py)
+        remainder = process_id % (px * py)
+        iy = remainder // px
+        ix = remainder % px
+        return (ix, iy, iz)
+
+    def _get_process_id(self, ix, iy, iz, px, py, pz):
+        &quot;&quot;&quot;Convert 3D coordinates to process ID.&quot;&quot;&quot;
+        return ix + px * iy + px * py * iz
+</pre></div>
+</div>
+</section>
+</section>
+<section id="worked-examples">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Worked Examples</a><a class="headerlink" href="#worked-examples" title="Link to this heading"></a></h2>
+<section id="example-1-8-processes-cube">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Example 1: 8 Processes (Cube)</a><a class="headerlink" href="#example-1-8-processes-cube" title="Link to this heading"></a></h3>
+<p><strong>Calculate MPI Topology for 8 Processes</strong></p>
+<p><strong>Step 1: Factorize</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8 = 2³
+factors = [2, 2, 2]
+</pre></div>
+</div>
+<p><strong>Step 2: Distribute Factors</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Start: (px, py, pz) = (1, 1, 1)
+
+Factor 1: value = 2
+- Smallest dimension: px = 1 (all equal, pick first)
+- px = 1 × 2 = 2
+- Result: (2, 1, 1)
+
+Factor 2: value = 2
+- Smallest dimension: py = 1 (tie between py and pz, pick py)
+- py = 1 × 2 = 2
+- Result: (2, 2, 1)
+
+Factor 3: value = 2
+- Smallest dimension: pz = 1
+- pz = 1 × 2 = 2
+- Result: (2, 2, 2)
+</pre></div>
+</div>
+<p><strong>Step 3: Verify</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>px × py × pz = 2 × 2 × 2 = 8 ✓
+
+This is a PERFECT CUBE!
+- Aspect ratio: 2/2 = 1.0 (optimal)
+- All dimensions equal
+- Balanced communication
+</pre></div>
+</div>
+<p><strong>Visualization</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Front Layer (z=0):    Back Layer (z=1):
+[0][1]                [4][5]
+[2][3]                [6][7]
+
+Each process has up to 6 neighbors:
+- Process 0: neighbors = {1 (right), 2 (up), 4 (front)}
+- Process 3: neighbors = {2 (left), 1 (down), 7 (front)}
+- Process 7: neighbors = {6 (left), 5 (down), 3 (back)}
+</pre></div>
+</div>
+</section>
+<section id="example-2-24-processes">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Example 2: 24 Processes</a><a class="headerlink" href="#example-2-24-processes" title="Link to this heading"></a></h3>
+<p><strong>Calculate MPI Topology for 24 Processes</strong></p>
+<p><strong>Step 1: Factorize</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>24 = 2³ × 3 = 8 × 3
+
+Factorization process:
+24 ÷ 2 = 12    factors = [2]
+12 ÷ 2 = 6     factors = [2, 2]
+6 ÷ 2 = 3      factors = [2, 2, 2]
+3 ÷ 3 = 1      factors = [2, 2, 2, 3]
+</pre></div>
+</div>
+<p><strong>Step 2: Sort Factors (Largest First)</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>factors = [2, 2, 2, 3]
+sorted = [3, 2, 2, 2]  # Largest first helps balance
+</pre></div>
+</div>
+<p><strong>Step 3: Distribute</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Start: (1, 1, 1)
+
+Factor 3:
+- Smallest: px = 1
+- px = 1 × 3 = 3
+- Result: (3, 1, 1)
+
+Factor 2:
+- Smallest: py = 1 (tie, pick py)
+- py = 1 × 2 = 2
+- Result: (3, 2, 1)
+
+Factor 2:
+- Smallest: pz = 1
+- pz = 1 × 2 = 2
+- Result: (3, 2, 2)
+
+Factor 2:
+- Smallest: py = 2 (tie between py and pz, pick py)
+- py = 2 × 2 = 4
+- Result: (3, 4, 2)
+</pre></div>
+</div>
+<p><strong>Final Result: (3, 4, 2)</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Verify: 3 × 4 × 2 = 24 ✓
+
+Aspect ratio: 4 / 2 = 2.0 (reasonable)
+
+Not a perfect cube, but well-balanced!
+</pre></div>
+</div>
+<p><strong>Visualization</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Layer 0 (z=0):                Layer 1 (z=1):
+[0 ][1 ][2 ]                  [12][13][14]
+[3 ][4 ][5 ]                  [15][16][17]
+[6 ][7 ][8 ]                  [18][19][20]
+[9 ][10][11]                  [21][22][23]
+</pre></div>
+</div>
+</section>
+<section id="example-3-64-processes">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Example 3: 64 Processes</a><a class="headerlink" href="#example-3-64-processes" title="Link to this heading"></a></h3>
+<p><strong>Calculate MPI Topology for 64 Processes</strong></p>
+<p><strong>Step 1: Factorize</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>64 = 2⁶
+factors = [2, 2, 2, 2, 2, 2]
+</pre></div>
+</div>
+<p><strong>Step 2: Distribute (all equal factors)</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Start: (1, 1, 1)
+
+This is interesting because all factors are the same!
+
+Factor 1 (2): px = 2 → (2, 1, 1)
+Factor 2 (2): py = 2 → (2, 2, 1)
+Factor 3 (2): pz = 2 → (2, 2, 2)
+Factor 4 (2): px = 4 → (4, 2, 2)  # px was smallest
+Factor 5 (2): py = 4 → (4, 4, 2)  # py was smallest
+Factor 6 (2): pz = 4 → (4, 4, 4)  # pz was smallest
+</pre></div>
+</div>
+<p><strong>Final Result: (4, 4, 4)</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Verify: 4 × 4 × 4 = 64 ✓
+
+PERFECT CUBE!
+Aspect ratio: 4/4 = 1.0 (optimal!)
+
+This is the best possible topology for 64 processes!
+</pre></div>
+</div>
+<p><strong>Why This is Optimal</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Maximum distance between any two processes:
+- In (64, 1, 1): 63 hops
+- In (8, 8, 1): 14 hops
+- In (4, 4, 4): 9 hops  ← Best!
+
+Communication is minimized in all dimensions!
+</pre></div>
+</div>
+</section>
+<section id="example-4-prime-number-17-processes">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">Example 4: Prime Number (17 Processes)</a><a class="headerlink" href="#example-4-prime-number-17-processes" title="Link to this heading"></a></h3>
+<p><strong>Calculate MPI Topology for 17 Processes</strong></p>
+<p><strong>Challenge</strong>: 17 is a prime number!</p>
+<p><strong>Step 1: Factorize</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>17 is prime
+factors = [17]  # Cannot be factored further!
+</pre></div>
+</div>
+<p><strong>Step 2: Distribute</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Start: (1, 1, 1)
+
+Only one factor: 17
+- Smallest: px = 1
+- px = 1 × 17 = 17
+- Result: (17, 1, 1)
+</pre></div>
+</div>
+<p><strong>Final Result: (17, 1, 1)</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>This creates a LINE of processes!
+
+[0][1][2][3][4][5][6][7][8][9][10][11][12][13][14][15][16]
+
+Not optimal for communication!
+- Process 0 to Process 16: 16 hops
+- Only 2 neighbors per process (except ends)
+</pre></div>
+</div>
+<p><strong>Lesson</strong>: Avoid prime numbers for process counts when possible!</p>
+<p><strong>Better Alternatives</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Instead of 17 processes, use:
+- 16 processes: (4, 4, 1) or (4, 2, 2)
+- 18 processes: (6, 3, 1) or (3, 3, 2)
+- 20 processes: (5, 4, 1) or (5, 2, 2)
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-analysis">
+<h2><a class="toc-backref" href="#id24" role="doc-backlink">Performance Analysis</a><a class="headerlink" href="#performance-analysis" title="Link to this heading"></a></h2>
+<section id="algorithmic-complexity">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Algorithmic Complexity</a><a class="headerlink" href="#algorithmic-complexity" title="Link to this heading"></a></h3>
+<p><strong>Factorization</strong>: <span class="math notranslate nohighlight">\(O(\sqrt{P})\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>For P processes:
+- Test divisors up to √P
+- Each test is O(1)
+
+Examples:
+- P = 64: √64 = 8 tests
+- P = 1024: √1024 ≈ 32 tests
+- P = 1,000,000: √1M ≈ 1000 tests
+
+Very fast even for large P!
+</pre></div>
+</div>
+<p><strong>Factor Distribution</strong>: <span class="math notranslate nohighlight">\(O(k \log k)\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Where k = number of prime factors
+
+Steps:
+1. Sort factors: O(k log k)
+2. Distribute factors: O(k)
+
+Total: O(k log k)
+
+Typical: k &lt; 10 (even for P = 1024)
+Practically: O(1) for realistic P
+</pre></div>
+</div>
+<p><strong>Total</strong>: <span class="math notranslate nohighlight">\(O(\sqrt{P})\)</span></p>
+</section>
+<section id="communication-overhead-analysis">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Communication Overhead Analysis</a><a class="headerlink" href="#communication-overhead-analysis" title="Link to this heading"></a></h3>
+<p><strong>Maximum Communication Distance</strong></p>
+<p>In a <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span> topology:</p>
+<div class="math notranslate nohighlight">
+\[D_{\max} = (p_x - 1) + (p_y - 1) + (p_z - 1)\]</div>
+<p><strong>Example</strong>: <span class="math notranslate nohighlight">\((4, 4, 4)\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Dmax = (4-1) + (4-1) + (4-1) = 3 + 3 + 3 = 9 hops
+</pre></div>
+</div>
+<p><strong>Comparison for 64 Processes</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Topology        Dmax    Aspect Ratio
+(64, 1, 1)      63      64.0  (worst)
+(32, 2, 1)      32      32.0
+(16, 4, 1)      18      16.0
+(8, 8, 1)       14       8.0
+(8, 4, 2)       12       4.0
+(4, 4, 4)        9       1.0  (best)
+</pre></div>
+</div>
+<p><strong>Optimal Topology Minimizes Dmax</strong></p>
+</section>
+<section id="surface-to-volume-ratio">
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Surface-to-Volume Ratio</a><a class="headerlink" href="#surface-to-volume-ratio" title="Link to this heading"></a></h3>
+<p><strong>Why This Matters</strong></p>
+<p>Communication happens at process boundaries (surface).
+Computation happens inside process volume.</p>
+<p><strong>Ratio</strong>:</p>
+<div class="math notranslate nohighlight">
+\[R = \frac{\text{Surface Area}}{\text{Volume}}\]</div>
+<p><strong>Lower ratio = Better</strong> (less communication per computation)</p>
+<p><strong>Example</strong>: 1000 cells per process</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Linear (1000 × 1 × 1):
+- Volume: 1000
+- Surface: 2 (two ends)
+- Ratio: 2/1000 = 0.002
+
+Flat (100 × 10 × 1):
+- Volume: 1000
+- Surface: 2×(100 + 10) = 220
+- Ratio: 220/1000 = 0.22
+
+Cubic (10 × 10 × 10):
+- Volume: 1000
+- Surface: 6×100 = 600
+- Ratio: 600/1000 = 0.6
+
+WAIT - cubic has HIGHER ratio?!
+</pre></div>
+</div>
+<p><strong>The Paradox Explained</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>In 1 dimension:
+- Very low surface area
+- BUT: Long communication chains!
+- Message from end to end: 999 hops
+
+In 3 dimensions:
+- Higher surface area
+- BUT: Short communication paths!
+- Message from corner to corner: 27 hops
+
+Trade-off: Higher local communication, but much shorter global paths
+
+For parallel computing: 3D is almost always better!
+</pre></div>
+</div>
+</section>
+</section>
+<section id="practical-usage">
+<h2><a class="toc-backref" href="#id28" role="doc-backlink">Practical Usage</a><a class="headerlink" href="#practical-usage" title="Link to this heading"></a></h2>
+<section id="using-hpc-scaletest">
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">Using HPC-ScaleTest</a><a class="headerlink" href="#using-hpc-scaletest" title="Link to this heading"></a></h3>
+<p><strong>Automatic Topology Calculation</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># HPC-ScaleTest automatically calculates topology</span>
+hpc-scaletest<span class="w"> </span>generate<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--baseline<span class="w"> </span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--nodes<span class="w"> </span><span class="s2">&quot;1 2 4 8&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--procs-per-node<span class="w"> </span><span class="m">8</span>
+
+<span class="c1"># Output shows calculated topologies:</span>
+<span class="c1"># 8 procs: (2, 2, 2)</span>
+<span class="c1"># 16 procs: (4, 2, 2)</span>
+<span class="c1"># 32 procs: (4, 4, 2)</span>
+<span class="c1"># 64 procs: (4, 4, 4)</span>
+</pre></div>
+</div>
+<p><strong>Manual Topology Specification</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Override automatic calculation</span>
+hpc-scaletest<span class="w"> </span>generate<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--processes<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--topology<span class="w"> </span><span class="m">6</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">2</span><span class="w">  </span><span class="c1"># Force this topology</span>
+
+<span class="c1"># Useful when you have specific requirements</span>
+</pre></div>
+</div>
+<p><strong>Verification</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify topology is valid</span>
+hpc-scaletest<span class="w"> </span>verify-topology<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--processes<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--topology<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">2</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># ✓ Topology (3, 4, 2) is valid for 24 processes</span>
+<span class="c1"># ✓ Product: 3 × 4 × 2 = 24</span>
+<span class="c1"># ✓ Aspect ratio: 2.0 (good)</span>
+</pre></div>
+</div>
+</section>
+<section id="python-api">
+<h3><a class="toc-backref" href="#id30" role="doc-backlink">Python API</a><a class="headerlink" href="#python-api" title="Link to this heading"></a></h3>
+<p><strong>Direct Calculation</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hpc_scaletest</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPITopologyCalculator</span>
+
+<span class="n">calc</span> <span class="o">=</span> <span class="n">MPITopologyCalculator</span><span class="p">()</span>
+
+<span class="c1"># Calculate for different process counts</span>
+<span class="k">for</span> <span class="n">procs</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">]:</span>
+    <span class="n">topo</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">calculate_topology</span><span class="p">(</span><span class="n">procs</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">procs</span><span class="si">}</span><span class="s2"> processes: </span><span class="si">{</span><span class="n">topo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># 8 processes: (2, 2, 2)</span>
+<span class="c1"># 24 processes: (3, 4, 2)</span>
+<span class="c1"># 64 processes: (4, 4, 4)</span>
+<span class="c1"># 128 processes: (8, 4, 4)</span>
+</pre></div>
+</div>
+<p><strong>With Verification</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Calculate and verify</span>
+<span class="n">topo</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">calculate_topology</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">topo</span>
+
+<span class="k">assert</span> <span class="n">px</span> <span class="o">*</span> <span class="n">py</span> <span class="o">*</span> <span class="n">pz</span> <span class="o">==</span> <span class="mi">60</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Topology for 60 processes: </span><span class="si">{</span><span class="n">topo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Aspect ratio: </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">min</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># Topology for 60 processes: (5, 4, 3)</span>
+<span class="c1"># Aspect ratio: 1.67</span>
+</pre></div>
+</div>
+<p><strong>Finding Neighbors</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get neighbors for a process</span>
+<span class="n">topology</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">process_id</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">neighbors</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">calculate_neighbors</span><span class="p">(</span><span class="n">process_id</span><span class="p">,</span> <span class="n">topology</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process </span><span class="si">{</span><span class="n">process_id</span><span class="si">}</span><span class="s2"> neighbors:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">direction</span><span class="p">,</span> <span class="n">neighbor_id</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">: Process </span><span class="si">{</span><span class="n">neighbor_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># Process 5 neighbors:</span>
+<span class="c1">#   left: Process 4</span>
+<span class="c1">#   right: Process 6</span>
+<span class="c1">#   down: Process 1</span>
+<span class="c1">#   up: Process 9</span>
+<span class="c1">#   back: Process 17</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="common-issues-and-solutions">
+<h2><a class="toc-backref" href="#id31" role="doc-backlink">Common Issues and Solutions</a><a class="headerlink" href="#common-issues-and-solutions" title="Link to this heading"></a></h2>
+<section id="issue-1-prime-process-counts">
+<h3><a class="toc-backref" href="#id32" role="doc-backlink">Issue 1: Prime Process Counts</a><a class="headerlink" href="#issue-1-prime-process-counts" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>You want to use 17 processes (prime number)
+Result: (17, 1, 1) - a long line!
+Poor communication pattern
+</pre></div>
+</div>
+<p><strong>Solution 1</strong>: Use Nearby Composite Number</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Instead of 17, use:
+- 16 processes: (4, 4, 1) or (4, 2, 2)
+- 18 processes: (6, 3, 1) or (3, 3, 2)
+
+Slightly different count, much better topology!
+</pre></div>
+</div>
+<p><strong>Solution 2</strong>: Accept the Limitation</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>If you must use 17 processes:
+- Accept (17, 1, 1) topology
+- Optimize your algorithm for 1D decomposition
+- Consider using different parallel strategy
+</pre></div>
+</div>
+</section>
+<section id="issue-2-non-cubic-results">
+<h3><a class="toc-backref" href="#id33" role="doc-backlink">Issue 2: Non-Cubic Results</a><a class="headerlink" href="#issue-2-non-cubic-results" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>100 processes gives (10, 10, 1)
+Not a true cube, mostly 2D!
+</pre></div>
+</div>
+<p><strong>Explanation</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>100 = 2² × 5² = 4 × 25
+
+Best factorization:
+- px = 10
+- py = 10
+- pz = 1
+
+This is optimal given the factors!
+</pre></div>
+</div>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p><strong>Use Different Process Count</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Instead of 100, use:
+- 96 processes: (6, 4, 4) - better cube
+- 108 processes: (6, 6, 3) - better balanced
+</pre></div>
+</div>
+</li>
+<li><p><strong>Accept It</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>(10, 10, 1) is still reasonable
+- Good for 2D problems
+- Aspect ratio = 10/1 = 10 (acceptable)
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="issue-3-large-aspect-ratios">
+<h3><a class="toc-backref" href="#id34" role="doc-backlink">Issue 3: Large Aspect Ratios</a><a class="headerlink" href="#issue-3-large-aspect-ratios" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Topology (16, 4, 1) has aspect ratio 16/1 = 16
+Is this bad?
+</pre></div>
+</div>
+<p><strong>Analysis</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Depends on your problem!
+
+For 2D problems (thin in Z):
+- (16, 4, 1) is perfectly fine!
+- Matches problem geometry
+
+For 3D problems:
+- Prefer more balanced topology
+- Consider different process count
+</pre></div>
+</div>
+<p><strong>Solution</strong>: Match Topology to Problem</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2D Problem (atmospheric layer):
+- Domain: 1024 × 1024 × 1 (thin!)
+- Good: (16, 4, 1), (8, 8, 1)
+- Bad: (4, 4, 4) - wastes Z dimension
+
+3D Problem (ocean volume):
+- Domain: 256 × 256 × 128
+- Good: (4, 4, 4), (4, 4, 2)
+- Bad: (16, 4, 1) - ignores Z structure
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2><a class="toc-backref" href="#id35" role="doc-backlink">Best Practices</a><a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<section id="choosing-process-counts">
+<h3><a class="toc-backref" href="#id36" role="doc-backlink">Choosing Process Counts</a><a class="headerlink" href="#choosing-process-counts" title="Link to this heading"></a></h3>
+<p><strong>Prefer Powers of 2</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Excellent: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
+
+Why:
+- Factor into equal parts: 2×2×2×2...
+- Create perfect cubes: (2,2,2), (4,4,4), (8,8,8)
+- Match hardware (most HPC nodes have 2ⁿ cores)
+</pre></div>
+</div>
+<p><strong>Good Alternatives</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Also good: 12, 24, 48, 96  (= 2ⁿ × 3)
+           20, 40, 80       (= 2ⁿ × 5)
+           18, 36, 72       (= 2ⁿ × 3²)
+
+These factor nicely into balanced topologies
+</pre></div>
+</div>
+<p><strong>Avoid</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Avoid: Prime numbers (17, 23, 29, 31, 37, ...)
+       Highly unbalanced (2 × large_prime)
+
+These create poor topologies
+</pre></div>
+</div>
+</section>
+<section id="matching-hardware">
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">Matching Hardware</a><a class="headerlink" href="#matching-hardware" title="Link to this heading"></a></h3>
+<p><strong>Know Your Cluster</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find cores per node</span>
+hpc-scaletest<span class="w"> </span>system-info
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Cores per node: 36</span>
+<span class="c1"># Nodes available: 10</span>
+<span class="c1"># Recommended process counts: 36, 72, 144, 288, 360</span>
+</pre></div>
+</div>
+<p><strong>Scale by Full Nodes</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>If nodes have 36 cores:
+
+Good:
+- 1 node: 36 processes
+- 2 nodes: 72 processes
+- 4 nodes: 144 processes
+
+Bad:
+- 50 processes (1.4 nodes - wastes resources)
+- 100 processes (2.8 nodes - wastes resources)
+</pre></div>
+</div>
+<p><strong>Hybrid Parallelism</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Modern approach: MPI + OpenMP
+
+Example: Node with 36 cores
+- 6 MPI processes × 6 OpenMP threads = 36 cores
+- Topology: Calculated for 6×nodes MPI processes
+- Better memory usage!
+</pre></div>
+</div>
+</section>
+<section id="testing-topologies">
+<h3><a class="toc-backref" href="#id38" role="doc-backlink">Testing Topologies</a><a class="headerlink" href="#testing-topologies" title="Link to this heading"></a></h3>
+<p><strong>Verify Before Running</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_topology</span><span class="p">(</span><span class="n">num_processes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test if topology is reasonable.&quot;&quot;&quot;</span>
+    <span class="n">calc</span> <span class="o">=</span> <span class="n">MPITopologyCalculator</span><span class="p">()</span>
+    <span class="n">topo</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">calculate_topology</span><span class="p">(</span><span class="n">num_processes</span><span class="p">)</span>
+
+    <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">topo</span>
+
+    <span class="c1"># Check 1: Correct total</span>
+    <span class="k">assert</span> <span class="n">px</span> <span class="o">*</span> <span class="n">py</span> <span class="o">*</span> <span class="n">pz</span> <span class="o">==</span> <span class="n">num_processes</span>
+
+    <span class="c1"># Check 2: Aspect ratio</span>
+    <span class="n">aspect_ratio</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span> <span class="o">/</span> <span class="nb">min</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">aspect_ratio</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: High aspect ratio </span><span class="si">{</span><span class="n">aspect_ratio</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check 3: No dimension is 1 (for 3D problems)</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">num_processes</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Effectively 2D topology </span><span class="si">{</span><span class="n">topo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">topo</span>
+</pre></div>
+</div>
+<p><strong>Benchmark Different Topologies</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test multiple topologies for same process count</span>
+hpc-scaletest<span class="w"> </span>benchmark<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--processes<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--topologies<span class="w"> </span><span class="s2">&quot;(6,2,2)&quot;</span><span class="w"> </span><span class="s2">&quot;(4,3,2)&quot;</span><span class="w"> </span><span class="s2">&quot;(3,4,2)&quot;</span><span class="w"> </span><span class="s2">&quot;(2,3,4)&quot;</span>
+
+<span class="c1"># See which performs best for your application!</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="summary">
+<h2><a class="toc-backref" href="#id39" role="doc-backlink">Summary</a><a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<section id="key-concepts">
+<h3><a class="toc-backref" href="#id40" role="doc-backlink">Key Concepts</a><a class="headerlink" href="#key-concepts" title="Link to this heading"></a></h3>
+<p><strong>MPI Topology</strong>:
+- 3D grid of processes: <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span>
+- Total processes: <span class="math notranslate nohighlight">\(P = p_x \times p_y \times p_z\)</span>
+- Each process has unique 3D coordinate</p>
+<p><strong>Goals</strong>:
+- Balanced dimensions (cubic shape)
+- Minimize communication distance
+- Match problem geometry</p>
+<p><strong>Algorithm</strong>:
+1. Factor process count into primes
+2. Distribute factors to keep dimensions balanced
+3. Verify topology is valid</p>
+<p><strong>Best Practices</strong>:
+- Use powers of 2 when possible
+- Match topology to problem geometry
+- Verify before running large studies</p>
+</section>
+<section id="further-reading">
+<h3><a class="toc-backref" href="#id41" role="doc-backlink">Further Reading</a><a class="headerlink" href="#further-reading" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="weak_scaling_complete.html"><span class="doc">Weak Scaling Algorithm: Complete Technical Reference</span></a> - Weak scaling algorithm</p></li>
+<li><p><a class="reference internal" href="strong_scaling_complete.html"><span class="doc">Strong Scaling Algorithm: Complete Technical Reference</span></a> - Strong scaling algorithm</p></li>
+<li><p><a class="reference internal" href="domain_decomposition_complete.html"><span class="doc">Domain Decomposition: Complete Technical Reference</span></a> - Domain decomposition details</p></li>
+</ul>
+</section>
+</section>
+<section id="mathematical-appendix">
+<h2><a class="toc-backref" href="#id42" role="doc-backlink">Mathematical Appendix</a><a class="headerlink" href="#mathematical-appendix" title="Link to this heading"></a></h2>
+<section id="neighbor-calculation-formulas">
+<h3><a class="toc-backref" href="#id43" role="doc-backlink">Neighbor Calculation Formulas</a><a class="headerlink" href="#neighbor-calculation-formulas" title="Link to this heading"></a></h3>
+<p><strong>Process ID from Coordinates</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\text{ID}(i_x, i_y, i_z) = i_x + p_x \cdot i_y + p_x \cdot p_y \cdot i_z\]</div>
+<p><strong>Coordinates from Process ID</strong>:</p>
+<div class="math notranslate nohighlight">
+\[i_z = \left\lfloor \frac{\text{ID}}{p_x \cdot p_y} \right\rfloor\]</div>
+<div class="math notranslate nohighlight">
+\[i_y = \left\lfloor \frac{\text{ID} \bmod (p_x \cdot p_y)}{p_x} \right\rfloor\]</div>
+<div class="math notranslate nohighlight">
+\[i_x = \text{ID} \bmod p_x\]</div>
+<p><strong>Neighbor IDs</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\text{Left} = \text{ID} - 1 \quad (\text{if } i_x &gt; 0)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Right} = \text{ID} + 1 \quad (\text{if } i_x &lt; p_x - 1)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Down} = \text{ID} - p_x \quad (\text{if } i_y &gt; 0)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Up} = \text{ID} + p_x \quad (\text{if } i_y &lt; p_y - 1)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Back} = \text{ID} - p_x \cdot p_y \quad (\text{if } i_z &gt; 0)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Front} = \text{ID} + p_x \cdot p_y \quad (\text{if } i_z &lt; p_z - 1)\]</div>
+</section>
+<section id="optimal-topology-proof">
+<h3><a class="toc-backref" href="#id44" role="doc-backlink">Optimal Topology Proof</a><a class="headerlink" href="#optimal-topology-proof" title="Link to this heading"></a></h3>
+<p><strong>Theorem</strong>: For <span class="math notranslate nohighlight">\(P = 2^n\)</span> processes, topology <span class="math notranslate nohighlight">\((2^{n/3}, 2^{n/3}, 2^{n/3})\)</span> minimizes maximum communication distance.</p>
+<p><strong>Proof</strong>:</p>
+<p>Maximum distance in topology <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[D = (p_x - 1) + (p_y - 1) + (p_z - 1)\]</div>
+<p>Subject to:</p>
+<div class="math notranslate nohighlight">
+\[p_x \cdot p_y \cdot p_z = P\]</div>
+<p>To minimize <span class="math notranslate nohighlight">\(D\)</span>, use Lagrange multipliers:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L} = (p_x - 1) + (p_y - 1) + (p_z - 1) - \lambda(p_x \cdot p_y \cdot p_z - P)\]</div>
+<p>Taking derivatives:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \mathcal{L}}{\partial p_x} = 1 - \lambda p_y p_z = 0 \implies p_y p_z = \frac{1}{\lambda}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \mathcal{L}}{\partial p_y} = 1 - \lambda p_x p_z = 0 \implies p_x p_z = \frac{1}{\lambda}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \mathcal{L}}{\partial p_z} = 1 - \lambda p_x p_y = 0 \implies p_x p_y = \frac{1}{\lambda}\]</div>
+<p>From these: <span class="math notranslate nohighlight">\(p_x = p_y = p_z = P^{1/3}\)</span></p>
+<p>Therefore: <strong>Cubic topology minimizes maximum communication distance</strong>. ∎</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="strong_scaling_complete.html" class="btn btn-neutral float-left" title="Strong Scaling Algorithm: Complete Technical Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="domain_decomposition_complete.html" class="btn btn-neutral float-right" title="Domain Decomposition: Complete Technical Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

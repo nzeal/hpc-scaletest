@@ -1,0 +1,549 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extending HPC-ScaleTest &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="FAQ" href="faq.html" />
+    <link rel="prev" title="Examples" href="examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Extending HPC-ScaleTest</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extension-mechanisms">Extension Mechanisms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#registry-pattern">Registry Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#decorator-based-registration">Decorator-Based Registration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-new-scheduler-directive">Adding a New Scheduler Directive</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-gpu-allocation">Example: GPU Allocation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-hardware-feature">Adding a Hardware Feature</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-high-bandwidth-memory">Example: High-Bandwidth Memory</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#complete-minimal-example">Complete Minimal Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-extensions">Testing Extensions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unit-test-example">Unit Test Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extension-points-summary">Extension Points Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Extending HPC-ScaleTest</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/extending.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="extending-hpc-scaletest">
+<h1>Extending HPC-ScaleTest<a class="headerlink" href="#extending-hpc-scaletest" title="Link to this heading"></a></h1>
+<p>This guide shows developers how to extend HPC-ScaleTest with new scheduler directives, hardware features, and backend implementations.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>HPC-ScaleTest uses a plugin-based architecture that allows extension without modifying core code. The system supports:</p>
+<ul class="simple">
+<li><p>Custom scheduler directives (GPU allocation, memory constraints, etc.)</p></li>
+<li><p>Hardware feature detection and configuration</p></li>
+<li><p>New scheduler backends (beyond SLURM/PBS)</p></li>
+<li><p>Custom launchers and module systems</p></li>
+</ul>
+</section>
+<section id="extension-mechanisms">
+<h2>Extension Mechanisms<a class="headerlink" href="#extension-mechanisms" title="Link to this heading"></a></h2>
+<section id="registry-pattern">
+<h3>Registry Pattern<a class="headerlink" href="#registry-pattern" title="Link to this heading"></a></h3>
+<p>HPC-ScaleTest uses a registry pattern for runtime discovery:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In core/registry.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FeatureRegistry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Central registry for hardware features and directives.&quot;&quot;&quot;</span>
+
+    <span class="n">_features</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_directives</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_feature</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">feature_class</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a hardware feature.&quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_features</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_class</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_directive</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">directive_func</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a scheduler directive.&quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_directives</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">directive_func</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_feature</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve registered feature.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_directive</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve registered directive.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_directives</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="decorator-based-registration">
+<h3>Decorator-Based Registration<a class="headerlink" href="#decorator-based-registration" title="Link to this heading"></a></h3>
+<p>The system uses decorators for automatic registration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In core/decorators.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureRegistry</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">register_feature</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to register a hardware feature.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="n">FeatureRegistry</span><span class="o">.</span><span class="n">register_feature</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span>
+    <span class="k">return</span> <span class="n">decorator</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">register_directive</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to register a scheduler directive.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">FeatureRegistry</span><span class="o">.</span><span class="n">register_directive</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span>
+    <span class="k">return</span> <span class="n">decorator</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="adding-a-new-scheduler-directive">
+<h2>Adding a New Scheduler Directive<a class="headerlink" href="#adding-a-new-scheduler-directive" title="Link to this heading"></a></h2>
+<section id="example-gpu-allocation">
+<h3>Example: GPU Allocation<a class="headerlink" href="#example-gpu-allocation" title="Link to this heading"></a></h3>
+<p>Here’s how to add GPU allocation support for SLURM:</p>
+<p><strong>Step 1: Define the Directive Function</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In backends/schedulers/directives/gpu.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_directive</span>
+
+<span class="nd">@register_directive</span><span class="p">(</span><span class="s2">&quot;gpu&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gpu_directive</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">,</span> <span class="n">gpu_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gpu_bind</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate GPU allocation directive for scheduler.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    num_gpus : int</span>
+<span class="sd">        Number of GPUs to allocate per node</span>
+<span class="sd">    gpu_type : str, optional</span>
+<span class="sd">        Specific GPU type (e.g., &#39;a100&#39;, &#39;v100&#39;)</span>
+<span class="sd">    gpu_bind : str, optional</span>
+<span class="sd">        GPU binding strategy</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Scheduler-specific directives</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">directives</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;slurm&#39;</span><span class="p">:</span> <span class="n">_slurm_gpu</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">,</span> <span class="n">gpu_type</span><span class="p">,</span> <span class="n">gpu_bind</span><span class="p">),</span>
+        <span class="s1">&#39;pbs&#39;</span><span class="p">:</span> <span class="n">_pbs_gpu</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">,</span> <span class="n">gpu_type</span><span class="p">,</span> <span class="n">gpu_bind</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">directives</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_slurm_gpu</span><span class="p">(</span><span class="n">num_gpus</span><span class="p">,</span> <span class="n">gpu_type</span><span class="p">,</span> <span class="n">gpu_bind</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SLURM-specific GPU directive.&quot;&quot;&quot;</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--gpus-per-node=</span><span class="si">{</span><span class="n">num_gpus</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">gpu_type</span><span class="p">:</span>
+        <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;--gpus-per-node=</span><span class="si">{</span><span class="n">gpu_type</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">num_gpus</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">if</span> <span class="n">gpu_bind</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--gpu-bind=</span><span class="si">{</span><span class="n">gpu_bind</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 2: Use in Application</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">engine.job_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">JobBuilder</span>
+
+<span class="n">builder</span> <span class="o">=</span> <span class="n">JobBuilder</span><span class="p">(</span><span class="n">scheduler_type</span><span class="o">=</span><span class="s1">&#39;slurm&#39;</span><span class="p">)</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s1">&#39;gpu&#39;</span><span class="p">,</span> <span class="n">num_gpus</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">gpu_type</span><span class="o">=</span><span class="s1">&#39;a100&#39;</span><span class="p">)</span>
+
+<span class="n">script</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build_script</span><span class="p">(</span>
+    <span class="n">job_name</span><span class="o">=</span><span class="s1">&#39;gpu_job&#39;</span><span class="p">,</span>
+    <span class="n">commands</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;./my_app --use-gpu&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="adding-a-hardware-feature">
+<h2>Adding a Hardware Feature<a class="headerlink" href="#adding-a-hardware-feature" title="Link to this heading"></a></h2>
+<section id="example-high-bandwidth-memory">
+<h3>Example: High-Bandwidth Memory<a class="headerlink" href="#example-high-bandwidth-memory" title="Link to this heading"></a></h3>
+<p><strong>Step 1: Define Feature Class</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In utils/hardware/hbm.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_feature</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HardwareFeature</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for hardware features.&quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect if feature is available.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure feature for use.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<span class="nd">@register_feature</span><span class="p">(</span><span class="s2">&quot;hbm&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HighBandwidthMemory</span><span class="p">(</span><span class="n">HardwareFeature</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;High-bandwidth memory feature.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">available</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacity_gb</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numa_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect HBM availability on system.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+        <span class="n">node_path</span> <span class="o">=</span> <span class="s1">&#39;/sys/devices/system/node&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">node_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Check for HBM NUMA nodes</span>
+        <span class="n">hbm_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node_dir</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">node_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">node_dir</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;node&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">meminfo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">node_path</span><span class="p">,</span> <span class="n">node_dir</span><span class="p">,</span> <span class="s1">&#39;meminfo&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">meminfo</span><span class="p">):</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">meminfo</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_hbm_node</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()):</span>
+                        <span class="n">node_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_dir</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+                        <span class="n">hbm_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_num</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">hbm_nodes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">available</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numa_nodes</span> <span class="o">=</span> <span class="n">hbm_nodes</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bind_policy</span><span class="o">=</span><span class="s1">&#39;preferred&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure HBM usage.&quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;env_vars&#39;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s1">&#39;launcher_args&#39;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">config</span>
+
+        <span class="k">if</span> <span class="n">bind_policy</span> <span class="o">==</span> <span class="s1">&#39;preferred&#39;</span><span class="p">:</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;env_vars&#39;</span><span class="p">][</span><span class="s1">&#39;MEMKIND_HBW_NODES&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numa_nodes</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">bind_policy</span> <span class="o">==</span> <span class="s1">&#39;bind&#39;</span><span class="p">:</span>
+            <span class="n">node_list</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numa_nodes</span><span class="p">))</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;launcher_args&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;--membind=</span><span class="si">{</span><span class="n">node_list</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">config</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_hbm_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meminfo_content</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Heuristic to identify HBM nodes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;HBM&#39;</span> <span class="ow">in</span> <span class="n">meminfo_content</span>
+</pre></div>
+</div>
+<p><strong>Step 2: Runtime Discovery</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In utils/hardware/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureRegistry</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">discover_hardware_features</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Automatically discover available hardware features.&quot;&quot;&quot;</span>
+    <span class="n">detected</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">feature_name</span> <span class="ow">in</span> <span class="n">FeatureRegistry</span><span class="o">.</span><span class="n">list_features</span><span class="p">():</span>
+        <span class="n">feature_class</span> <span class="o">=</span> <span class="n">FeatureRegistry</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="n">feature_name</span><span class="p">)</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">feature_class</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">detect</span><span class="p">():</span>
+            <span class="n">detected</span><span class="p">[</span><span class="n">feature_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature</span>
+
+    <span class="k">return</span> <span class="n">detected</span>
+</pre></div>
+</div>
+<p><strong>Step 3: Use in Job Configuration</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">utils.hardware</span><span class="w"> </span><span class="kn">import</span> <span class="n">discover_hardware_features</span>
+
+<span class="c1"># Detect hardware</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">discover_hardware_features</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="s1">&#39;hbm&#39;</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+    <span class="n">hbm</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="s1">&#39;hbm&#39;</span><span class="p">]</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">hbm</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bind_policy</span><span class="o">=</span><span class="s1">&#39;preferred&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Use config in job setup</span>
+    <span class="n">job_env</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;env_vars&#39;</span><span class="p">]</span>
+    <span class="n">launcher_args</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;launcher_args&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="complete-minimal-example">
+<h2>Complete Minimal Example<a class="headerlink" href="#complete-minimal-example" title="Link to this heading"></a></h2>
+<p>Here’s a complete example adding a custom memory directive:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">custom_memory.py - Custom memory allocation directive</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    1. Place this file in your project</span>
+<span class="sd">    2. Import it before creating jobs</span>
+<span class="sd">    3. Use the directive in job builder</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_directive</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">engine.job_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">JobBuilder</span>
+
+<span class="nd">@register_directive</span><span class="p">(</span><span class="s2">&quot;memory_per_node&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">memory_per_node</span><span class="p">(</span><span class="n">memory_gb</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Allocate memory per node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    memory_gb : int</span>
+<span class="sd">        Memory in GB per node</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Scheduler directives</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;slurm&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;--mem=</span><span class="si">{</span><span class="n">memory_gb</span><span class="si">}</span><span class="s2">G&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;pbs&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;-l mem=</span><span class="si">{</span><span class="n">memory_gb</span><span class="si">}</span><span class="s2">gb&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<span class="c1"># Example usage</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># Import the directive (registers it automatically)</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">custom_memory</span>
+
+    <span class="c1"># Create job builder</span>
+    <span class="n">builder</span> <span class="o">=</span> <span class="n">JobBuilder</span><span class="p">(</span><span class="n">scheduler_type</span><span class="o">=</span><span class="s1">&#39;slurm&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Add custom directive</span>
+    <span class="n">builder</span><span class="o">.</span><span class="n">add_directive</span><span class="p">(</span><span class="s1">&#39;memory_per_node&#39;</span><span class="p">,</span> <span class="n">memory_gb</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+
+    <span class="c1"># Build script</span>
+    <span class="n">script</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build_script</span><span class="p">(</span>
+        <span class="n">job_name</span><span class="o">=</span><span class="s1">&#39;memory_test&#39;</span><span class="p">,</span>
+        <span class="n">commands</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;./my_app&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+    <span class="c1"># Output:</span>
+    <span class="c1"># #!/bin/bash</span>
+    <span class="c1"># #SBATCH --job-name=memory_test</span>
+    <span class="c1"># #SBATCH --mem=128G</span>
+    <span class="c1">#</span>
+    <span class="c1"># ./my_app</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-extensions">
+<h2>Testing Extensions<a class="headerlink" href="#testing-extensions" title="Link to this heading"></a></h2>
+<section id="unit-test-example">
+<h3>Unit Test Example<a class="headerlink" href="#unit-test-example" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># test_custom_directive.py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureRegistry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">custom_memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">memory_per_node</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestMemoryDirective</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_registration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test directive is registered.&quot;&quot;&quot;</span>
+        <span class="n">directive</span> <span class="o">=</span> <span class="n">FeatureRegistry</span><span class="o">.</span><span class="n">get_directive</span><span class="p">(</span><span class="s1">&#39;memory_per_node&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIsNotNone</span><span class="p">(</span><span class="n">directive</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_slurm_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test SLURM directive format.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">memory_per_node</span><span class="p">(</span><span class="n">memory_gb</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;slurm&#39;</span><span class="p">],</span> <span class="s1">&#39;--mem=64G&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_pbs_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test PBS directive format.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">memory_per_node</span><span class="p">(</span><span class="n">memory_gb</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;pbs&#39;</span><span class="p">],</span> <span class="s1">&#39;-l mem=64gb&#39;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p><strong>Use Decorators for Registration</strong></p>
+<p>Automatic registration via <code class="docutils literal notranslate"><span class="pre">&#64;register_feature</span></code> and <code class="docutils literal notranslate"><span class="pre">&#64;register_directive</span></code></p>
+</li>
+<li><p><strong>Support Multiple Schedulers</strong></p>
+<p>Return dictionary with scheduler-specific implementations</p>
+</li>
+<li><p><strong>Provide Sensible Defaults</strong></p>
+<p>Make parameters optional when reasonable</p>
+</li>
+<li><p><strong>Document Thoroughly</strong></p>
+<p>Include docstrings with parameter descriptions</p>
+</li>
+<li><p><strong>Write Tests</strong></p>
+<p>Verify registration and functionality</p>
+</li>
+<li><p><strong>Handle Errors Gracefully</strong></p>
+<p>Validate inputs and provide clear messages</p>
+</li>
+</ol>
+</section>
+<section id="extension-points-summary">
+<h2>Extension Points Summary<a class="headerlink" href="#extension-points-summary" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>Scheduler Directives</strong></dt><dd><p>Register via <code class="docutils literal notranslate"><span class="pre">&#64;register_directive</span></code></p>
+</dd>
+<dt><strong>Hardware Features</strong></dt><dd><p>Extend <code class="docutils literal notranslate"><span class="pre">HardwareFeature</span></code> and use <code class="docutils literal notranslate"><span class="pre">&#64;register_feature</span></code></p>
+</dd>
+<dt><strong>Scheduler Backends</strong></dt><dd><p>Extend <code class="docutils literal notranslate"><span class="pre">AbstractScheduler</span></code> and register with factory</p>
+</dd>
+<dt><strong>Runtime Discovery</strong></dt><dd><p>Features auto-discovered through registry</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="faq.html" class="btn btn-neutral float-right" title="FAQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

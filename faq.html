@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Troubleshooting" href="troubleshooting.html" />
+    <link rel="prev" title="Extending HPC-ScaleTest" href="extending.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-questions">General Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-hpc-scaletest">What is HPC-ScaleTest?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#who-should-use-it">Who should use it?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-makes-it-different">What makes it different?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-questions">Usage Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-use-it-on-my-laptop">Can I use it on my laptop?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#do-i-need-to-modify-my-code">Do I need to modify my code?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-schedulers-are-supported">What schedulers are supported?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-test-gpu-applications">Can I test GPU applications?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#does-it-work-with-python-codes">Does it work with Python codes?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-questions">Configuration Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-specify-custom-modules">How do I specify custom modules?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-use-environment-variables">Can I use environment variables?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-scale-only-in-2d">How do I scale only in 2D?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#jobs-fail-immediately">Jobs fail immediately</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results-look-wrong">Results look wrong</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-not-found">Module not found</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#technical-questions">Technical Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-extend-the-framework">Can I extend the framework?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#is-it-open-source">Is it open source?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-contribute">Can I contribute?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-report-bugs">How do I report bugs?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#where-can-i-get-help">Where can I get help?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-questions">Advanced Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-use-custom-input-formats">Can I use custom input formats?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-add-custom-metrics">Can I add custom metrics?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-use-a-different-build-system">Can I use a different build system?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-is-weak-scaling-calculated">How is weak scaling calculated?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-2d-vs-3d-scaling">What is 2D vs 3D scaling?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-i-specify-custom-scaling-patterns">Can I specify custom scaling patterns?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">FAQ</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/faq.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="faq">
+<h1>FAQ<a class="headerlink" href="#faq" title="Link to this heading"></a></h1>
+<p>Frequently Asked Questions about HPC-ScaleTest.</p>
+<section id="general-questions">
+<h2>General Questions<a class="headerlink" href="#general-questions" title="Link to this heading"></a></h2>
+<section id="what-is-hpc-scaletest">
+<h3>What is HPC-ScaleTest?<a class="headerlink" href="#what-is-hpc-scaletest" title="Link to this heading"></a></h3>
+<p>HPC-ScaleTest is a framework for automating scaling benchmarks on HPC systems.</p>
+</section>
+<section id="who-should-use-it">
+<h3>Who should use it?<a class="headerlink" href="#who-should-use-it" title="Link to this heading"></a></h3>
+<p>Researchers, HPC application developers, and system administrators who need to evaluate application scalability.</p>
+</section>
+<section id="what-makes-it-different">
+<h3>What makes it different?<a class="headerlink" href="#what-makes-it-different" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fully automated workflow</p></li>
+<li><p>Works with any HPC application</p></li>
+<li><p>Intelligent parameter detection</p></li>
+<li><p>Multi-backend support</p></li>
+</ul>
+</section>
+</section>
+<section id="usage-questions">
+<h2>Usage Questions<a class="headerlink" href="#usage-questions" title="Link to this heading"></a></h2>
+<section id="can-i-use-it-on-my-laptop">
+<h3>Can I use it on my laptop?<a class="headerlink" href="#can-i-use-it-on-my-laptop" title="Link to this heading"></a></h3>
+<p>Yes! Use <code class="docutils literal notranslate"><span class="pre">scheduler:</span> <span class="pre">local</span></code> for testing.</p>
+</section>
+<section id="do-i-need-to-modify-my-code">
+<h3>Do I need to modify my code?<a class="headerlink" href="#do-i-need-to-modify-my-code" title="Link to this heading"></a></h3>
+<p>No. HPC-ScaleTest works with existing applications.</p>
+</section>
+<section id="what-schedulers-are-supported">
+<h3>What schedulers are supported?<a class="headerlink" href="#what-schedulers-are-supported" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>SLURM</p></li>
+<li><p>PBS/Torque</p></li>
+<li><p>Local execution</p></li>
+</ul>
+</section>
+<section id="can-i-test-gpu-applications">
+<h3>Can I test GPU applications?<a class="headerlink" href="#can-i-test-gpu-applications" title="Link to this heading"></a></h3>
+<p>Yes. Set <code class="docutils literal notranslate"><span class="pre">hardware:</span> <span class="pre">type:</span> <span class="pre">gpu</span></code> in configuration.</p>
+</section>
+<section id="does-it-work-with-python-codes">
+<h3>Does it work with Python codes?<a class="headerlink" href="#does-it-work-with-python-codes" title="Link to this heading"></a></h3>
+<p>Yes. Specify Python command in configuration.</p>
+</section>
+</section>
+<section id="configuration-questions">
+<h2>Configuration Questions<a class="headerlink" href="#configuration-questions" title="Link to this heading"></a></h2>
+<section id="how-do-i-specify-custom-modules">
+<h3>How do I specify custom modules?<a class="headerlink" href="#how-do-i-specify-custom-modules" title="Link to this heading"></a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">modules</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compiler/gcc/11.2.0</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mpi/openmpi/4.1.1</span>
+</pre></div>
+</div>
+</section>
+<section id="can-i-use-environment-variables">
+<h3>Can I use environment variables?<a class="headerlink" href="#can-i-use-environment-variables" title="Link to this heading"></a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">OMP_NUM_THREADS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;4&quot;</span>
+<span class="w">  </span><span class="nt">TMPDIR</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/scratch&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="how-do-i-scale-only-in-2d">
+<h3>How do I scale only in 2D?<a class="headerlink" href="#how-do-i-scale-only-in-2d" title="Link to this heading"></a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">scaling</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">scaling_dimensions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">  </span><span class="c1"># X→Y pattern</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<section id="jobs-fail-immediately">
+<h3>Jobs fail immediately<a class="headerlink" href="#jobs-fail-immediately" title="Link to this heading"></a></h3>
+<p>Check:</p>
+<ol class="arabic simple">
+<li><p>Module loads: <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">list</span></code></p></li>
+<li><p>Executable path</p></li>
+<li><p>Resource limits</p></li>
+<li><p>Input file format</p></li>
+</ol>
+</section>
+<section id="results-look-wrong">
+<h3>Results look wrong<a class="headerlink" href="#results-look-wrong" title="Link to this heading"></a></h3>
+<p>Verify:</p>
+<ol class="arabic simple">
+<li><p>Timing extraction is correct</p></li>
+<li><p>Problem size actually scaled</p></li>
+<li><p>No I/O bottlenecks</p></li>
+</ol>
+</section>
+<section id="module-not-found">
+<h3>Module not found<a class="headerlink" href="#module-not-found" title="Link to this heading"></a></h3>
+<p>Update module names or contact HPC support.</p>
+</section>
+</section>
+<section id="technical-questions">
+<h2>Technical Questions<a class="headerlink" href="#technical-questions" title="Link to this heading"></a></h2>
+<section id="can-i-extend-the-framework">
+<h3>Can I extend the framework?<a class="headerlink" href="#can-i-extend-the-framework" title="Link to this heading"></a></h3>
+<p>Yes! See <a class="reference internal" href="developer_guide.html"><span class="doc">Developer Guide</span></a>.</p>
+</section>
+<section id="is-it-open-source">
+<h3>Is it open source?<a class="headerlink" href="#is-it-open-source" title="Link to this heading"></a></h3>
+<p>Yes, MIT licensed.</p>
+</section>
+<section id="can-i-contribute">
+<h3>Can I contribute?<a class="headerlink" href="#can-i-contribute" title="Link to this heading"></a></h3>
+<p>Yes! See <a class="reference internal" href="contributing.html"><span class="doc">Contributing</span></a>.</p>
+</section>
+<section id="how-do-i-report-bugs">
+<h3>How do I report bugs?<a class="headerlink" href="#how-do-i-report-bugs" title="Link to this heading"></a></h3>
+<p>Open an issue on GitHub.</p>
+</section>
+<section id="where-can-i-get-help">
+<h3>Where can I get help?<a class="headerlink" href="#where-can-i-get-help" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Documentation: This site</p></li>
+<li><p>GitHub Issues</p></li>
+<li><p>Email: <a class="reference external" href="mailto:support&#37;&#52;&#48;example&#46;com">support<span>&#64;</span>example<span>&#46;</span>com</a></p></li>
+</ul>
+</section>
+</section>
+<section id="advanced-questions">
+<h2>Advanced Questions<a class="headerlink" href="#advanced-questions" title="Link to this heading"></a></h2>
+<section id="can-i-use-custom-input-formats">
+<h3>Can I use custom input formats?<a class="headerlink" href="#can-i-use-custom-input-formats" title="Link to this heading"></a></h3>
+<p>Yes. Override <code class="docutils literal notranslate"><span class="pre">get_input_content()</span></code> method.</p>
+</section>
+<section id="can-i-add-custom-metrics">
+<h3>Can I add custom metrics?<a class="headerlink" href="#can-i-add-custom-metrics" title="Link to this heading"></a></h3>
+<p>Yes. Extend <code class="docutils literal notranslate"><span class="pre">ReportGenerator</span></code> class.</p>
+</section>
+<section id="can-i-use-a-different-build-system">
+<h3>Can I use a different build system?<a class="headerlink" href="#can-i-use-a-different-build-system" title="Link to this heading"></a></h3>
+<p>Yes. Implement <code class="docutils literal notranslate"><span class="pre">BuildBackend</span></code> interface.</p>
+</section>
+<section id="how-is-weak-scaling-calculated">
+<h3>How is weak scaling calculated?<a class="headerlink" href="#how-is-weak-scaling-calculated" title="Link to this heading"></a></h3>
+<p>Domain size scales proportionally with process count to maintain constant work per process.</p>
+</section>
+<section id="what-is-2d-vs-3d-scaling">
+<h3>What is 2D vs 3D scaling?<a class="headerlink" href="#what-is-2d-vs-3d-scaling" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>2D: Scales X→Y→X→Y</p></li>
+<li><p>3D: Scales X→Y→Z→X→Y→Z</p></li>
+</ul>
+</section>
+<section id="can-i-specify-custom-scaling-patterns">
+<h3>Can I specify custom scaling patterns?<a class="headerlink" href="#can-i-specify-custom-scaling-patterns" title="Link to this heading"></a></h3>
+<p>Yes. Modify <code class="docutils literal notranslate"><span class="pre">engine/scaling.py</span></code>.</p>
+</section>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="troubleshooting.html"><span class="doc">Troubleshooting</span></a> - Troubleshooting guide</p></li>
+<li><p><a class="reference internal" href="user_guide.html"><span class="doc">User Guide</span></a> - User documentation</p></li>
+<li><p><a class="reference internal" href="examples.html"><span class="doc">Examples</span></a> - Example configurations</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="extending.html" class="btn btn-neutral float-left" title="Extending HPC-ScaleTest" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="troubleshooting.html" class="btn btn-neutral float-right" title="Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

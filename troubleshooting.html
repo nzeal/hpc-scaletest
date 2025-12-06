@@ -1,0 +1,438 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Troubleshooting &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Weak Scaling Algorithm: Complete Technical Reference" href="algorithms/weak_scaling_complete.html" />
+    <link rel="prev" title="FAQ" href="faq.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#common-issues-and-solutions">Common Issues and Solutions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-issues">Installation Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#importerror-no-module-named-yaml">ImportError: No module named ‘yaml’</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#permission-denied">Permission Denied</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#job-submission-issues">Job Submission Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#jobs-fail-immediately">Jobs Fail Immediately</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-not-found">Module Not Found</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#slurm-invalid-account">SLURM: Invalid Account</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#results-issues">Results Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#missing-timing-data">Missing Timing Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#incorrect-efficiency-metrics">Incorrect Efficiency Metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#build-issues">Build Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cmake-configuration-failed">CMake Configuration Failed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#missing-dependencies">Missing Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-issues">Configuration Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#yaml-parsing-error">YAML Parsing Error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#invalid-configuration">Invalid Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-issues">Performance Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#poor-scaling-efficiency">Poor Scaling Efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#slow-job-submission">Slow Job Submission</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#system-specific-issues">System-Specific Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#slurm-job-pending-forever">SLURM: Job Pending Forever</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pbs-job-not-starting">PBS: Job Not Starting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-out-of-memory">Local: Out of Memory</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-more-help">Getting More Help</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#enable-debug-logging">Enable Debug Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#collect-diagnostic-information">Collect Diagnostic Information</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#report-issues">Report Issues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#contact-support">Contact Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Troubleshooting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/troubleshooting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h1>
+<section id="common-issues-and-solutions">
+<h2>Common Issues and Solutions<a class="headerlink" href="#common-issues-and-solutions" title="Link to this heading"></a></h2>
+</section>
+<section id="installation-issues">
+<h2>Installation Issues<a class="headerlink" href="#installation-issues" title="Link to this heading"></a></h2>
+<section id="importerror-no-module-named-yaml">
+<h3>ImportError: No module named ‘yaml’<a class="headerlink" href="#importerror-no-module-named-yaml" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Install PyYAML</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pyyaml
+</pre></div>
+</div>
+</section>
+<section id="permission-denied">
+<h3>Permission Denied<a class="headerlink" href="#permission-denied" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Use –user flag</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</section>
+</section>
+<section id="job-submission-issues">
+<h2>Job Submission Issues<a class="headerlink" href="#job-submission-issues" title="Link to this heading"></a></h2>
+<section id="jobs-fail-immediately">
+<h3>Jobs Fail Immediately<a class="headerlink" href="#jobs-fail-immediately" title="Link to this heading"></a></h3>
+<p><strong>Symptoms</strong>: Jobs exit right after submission</p>
+<p><strong>Diagnosis</strong>:</p>
+<ol class="arabic simple">
+<li><p>Check SLURM output: <code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">slurm-XXXXX.out</span></code></p></li>
+<li><p>Check error log: <code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">slurm-XXXXX.err</span></code></p></li>
+</ol>
+<p><strong>Common Causes</strong>:</p>
+<ul class="simple">
+<li><p>Module load failures</p></li>
+<li><p>Incorrect executable path</p></li>
+<li><p>Missing dependencies</p></li>
+<li><p>Insufficient resources</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test module loads</span>
+module<span class="w"> </span>purge
+module<span class="w"> </span>load<span class="w"> </span>gcc/11.2.0<span class="w"> </span>openmpi/4.1.1
+
+<span class="c1"># Test executable</span>
+./app<span class="w"> </span>--help
+
+<span class="c1"># Check resource limits</span>
+<span class="nb">ulimit</span><span class="w"> </span>-a
+</pre></div>
+</div>
+</section>
+<section id="module-not-found">
+<h3>Module Not Found<a class="headerlink" href="#module-not-found" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Update module names</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module<span class="w"> </span>avail<span class="w">  </span><span class="c1"># List available modules</span>
+module<span class="w"> </span>spider<span class="w"> </span>gcc<span class="w">  </span><span class="c1"># Search for modules</span>
+</pre></div>
+</div>
+</section>
+<section id="slurm-invalid-account">
+<h3>SLURM: Invalid Account<a class="headerlink" href="#slurm-invalid-account" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Check valid accounts</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sacctmgr<span class="w"> </span>show<span class="w"> </span>assoc<span class="w"> </span>where<span class="w"> </span><span class="nv">user</span><span class="o">=</span><span class="nv">$USER</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="results-issues">
+<h2>Results Issues<a class="headerlink" href="#results-issues" title="Link to this heading"></a></h2>
+<section id="missing-timing-data">
+<h3>Missing Timing Data<a class="headerlink" href="#missing-timing-data" title="Link to this heading"></a></h3>
+<p><strong>Symptoms</strong>: Report shows “N/A” for times</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Verify output files exist</p></li>
+<li><p>Check timing format in output</p></li>
+<li><p>Update timing parser if needed</p></li>
+</ol>
+</section>
+<section id="incorrect-efficiency-metrics">
+<h3>Incorrect Efficiency Metrics<a class="headerlink" href="#incorrect-efficiency-metrics" title="Link to this heading"></a></h3>
+<p><strong>Symptoms</strong>: Efficiency &gt; 100% or negative</p>
+<p><strong>Causes</strong>:</p>
+<ul class="simple">
+<li><p>Timing variation</p></li>
+<li><p>Wrong baseline</p></li>
+<li><p>Incorrect parsing</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Run multiple trials</p></li>
+<li><p>Verify baseline configuration</p></li>
+<li><p>Check timing extraction logic</p></li>
+</ol>
+</section>
+</section>
+<section id="build-issues">
+<h2>Build Issues<a class="headerlink" href="#build-issues" title="Link to this heading"></a></h2>
+<section id="cmake-configuration-failed">
+<h3>CMake Configuration Failed<a class="headerlink" href="#cmake-configuration-failed" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Specify compilers</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">build</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">flags</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">CMAKE_CXX_COMPILER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mpicxx</span>
+<span class="w">    </span><span class="nt">CMAKE_C_COMPILER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mpicc</span>
+</pre></div>
+</div>
+</section>
+<section id="missing-dependencies">
+<h3>Missing Dependencies<a class="headerlink" href="#missing-dependencies" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Load required modules</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">modules</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compiler/gcc/11.2.0</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">libraries/hdf5/1.12.0</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration-issues">
+<h2>Configuration Issues<a class="headerlink" href="#configuration-issues" title="Link to this heading"></a></h2>
+<section id="yaml-parsing-error">
+<h3>YAML Parsing Error<a class="headerlink" href="#yaml-parsing-error" title="Link to this heading"></a></h3>
+<p><strong>Symptoms</strong>: “YAML parsing failed”</p>
+<p><strong>Solution</strong>: Check YAML syntax</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import yaml; yaml.safe_load(open(&#39;run.yaml&#39;))&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="invalid-configuration">
+<h3>Invalid Configuration<a class="headerlink" href="#invalid-configuration" title="Link to this heading"></a></h3>
+<p><strong>Symptoms</strong>: “Configuration validation failed”</p>
+<p><strong>Solution</strong>: Run validator</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>validate_scaling.py<span class="w"> </span>--config<span class="w"> </span>run.yaml
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-issues">
+<h2>Performance Issues<a class="headerlink" href="#performance-issues" title="Link to this heading"></a></h2>
+<section id="poor-scaling-efficiency">
+<h3>Poor Scaling Efficiency<a class="headerlink" href="#poor-scaling-efficiency" title="Link to this heading"></a></h3>
+<p><strong>Possible Causes</strong>:</p>
+<ul class="simple">
+<li><p>Communication overhead</p></li>
+<li><p>Load imbalance</p></li>
+<li><p>I/O contention</p></li>
+<li><p>Memory bandwidth</p></li>
+</ul>
+<p><strong>Diagnosis Tools</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Profile application</span>
+module<span class="w"> </span>load<span class="w"> </span>vtune
+srun<span class="w"> </span>--profile<span class="o">=</span>vtune<span class="w"> </span>./app
+</pre></div>
+</div>
+</section>
+<section id="slow-job-submission">
+<h3>Slow Job Submission<a class="headerlink" href="#slow-job-submission" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Submit in batches</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Limit concurrent submissions</span>
+<span class="nt">max_concurrent_jobs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="system-specific-issues">
+<h2>System-Specific Issues<a class="headerlink" href="#system-specific-issues" title="Link to this heading"></a></h2>
+<section id="slurm-job-pending-forever">
+<h3>SLURM: Job Pending Forever<a class="headerlink" href="#slurm-job-pending-forever" title="Link to this heading"></a></h3>
+<p><strong>Check</strong>: Queue status and limits</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>squeue<span class="w"> </span>-u<span class="w"> </span><span class="nv">$USER</span>
+scontrol<span class="w"> </span>show<span class="w"> </span>partition
+sacctmgr<span class="w"> </span>show<span class="w"> </span>qos
+</pre></div>
+</div>
+</section>
+<section id="pbs-job-not-starting">
+<h3>PBS: Job Not Starting<a class="headerlink" href="#pbs-job-not-starting" title="Link to this heading"></a></h3>
+<p><strong>Check</strong>: PBS status</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qstat<span class="w"> </span>-f<span class="w"> </span><span class="nv">$JOBID</span>
+qstat<span class="w"> </span>-Q
+</pre></div>
+</div>
+</section>
+<section id="local-out-of-memory">
+<h3>Local: Out of Memory<a class="headerlink" href="#local-out-of-memory" title="Link to this heading"></a></h3>
+<p><strong>Solution</strong>: Reduce problem size or process count</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">hardware</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">procs_per_node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">  </span><span class="c1"># Reduce</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="getting-more-help">
+<h2>Getting More Help<a class="headerlink" href="#getting-more-help" title="Link to this heading"></a></h2>
+<section id="enable-debug-logging">
+<h3>Enable Debug Logging<a class="headerlink" href="#enable-debug-logging" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="collect-diagnostic-information">
+<h3>Collect Diagnostic Information<a class="headerlink" href="#collect-diagnostic-information" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># System info</span>
+uname<span class="w"> </span>-a
+python<span class="w"> </span>--version
+module<span class="w"> </span>list
+
+<span class="c1"># Configuration</span>
+cat<span class="w"> </span>run.yaml
+
+<span class="c1"># Error logs</span>
+cat<span class="w"> </span>slurm-*.err
+cat<span class="w"> </span>output/logs/error.log
+</pre></div>
+</div>
+</section>
+<section id="report-issues">
+<h3>Report Issues<a class="headerlink" href="#report-issues" title="Link to this heading"></a></h3>
+<p>When reporting issues, include:</p>
+<ol class="arabic simple">
+<li><p>HPC-ScaleTest version</p></li>
+<li><p>System information</p></li>
+<li><p>Configuration files</p></li>
+<li><p>Error messages</p></li>
+<li><p>Steps to reproduce</p></li>
+</ol>
+</section>
+<section id="contact-support">
+<h3>Contact Support<a class="headerlink" href="#contact-support" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>GitHub Issues: <a class="reference external" href="https://github.com/user/hpc-scaletest/issues">https://github.com/user/hpc-scaletest/issues</a></p></li>
+<li><p>Email: <a class="reference external" href="mailto:support&#37;&#52;&#48;example&#46;com">support<span>&#64;</span>example<span>&#46;</span>com</a></p></li>
+<li><p>Documentation: <a class="reference external" href="https://hpc-scaletest.readthedocs.io">https://hpc-scaletest.readthedocs.io</a></p></li>
+</ul>
+</section>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="faq.html"><span class="doc">FAQ</span></a> - Frequently asked questions</p></li>
+<li><p><a class="reference internal" href="user_guide.html"><span class="doc">User Guide</span></a> - User documentation</p></li>
+<li><p><a class="reference internal" href="configuration.html"><span class="doc">Configuration</span></a> - Configuration options</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="faq.html" class="btn btn-neutral float-left" title="FAQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="algorithms/weak_scaling_complete.html" class="btn btn-neutral float-right" title="Weak Scaling Algorithm: Complete Technical Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

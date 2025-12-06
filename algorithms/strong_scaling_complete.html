@@ -1,0 +1,1579 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strong Scaling Algorithm: Complete Technical Reference &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]]}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MPI Topology Calculation: Complete Technical Reference" href="mpi_topology_complete.html" />
+    <link rel="prev" title="Weak Scaling Algorithm: Complete Technical Reference" href="weak_scaling_complete.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Strong Scaling Algorithm: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction-for-everyone">Introduction for Everyone</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-strong-scaling">What is Strong Scaling?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#real-world-example">Real-World Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#why-is-strong-scaling-important">Why is Strong Scaling Important?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#strong-scaling-vs-weak-scaling">Strong Scaling vs Weak Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conceptual-foundation">Conceptual Foundation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-computers-share-work">How Computers Share Work</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-big-challenge-amdahl-s-law">The Big Challenge: Amdahl’s Law</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#efficiency-metrics-explained">Efficiency Metrics Explained</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mathematical-foundations">Mathematical Foundations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#problem-definition">Problem Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mathematical-formulation">Mathematical Formulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mpi-topology-calculation">MPI Topology Calculation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#algorithm-design">Algorithm Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mpi-topology-calculation-algorithm">MPI Topology Calculation Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#divisibility-verification">Divisibility Verification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-implementation">Complete Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#worked-example">Worked Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#complete-strong-scaling-study">Complete Strong Scaling Study</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#baseline-configuration">Baseline Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-1-16-processes">Configuration 1: 16 Processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-2-32-processes">Configuration 2: 32 Processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-3-64-processes">Configuration 3: 64 Processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-4-128-processes">Configuration 4: 128 Processes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#summary-table">Summary Table</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-analysis">Performance Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#algorithmic-complexity">Algorithmic Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#space-complexity">Space Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#communication-overhead">Communication Overhead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#efficiency-predictions">Efficiency Predictions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-usage">Practical Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#command-line-interface">Command-Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#python-api-usage">Python API Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-usage">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-and-validation">Testing and Validation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#verification-checklist">Verification Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#common-issues-and-solutions">Common Issues and Solutions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#issue-1-grid-not-divisible">Issue 1: Grid Not Divisible</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issue-2-poor-speedup">Issue 2: Poor Speedup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#issue-3-memory-limitations">Issue 3: Memory Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#choosing-process-counts">Choosing Process Counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#designing-grid-sizes">Designing Grid Sizes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-studies-efficiently">Running Studies Efficiently</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#key-takeaways">Key Takeaways</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mathematical-appendix">Mathematical Appendix</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#speedup-formula-derivation">Speedup Formula Derivation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#efficiency-formula">Efficiency Formula</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work-distribution-formula">Work Distribution Formula</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Strong Scaling Algorithm: Complete Technical Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/algorithms/strong_scaling_complete.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="strong-scaling-algorithm-complete-technical-reference">
+<h1>Strong Scaling Algorithm: Complete Technical Reference<a class="headerlink" href="#strong-scaling-algorithm-complete-technical-reference" title="Link to this heading"></a></h1>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#introduction-for-everyone" id="id1">Introduction for Everyone</a></p>
+<ul>
+<li><p><a class="reference internal" href="#what-is-strong-scaling" id="id2">What is Strong Scaling?</a></p>
+<ul>
+<li><p><a class="reference internal" href="#real-world-example" id="id3">Real-World Example</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#why-is-strong-scaling-important" id="id4">Why is Strong Scaling Important?</a></p></li>
+<li><p><a class="reference internal" href="#strong-scaling-vs-weak-scaling" id="id5">Strong Scaling vs Weak Scaling</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#conceptual-foundation" id="id6">Conceptual Foundation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-computers-share-work" id="id7">How Computers Share Work</a></p></li>
+<li><p><a class="reference internal" href="#the-big-challenge-amdahl-s-law" id="id8">The Big Challenge: Amdahl’s Law</a></p></li>
+<li><p><a class="reference internal" href="#efficiency-metrics-explained" id="id9">Efficiency Metrics Explained</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#mathematical-foundations" id="id10">Mathematical Foundations</a></p>
+<ul>
+<li><p><a class="reference internal" href="#problem-definition" id="id11">Problem Definition</a></p></li>
+<li><p><a class="reference internal" href="#mathematical-formulation" id="id12">Mathematical Formulation</a></p></li>
+<li><p><a class="reference internal" href="#mpi-topology-calculation" id="id13">MPI Topology Calculation</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#algorithm-design" id="id14">Algorithm Design</a></p>
+<ul>
+<li><p><a class="reference internal" href="#overview" id="id15">Overview</a></p></li>
+<li><p><a class="reference internal" href="#mpi-topology-calculation-algorithm" id="id16">MPI Topology Calculation Algorithm</a></p></li>
+<li><p><a class="reference internal" href="#divisibility-verification" id="id17">Divisibility Verification</a></p></li>
+<li><p><a class="reference internal" href="#complete-implementation" id="id18">Complete Implementation</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#worked-example" id="id19">Worked Example</a></p>
+<ul>
+<li><p><a class="reference internal" href="#complete-strong-scaling-study" id="id20">Complete Strong Scaling Study</a></p>
+<ul>
+<li><p><a class="reference internal" href="#baseline-configuration" id="id21">Baseline Configuration</a></p></li>
+<li><p><a class="reference internal" href="#configuration-1-16-processes" id="id22">Configuration 1: 16 Processes</a></p></li>
+<li><p><a class="reference internal" href="#configuration-2-32-processes" id="id23">Configuration 2: 32 Processes</a></p></li>
+<li><p><a class="reference internal" href="#configuration-3-64-processes" id="id24">Configuration 3: 64 Processes</a></p></li>
+<li><p><a class="reference internal" href="#configuration-4-128-processes" id="id25">Configuration 4: 128 Processes</a></p></li>
+<li><p><a class="reference internal" href="#summary-table" id="id26">Summary Table</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#performance-analysis" id="id27">Performance Analysis</a></p>
+<ul>
+<li><p><a class="reference internal" href="#algorithmic-complexity" id="id28">Algorithmic Complexity</a></p></li>
+<li><p><a class="reference internal" href="#space-complexity" id="id29">Space Complexity</a></p></li>
+<li><p><a class="reference internal" href="#communication-overhead" id="id30">Communication Overhead</a></p></li>
+<li><p><a class="reference internal" href="#efficiency-predictions" id="id31">Efficiency Predictions</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#practical-usage" id="id32">Practical Usage</a></p>
+<ul>
+<li><p><a class="reference internal" href="#command-line-interface" id="id33">Command-Line Interface</a></p></li>
+<li><p><a class="reference internal" href="#python-api-usage" id="id34">Python API Usage</a></p></li>
+<li><p><a class="reference internal" href="#advanced-usage" id="id35">Advanced Usage</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#testing-and-validation" id="id36">Testing and Validation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#unit-tests" id="id37">Unit Tests</a></p></li>
+<li><p><a class="reference internal" href="#integration-tests" id="id38">Integration Tests</a></p></li>
+<li><p><a class="reference internal" href="#verification-checklist" id="id39">Verification Checklist</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#common-issues-and-solutions" id="id40">Common Issues and Solutions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#issue-1-grid-not-divisible" id="id41">Issue 1: Grid Not Divisible</a></p></li>
+<li><p><a class="reference internal" href="#issue-2-poor-speedup" id="id42">Issue 2: Poor Speedup</a></p></li>
+<li><p><a class="reference internal" href="#issue-3-memory-limitations" id="id43">Issue 3: Memory Limitations</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#best-practices" id="id44">Best Practices</a></p>
+<ul>
+<li><p><a class="reference internal" href="#choosing-process-counts" id="id45">Choosing Process Counts</a></p></li>
+<li><p><a class="reference internal" href="#designing-grid-sizes" id="id46">Designing Grid Sizes</a></p></li>
+<li><p><a class="reference internal" href="#running-studies-efficiently" id="id47">Running Studies Efficiently</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#summary" id="id48">Summary</a></p>
+<ul>
+<li><p><a class="reference internal" href="#key-takeaways" id="id49">Key Takeaways</a></p></li>
+<li><p><a class="reference internal" href="#further-reading" id="id50">Further Reading</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#mathematical-appendix" id="id51">Mathematical Appendix</a></p>
+<ul>
+<li><p><a class="reference internal" href="#speedup-formula-derivation" id="id52">Speedup Formula Derivation</a></p></li>
+<li><p><a class="reference internal" href="#efficiency-formula" id="id53">Efficiency Formula</a></p></li>
+<li><p><a class="reference internal" href="#work-distribution-formula" id="id54">Work Distribution Formula</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction-for-everyone">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Introduction for Everyone</a><a class="headerlink" href="#introduction-for-everyone" title="Link to this heading"></a></h2>
+<section id="what-is-strong-scaling">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">What is Strong Scaling?</a><a class="headerlink" href="#what-is-strong-scaling" title="Link to this heading"></a></h3>
+<p><strong>Strong scaling</strong> is about <strong>making your program run faster</strong> by using more computers.</p>
+<p>Think of it like this:</p>
+<p>Imagine you need to paint a large house:
+- <strong>1 painter</strong>: Takes 10 hours
+- <strong>2 painters</strong>: Takes 5 hours (twice as fast!)
+- <strong>4 painters</strong>: Takes 2.5 hours (four times as fast!)</p>
+<p>The <strong>size of the house doesn’t change</strong> - you just use more painters to finish faster.</p>
+<p>That’s strong scaling: <strong>Same problem size, more workers = faster completion!</strong></p>
+<section id="real-world-example">
+<h4><a class="toc-backref" href="#id3" role="doc-backlink">Real-World Example</a><a class="headerlink" href="#real-world-example" title="Link to this heading"></a></h4>
+<p><strong>Scenario</strong>: You have a climate simulation with 1 million grid points.</p>
+<ul class="simple">
+<li><p>On <strong>1 computer</strong>: Takes 24 hours</p></li>
+<li><p>On <strong>2 computers</strong>: Takes 12 hours (ideally)</p></li>
+<li><p>On <strong>4 computers</strong>: Takes 6 hours (ideally)</p></li>
+<li><p>On <strong>8 computers</strong>: Takes 3 hours (ideally)</p></li>
+</ul>
+<p>The simulation size (1 million points) <strong>stays the same</strong>. You’re just using more
+computers to finish faster.</p>
+<p>HPC-ScaleTest <strong>automatically calculates</strong> how to split this work across any number
+of computers!</p>
+</section>
+</section>
+<section id="why-is-strong-scaling-important">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Why is Strong Scaling Important?</a><a class="headerlink" href="#why-is-strong-scaling-important" title="Link to this heading"></a></h3>
+<p><strong>Time is Money</strong></p>
+<p>If your simulation takes 24 hours on 1 computer:
+- Using 8 computers → Finish in 3 hours
+- Get your results <strong>8 times faster</strong>!
+- Run more experiments in less time</p>
+<p><strong>Real Research Examples</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Weather Forecasting</strong>: Must finish before the weather arrives!</p></li>
+<li><p><strong>Drug Discovery</strong>: Test thousands of molecules quickly</p></li>
+<li><p><strong>Crash Simulations</strong>: Fast results for design iterations</p></li>
+<li><p><strong>Genomics</strong>: Process huge datasets in reasonable time</p></li>
+</ol>
+</section>
+<section id="strong-scaling-vs-weak-scaling">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Strong Scaling vs Weak Scaling</a><a class="headerlink" href="#strong-scaling-vs-weak-scaling" title="Link to this heading"></a></h3>
+<p>These are the two main ways to use more computers:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>STRONG SCALING (this document):
+================================
+Problem size: FIXED
+Goal: Make it FASTER
+
+Example:
+- 1 computer: 1M grid points, 10 hours
+- 2 computers: 1M grid points, 5 hours  ← Same problem, half the time
+- 4 computers: 1M grid points, 2.5 hours
+
+
+WEAK SCALING (other document):
+==============================
+Problem size: GROWS with computers
+Goal: Keep time CONSTANT
+
+Example:
+- 1 computer: 1M grid points, 10 hours
+- 2 computers: 2M grid points, 10 hours  ← Bigger problem, same time
+- 4 computers: 4M grid points, 10 hours
+</pre></div>
+</div>
+<p><strong>When to use strong scaling</strong>: You have a fixed problem and want faster results.</p>
+<p><strong>When to use weak scaling</strong>: You want to solve bigger problems without waiting longer.</p>
+</section>
+</section>
+<section id="conceptual-foundation">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Conceptual Foundation</a><a class="headerlink" href="#conceptual-foundation" title="Link to this heading"></a></h2>
+<section id="how-computers-share-work">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">How Computers Share Work</a><a class="headerlink" href="#how-computers-share-work" title="Link to this heading"></a></h3>
+<p>When you run a program on multiple computers (called “parallel computing”),
+the computers need to:</p>
+<ol class="arabic simple">
+<li><p><strong>Divide the work</strong> - Split the problem into pieces</p></li>
+<li><p><strong>Work independently</strong> - Each computer handles its piece</p></li>
+<li><p><strong>Communicate</strong> - Share results with each other</p></li>
+<li><p><strong>Combine</strong> - Put the final answer together</p></li>
+</ol>
+</section>
+<section id="the-big-challenge-amdahl-s-law">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">The Big Challenge: Amdahl’s Law</a><a class="headerlink" href="#the-big-challenge-amdahl-s-law" title="Link to this heading"></a></h3>
+<p><strong>Not everything can be parallelized!</strong></p>
+<p>Every program has:
+- <strong>Parallel parts</strong>: Can be split across computers (e.g., calculating grid points)
+- <strong>Serial parts</strong>: Must be done by one computer (e.g., reading the input file)</p>
+<p><strong>Amdahl’s Law</strong> (explained simply):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>If 90% of your program can be parallelized:
+
+- 1 computer:   100 seconds total
+- 2 computers:  55 seconds  (10 serial + 45 parallel)
+- 4 computers:  32.5 seconds (10 serial + 22.5 parallel)
+- 8 computers:  21.25 seconds (10 serial + 11.25 parallel)
+- ∞ computers:  10 seconds (serial part is the limit!)
+</pre></div>
+</div>
+<p><strong>Key insight</strong>: The serial part (10%) limits how much speedup you can get!</p>
+</section>
+<section id="efficiency-metrics-explained">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Efficiency Metrics Explained</a><a class="headerlink" href="#efficiency-metrics-explained" title="Link to this heading"></a></h3>
+<p>When we use more computers, we measure how well it’s working:</p>
+<p><strong>Speedup</strong>: How much faster did we get?</p>
+<div class="math notranslate nohighlight">
+\[\text{Speedup} = \frac{\text{Time on 1 computer}}{\text{Time on N computers}}\]</div>
+<p><strong>Example</strong>:
+- 1 computer: 100 seconds
+- 4 computers: 30 seconds
+- Speedup = 100 / 30 = 3.33×</p>
+<p><strong>Ideal</strong> would be 4× (4 computers = 4× faster)
+<strong>Actual</strong> is 3.33× (pretty good!)</p>
+<p><strong>Efficiency</strong>: How effectively are we using the computers?</p>
+<div class="math notranslate nohighlight">
+\[\text{Efficiency} = \frac{\text{Speedup}}{\text{Number of computers}} \times 100\%\]</div>
+<p><strong>Example</strong>:
+- Speedup: 3.33×
+- Computers: 4
+- Efficiency = 3.33 / 4 = 83.25%</p>
+<p><strong>Interpretation</strong>:
+- 100% = Perfect! (Each computer contributes fully)
+- 80%+ = Good (minor overhead)
+- 50-80% = Acceptable (some inefficiency)
+- &lt;50% = Poor (too much overhead)</p>
+</section>
+</section>
+<section id="mathematical-foundations">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Mathematical Foundations</a><a class="headerlink" href="#mathematical-foundations" title="Link to this heading"></a></h2>
+<section id="problem-definition">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Problem Definition</a><a class="headerlink" href="#problem-definition" title="Link to this heading"></a></h3>
+<p>Given:
+- A computational problem with <strong>fixed size</strong>
+- A baseline configuration with <span class="math notranslate nohighlight">\(P_0\)</span> processes
+- A target configuration with <span class="math notranslate nohighlight">\(P\)</span> processes where <span class="math notranslate nohighlight">\(P &gt; P_0\)</span></p>
+<p>Goal:
+Calculate MPI topology (process grid) that maintains:</p>
+<ol class="arabic simple">
+<li><p><strong>Fixed problem size</strong> (grid dimensions don’t change)</p></li>
+<li><p><strong>Proper load distribution</strong> (work evenly divided)</p></li>
+<li><p><strong>Optimal communication</strong> (minimize processor idle time)</p></li>
+</ol>
+</section>
+<section id="mathematical-formulation">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Mathematical Formulation</a><a class="headerlink" href="#mathematical-formulation" title="Link to this heading"></a></h3>
+<p>For a 3D problem with baseline grid <span class="math notranslate nohighlight">\((n_x, n_y, n_z)\)</span> on <span class="math notranslate nohighlight">\(P_0\)</span> processes:</p>
+<p><strong>Baseline Configuration</strong>:</p>
+<div class="math notranslate nohighlight">
+\[P_0 = p_x^0 \times p_y^0 \times p_z^0\]</div>
+<p>where <span class="math notranslate nohighlight">\((p_x^0, p_y^0, p_z^0)\)</span> is the baseline MPI topology.</p>
+<p><strong>Target Configuration</strong>:</p>
+<div class="math notranslate nohighlight">
+\[P = p_x \times p_y \times p_z\]</div>
+<p><strong>Constraint</strong>: Grid dimensions remain constant:</p>
+<div class="math notranslate nohighlight">
+\[n_x, n_y, n_z \text{ are fixed}\]</div>
+<p><strong>Work per Process</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}W_{\text{baseline}} &amp;= \frac{n_x \times n_y \times n_z}{P_0} \\
+W_{\text{target}} &amp;= \frac{n_x \times n_y \times n_z}{P}\end{split}\]</div>
+<p><strong>Key Relationship</strong>:</p>
+<div class="math notranslate nohighlight">
+\[W_{\text{target}} = W_{\text{baseline}} \times \frac{P_0}{P}\]</div>
+<p>As <span class="math notranslate nohighlight">\(P\)</span> increases, work per process decreases proportionally (ideal strong scaling).</p>
+</section>
+<section id="mpi-topology-calculation">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">MPI Topology Calculation</a><a class="headerlink" href="#mpi-topology-calculation" title="Link to this heading"></a></h3>
+<p><strong>Goal</strong>: Find <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span> such that:</p>
+<ol class="arabic simple">
+<li><p><span class="math notranslate nohighlight">\(p_x \times p_y \times p_z = P\)</span> (correct total)</p></li>
+<li><p>Approximately cubic ratio (optimal communication)</p></li>
+<li><p>Divisibility: <span class="math notranslate nohighlight">\(n_x \% p_x = 0\)</span>, <span class="math notranslate nohighlight">\(n_y \% p_y = 0\)</span>, <span class="math notranslate nohighlight">\(n_z \% p_z = 0\)</span></p></li>
+</ol>
+<p><strong>Algorithm</strong>: Prime factorization with balanced distribution</p>
+<div class="math notranslate nohighlight">
+\[P = 2^a \times 3^b \times 5^c \times \ldots\]</div>
+<p>Distribute prime factors to <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span> maintaining:</p>
+<div class="math notranslate nohighlight">
+\[\frac{p_x}{p_y} \approx \frac{p_y}{p_z} \approx 1\]</div>
+</section>
+</section>
+<section id="algorithm-design">
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Algorithm Design</a><a class="headerlink" href="#algorithm-design" title="Link to this heading"></a></h2>
+<section id="overview">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>HPC-ScaleTest’s strong scaling algorithm has three main steps:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>INPUT:
+- Baseline configuration (e.g., 8 processes)
+- Target process counts (e.g., 16, 32, 64, 128 processes)
+- Grid dimensions (e.g., 128 × 128 × 128)
+
+ALGORITHM:
+
+Step 1: Calculate MPI Topology
+        For each target process count, find best (px, py, pz)
+        that multiplies to give the target
+
+Step 2: Verify Divisibility
+        Ensure grid can be evenly divided
+        (e.g., 128 cells ÷ 4 processes = 32 cells each)
+
+Step 3: Generate Configuration
+        Create input files with correct settings
+
+OUTPUT:
+- Configuration files for each process count
+- Job scripts to run experiments
+- Verification that work is evenly distributed
+</pre></div>
+</div>
+</section>
+<section id="mpi-topology-calculation-algorithm">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">MPI Topology Calculation Algorithm</a><a class="headerlink" href="#mpi-topology-calculation-algorithm" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>: Given <span class="math notranslate nohighlight">\(P\)</span> processes, find <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span> where <span class="math notranslate nohighlight">\(p_x \times p_y \times p_z = P\)</span></p>
+<p><strong>Method</strong>: Prime Factorization with Balanced Distribution</p>
+<p><strong>Step 1: Factor the number</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>def factorize(n):
+    &quot;&quot;&quot;Find all prime factors of n.
+
+    Example: 24 = 2 × 2 × 2 × 3
+    Returns: [2, 2, 2, 3]
+    &quot;&quot;&quot;
+    factors = []
+    d = 2
+    while d * d &lt;= n:
+        while n % d == 0:
+            factors.append(d)
+            n //= d
+        d += 1
+    if n &gt; 1:
+        factors.append(n)
+    return factors
+</pre></div>
+</div>
+<p><strong>Example</strong>: <span class="math notranslate nohighlight">\(P = 24\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>24 = 2 × 2 × 2 × 3
+factors = [2, 2, 2, 3]
+</pre></div>
+</div>
+<p><strong>Step 2: Distribute factors to create balanced topology</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>def calculate_mpi_topology(num_procs):
+    &quot;&quot;&quot;Calculate balanced 3D MPI topology.
+
+    Strategy: Distribute prime factors to maintain cubic ratio.
+    Goal: px ≈ py ≈ pz for optimal communication
+    &quot;&quot;&quot;
+    if num_procs == 1:
+        return (1, 1, 1)
+
+    # Get prime factors
+    factors = factorize(num_procs)
+
+    # Start with (1, 1, 1)
+    px, py, pz = 1, 1, 1
+
+    # Distribute factors to maintain balance
+    for factor in sorted(factors, reverse=True):
+        # Find smallest dimension
+        if px &lt;= py and px &lt;= pz:
+            px *= factor
+        elif py &lt;= pz:
+            py *= factor
+        else:
+            pz *= factor
+
+    return (px, py, pz)
+</pre></div>
+</div>
+<p><strong>Example</strong>: <span class="math notranslate nohighlight">\(P = 24\)</span>, factors = [3, 2, 2, 2]</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Start: (1, 1, 1)
+
+Factor 3 (largest):
+- Smallest is px=1, so px = 1 × 3 = 3
+- Result: (3, 1, 1)
+
+Factor 2:
+- Smallest is py=1, so py = 1 × 2 = 2
+- Result: (3, 2, 1)
+
+Factor 2:
+- Smallest is pz=1, so pz = 1 × 2 = 2
+- Result: (3, 2, 2)
+
+Factor 2:
+- Smallest is py=2, so py = 2 × 2 = 4
+- Result: (3, 4, 2)
+
+Final: (3, 4, 2)
+Verify: 3 × 4 × 2 = 24 ✓
+</pre></div>
+</div>
+</section>
+<section id="divisibility-verification">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Divisibility Verification</a><a class="headerlink" href="#divisibility-verification" title="Link to this heading"></a></h3>
+<p><strong>Critical Check</strong>: Can the grid be evenly divided?</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">verify_divisibility</span><span class="p">(</span><span class="n">grid_dims</span><span class="p">,</span> <span class="n">mpi_topo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify grid can be evenly divided among processes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        grid_dims: (nx, ny, nz) - Total grid size</span>
+<span class="sd">        mpi_topo: (px, py, pz) - Process grid</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if evenly divisible, False otherwise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="n">grid_dims</span>
+    <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">mpi_topo</span>
+
+    <span class="c1"># Check each dimension</span>
+    <span class="k">if</span> <span class="n">nx</span> <span class="o">%</span> <span class="n">px</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: </span><span class="si">{</span><span class="n">nx</span><span class="si">}</span><span class="s2"> cells not divisible by </span><span class="si">{</span><span class="n">px</span><span class="si">}</span><span class="s2"> processes in X&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">ny</span> <span class="o">%</span> <span class="n">py</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: </span><span class="si">{</span><span class="n">ny</span><span class="si">}</span><span class="s2"> cells not divisible by </span><span class="si">{</span><span class="n">py</span><span class="si">}</span><span class="s2"> processes in Y&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">nz</span> <span class="o">%</span> <span class="n">pz</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: </span><span class="si">{</span><span class="n">nz</span><span class="si">}</span><span class="s2"> cells not divisible by </span><span class="si">{</span><span class="n">pz</span><span class="si">}</span><span class="s2"> processes in Z&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p><strong>Example</strong>: Grid = (128, 128, 128), MPI = (3, 4, 2)</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>X dimension: 128 ÷ 3 = 42.666... ✗ NOT evenly divisible!
+Y dimension: 128 ÷ 4 = 32 ✓
+Z dimension: 128 ÷ 2 = 64 ✓
+
+Result: FAIL - Need different topology or grid size
+</pre></div>
+</div>
+</section>
+<section id="complete-implementation">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Complete Implementation</a><a class="headerlink" href="#complete-implementation" title="Link to this heading"></a></h3>
+<p>Here’s the complete algorithm from HPC-ScaleTest:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From engine/scaling.py</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StrongScaling</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate strong scaling configurations.</span>
+
+<span class="sd">    Strong scaling: Fixed problem size, increasing processes.</span>
+<span class="sd">    Goal: Measure speedup as we add more computing resources.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baseline_config</span><span class="p">,</span> <span class="n">target_process_counts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize strong scaling generator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            baseline_config: Configuration with baseline process count</span>
+<span class="sd">            target_process_counts: List of target process counts to test</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseline</span> <span class="o">=</span> <span class="n">baseline_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="n">target_process_counts</span>
+
+        <span class="c1"># Extract baseline information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseline_procs</span> <span class="o">=</span> <span class="n">baseline_config</span><span class="o">.</span><span class="n">num_processes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseline_mpi</span> <span class="o">=</span> <span class="n">baseline_config</span><span class="o">.</span><span class="n">mpi_topology</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid_dims</span> <span class="o">=</span> <span class="n">baseline_config</span><span class="o">.</span><span class="n">grid_dimensions</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_configurations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate all strong scaling configurations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of configurations, one for each target process count</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">configs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">target_procs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">:</span>
+            <span class="c1"># Calculate MPI topology for this process count</span>
+            <span class="n">mpi_topo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_mpi_topology</span><span class="p">(</span><span class="n">target_procs</span><span class="p">)</span>
+
+            <span class="c1"># Verify divisibility</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_divisibility</span><span class="p">(</span><span class="n">mpi_topo</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Process count </span><span class="si">{</span><span class="n">target_procs</span><span class="si">}</span><span class="s2"> incompatible with grid&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Create configuration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_config</span><span class="p">(</span><span class="n">target_procs</span><span class="p">,</span> <span class="n">mpi_topo</span><span class="p">)</span>
+            <span class="n">configs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">configs</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_mpi_topology</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_procs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate balanced MPI topology.</span>
+
+<span class="sd">        Uses prime factorization with balanced distribution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">num_procs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Prime factorization</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factorize</span><span class="p">(</span><span class="n">num_procs</span><span class="p">)</span>
+
+        <span class="c1"># Distribute factors</span>
+        <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">factors</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">px</span> <span class="o">&lt;=</span> <span class="n">py</span> <span class="ow">and</span> <span class="n">px</span> <span class="o">&lt;=</span> <span class="n">pz</span><span class="p">:</span>
+                <span class="n">px</span> <span class="o">*=</span> <span class="n">factor</span>
+            <span class="k">elif</span> <span class="n">py</span> <span class="o">&lt;=</span> <span class="n">pz</span><span class="p">:</span>
+                <span class="n">py</span> <span class="o">*=</span> <span class="n">factor</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pz</span> <span class="o">*=</span> <span class="n">factor</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_factorize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find all prime factors.&quot;&quot;&quot;</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">while</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
+            <span class="k">while</span> <span class="n">n</span> <span class="o">%</span> <span class="n">d</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                <span class="n">n</span> <span class="o">//=</span> <span class="n">d</span>
+            <span class="n">d</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">factors</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_verify_divisibility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpi_topo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify grid can be evenly divided.&quot;&quot;&quot;</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_dims</span>
+        <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">mpi_topo</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">nx</span> <span class="o">%</span> <span class="n">px</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span>
+                <span class="n">ny</span> <span class="o">%</span> <span class="n">py</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span>
+                <span class="n">nz</span> <span class="o">%</span> <span class="n">pz</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_procs</span><span class="p">,</span> <span class="n">mpi_topo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create configuration for this process count.&quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;num_processes&#39;</span><span class="p">:</span> <span class="n">num_procs</span><span class="p">,</span>
+            <span class="s1">&#39;mpi_topology&#39;</span><span class="p">:</span> <span class="n">mpi_topo</span><span class="p">,</span>
+            <span class="s1">&#39;grid_dimensions&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_dims</span><span class="p">,</span>  <span class="c1"># UNCHANGED!</span>
+            <span class="s1">&#39;work_per_process&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_work_per_proc</span><span class="p">(</span><span class="n">num_procs</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">config</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_work_per_proc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_procs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate work per process.&quot;&quot;&quot;</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_dims</span>
+        <span class="n">total_work</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="n">nz</span>
+        <span class="k">return</span> <span class="n">total_work</span> <span class="o">/</span> <span class="n">num_procs</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="worked-example">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Worked Example</a><a class="headerlink" href="#worked-example" title="Link to this heading"></a></h2>
+<section id="complete-strong-scaling-study">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Complete Strong Scaling Study</a><a class="headerlink" href="#complete-strong-scaling-study" title="Link to this heading"></a></h3>
+<p>Let’s walk through a complete example step-by-step.</p>
+<p><strong>Scenario</strong>: Climate simulation with 256 × 256 × 128 grid</p>
+<section id="baseline-configuration">
+<h4><a class="toc-backref" href="#id21" role="doc-backlink">Baseline Configuration</a><a class="headerlink" href="#baseline-configuration" title="Link to this heading"></a></h4>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Application: Climate simulation
+Grid size: 256 × 256 × 128 cells (fixed for all runs!)
+Baseline: 8 processes on 1 node
+Target: Test 16, 32, 64, 128 processes
+</pre></div>
+</div>
+<p><strong>Baseline MPI Topology</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>num_procs = 8
+factors = [2, 2, 2]  # 8 = 2³
+
+Distribution:
+- Factor 2: px = 2
+- Factor 2: py = 2
+- Factor 2: pz = 2
+
+Topology: (2, 2, 2)
+Verify: 2 × 2 × 2 = 8 ✓
+</pre></div>
+</div>
+<p><strong>Baseline Work Distribution</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Total cells = 256 × 256 × 128 = 8,388,608 cells
+
+Cells per process = 8,388,608 / 8 = 1,048,576 cells
+
+Per dimension:
+- X: 256 / 2 = 128 cells per process
+- Y: 256 / 2 = 128 cells per process
+- Z: 128 / 2 = 64 cells per process
+
+Each process handles: 128 × 128 × 64 = 1,048,576 cells ✓
+</pre></div>
+</div>
+</section>
+<section id="configuration-1-16-processes">
+<h4><a class="toc-backref" href="#id22" role="doc-backlink">Configuration 1: 16 Processes</a><a class="headerlink" href="#configuration-1-16-processes" title="Link to this heading"></a></h4>
+<p><strong>Calculate MPI Topology</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>num_procs = 16
+factors = [2, 2, 2, 2]  # 16 = 2⁴
+
+Start: (1, 1, 1)
+
+Factor 2: px = 2 → (2, 1, 1)
+Factor 2: py = 2 → (2, 2, 1)
+Factor 2: pz = 2 → (2, 2, 2)
+Factor 2: px = 4 → (4, 2, 2)  # px was smallest
+
+Topology: (4, 2, 2)
+Verify: 4 × 2 × 2 = 16 ✓
+</pre></div>
+</div>
+<p><strong>Verify Divisibility</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Grid: (256, 256, 128)
+Topology: (4, 2, 2)
+
+X: 256 ÷ 4 = 64 ✓
+Y: 256 ÷ 2 = 128 ✓
+Z: 128 ÷ 2 = 64 ✓
+
+All evenly divisible! ✓
+</pre></div>
+</div>
+<p><strong>Work Distribution</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Total cells = 8,388,608 (unchanged)
+Processes = 16
+
+Cells per process = 8,388,608 / 16 = 524,288 cells
+
+Per dimension per process:
+- X: 256 / 4 = 64 cells
+- Y: 256 / 2 = 128 cells
+- Z: 128 / 2 = 64 cells
+
+Each process: 64 × 128 × 64 = 524,288 cells ✓
+
+Comparison to baseline:
+- Baseline: 1,048,576 cells per process
+- 16 procs: 524,288 cells per process
+- Reduction: 50% (half the work per process!)
+</pre></div>
+</div>
+<p><strong>Expected Performance</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>If baseline takes 100 seconds:
+
+Ideal: 100 / 2 = 50 seconds (2× speedup from doubling processes)
+Realistic: ~55 seconds (communication overhead)
+
+Speedup: 100 / 55 = 1.82×
+Efficiency: 1.82 / 2 = 91%
+</pre></div>
+</div>
+</section>
+<section id="configuration-2-32-processes">
+<h4><a class="toc-backref" href="#id23" role="doc-backlink">Configuration 2: 32 Processes</a><a class="headerlink" href="#configuration-2-32-processes" title="Link to this heading"></a></h4>
+<p><strong>MPI Topology</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>num_procs = 32
+factors = [2, 2, 2, 2, 2]  # 32 = 2⁵
+
+Distribution → (4, 4, 2)
+Verify: 4 × 4 × 2 = 32 ✓
+</pre></div>
+</div>
+<p><strong>Divisibility</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>256 ÷ 4 = 64 ✓
+256 ÷ 4 = 64 ✓
+128 ÷ 2 = 64 ✓
+</pre></div>
+</div>
+<p><strong>Work Per Process</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8,388,608 / 32 = 262,144 cells per process
+
+Per dimension: 64 × 64 × 64 = 262,144 ✓
+
+Reduction from baseline:
+1,048,576 → 262,144 (25% of original work)
+</pre></div>
+</div>
+</section>
+<section id="configuration-3-64-processes">
+<h4><a class="toc-backref" href="#id24" role="doc-backlink">Configuration 3: 64 Processes</a><a class="headerlink" href="#configuration-3-64-processes" title="Link to this heading"></a></h4>
+<p><strong>MPI Topology</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>num_procs = 64
+factors = [2, 2, 2, 2, 2, 2]  # 64 = 2⁶
+
+Distribution → (4, 4, 4)
+Verify: 4 × 4 × 4 = 64 ✓
+</pre></div>
+</div>
+<p><strong>Work Per Process</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8,388,608 / 64 = 131,072 cells per process
+
+Per dimension: 64 × 64 × 32 = 131,072 ✓
+
+Reduction: 12.5% of baseline work
+</pre></div>
+</div>
+</section>
+<section id="configuration-4-128-processes">
+<h4><a class="toc-backref" href="#id25" role="doc-backlink">Configuration 4: 128 Processes</a><a class="headerlink" href="#configuration-4-128-processes" title="Link to this heading"></a></h4>
+<p><strong>MPI Topology</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>num_procs = 128
+factors = [2, 2, 2, 2, 2, 2, 2]  # 128 = 2⁷
+
+Distribution → (8, 4, 4)
+Verify: 8 × 4 × 4 = 128 ✓
+</pre></div>
+</div>
+<p><strong>Work Per Process</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8,388,608 / 128 = 65,536 cells per process
+
+Per dimension: 32 × 64 × 32 = 65,536 ✓
+
+Reduction: 6.25% of baseline work
+</pre></div>
+</div>
+</section>
+<section id="summary-table">
+<h4><a class="toc-backref" href="#id26" role="doc-backlink">Summary Table</a><a class="headerlink" href="#summary-table" title="Link to this heading"></a></h4>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌────────┬────────────────┬──────────────┬───────────────┬──────────┐
+│ Procs  │ MPI Topology   │ Work/Process │ Expected Time │ Speedup  │
+├────────┼────────────────┼──────────────┼───────────────┼──────────┤
+│   8    │ (2, 2, 2)      │ 1,048,576    │ 100 sec       │ 1.0×     │
+│  16    │ (4, 2, 2)      │   524,288    │  55 sec       │ 1.82×    │
+│  32    │ (4, 4, 2)      │   262,144    │  30 sec       │ 3.33×    │
+│  64    │ (4, 4, 4)      │   131,072    │  17 sec       │ 5.88×    │
+│ 128    │ (8, 4, 4)      │    65,536    │  10 sec       │ 10.0×    │
+└────────┴────────────────┴──────────────┴───────────────┴──────────┘
+
+Note: Times are realistic estimates including communication overhead
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="performance-analysis">
+<h2><a class="toc-backref" href="#id27" role="doc-backlink">Performance Analysis</a><a class="headerlink" href="#performance-analysis" title="Link to this heading"></a></h2>
+<section id="algorithmic-complexity">
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Algorithmic Complexity</a><a class="headerlink" href="#algorithmic-complexity" title="Link to this heading"></a></h3>
+<p><strong>Topology Calculation</strong>: <span class="math notranslate nohighlight">\(O(\log P)\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Prime factorization complexity:
+- Worst case: O(√P)
+- Typical case: O(log P) for powers of 2
+
+Factor distribution: O(log P)
+
+Total: O(log P) operations per configuration
+</pre></div>
+</div>
+<p><strong>Example</strong>:
+- P = 1024: ~10 iterations
+- P = 1,000,000: ~20 iterations
+- Very fast even for large process counts!</p>
+<p><strong>Complete Study</strong>: <span class="math notranslate nohighlight">\(O(N \log P_{\max})\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>For N configurations testing up to Pmax processes:
+Time ≈ N × log(Pmax)
+
+Example: N = 10 configs, Pmax = 1024
+Time ≈ 10 × 10 = 100 operations
+
+On modern CPU: &lt;&lt; 1 millisecond
+</pre></div>
+</div>
+</section>
+<section id="space-complexity">
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">Space Complexity</a><a class="headerlink" href="#space-complexity" title="Link to this heading"></a></h3>
+<p><strong>Per Configuration</strong>: <span class="math notranslate nohighlight">\(O(1)\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Each configuration stores:
+- Process count: 1 integer
+- MPI topology: 3 integers
+- Grid dimensions: 3 integers
+- Work metrics: 3 floats
+
+Total: ~50 bytes per configuration
+</pre></div>
+</div>
+<p><strong>N Configurations</strong>: <span class="math notranslate nohighlight">\(O(N)\)</span></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>10 configurations = 500 bytes
+100 configurations = 5 KB
+
+Negligible memory usage!
+</pre></div>
+</div>
+</section>
+<section id="communication-overhead">
+<h3><a class="toc-backref" href="#id30" role="doc-backlink">Communication Overhead</a><a class="headerlink" href="#communication-overhead" title="Link to this heading"></a></h3>
+<p><strong>Why Perfect Speedup is Impossible</strong></p>
+<p>When processes communicate, they experience overhead:</p>
+<ol class="arabic simple">
+<li><p><strong>Latency</strong>: Time to start sending a message (~1-10 microseconds)</p></li>
+<li><p><strong>Bandwidth</strong>: Time to transfer data (~1-10 GB/s)</p></li>
+<li><p><strong>Synchronization</strong>: Waiting for all processes to reach a point</p></li>
+</ol>
+<p><strong>Communication Pattern in 3D Grid</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Each process communicates with 6 neighbors (up/down/left/right/front/back)
+
+As we add more processes:
+- Work per process decreases (good!)
+- Communication per process increases (bad!)
+
+Eventually: Communication time &gt; Computation time
+This limits maximum useful processes
+</pre></div>
+</div>
+<p><strong>Example</strong>: 256 × 256 × 128 grid</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>8 processes:
+- Work: 1,048,576 cells per process
+- Surface area: 3 × 128 × 64 = 24,576 cells to communicate
+- Communication/Computation: 2.3%
+
+128 processes:
+- Work: 65,536 cells per process
+- Surface area: 3 × 32 × 32 = 3,072 cells to communicate
+- Communication/Computation: 4.7%
+
+As processes increase, communication becomes more significant!
+</pre></div>
+</div>
+</section>
+<section id="efficiency-predictions">
+<h3><a class="toc-backref" href="#id31" role="doc-backlink">Efficiency Predictions</a><a class="headerlink" href="#efficiency-predictions" title="Link to this heading"></a></h3>
+<p><strong>Theoretical Maximum</strong>:</p>
+<p>Based on Amdahl’s Law with 95% parallelizable code:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Speedup(P) = P / (0.05 + 0.95/P)
+
+P=8:    Speedup = 7.27  (Efficiency = 91%)
+P=16:   Speedup = 13.91 (Efficiency = 87%)
+P=32:   Speedup = 24.62 (Efficiency = 77%)
+P=64:   Speedup = 39.02 (Efficiency = 61%)
+P=128:  Speedup = 58.18 (Efficiency = 45%)
+</pre></div>
+</div>
+<p><strong>Key Insight</strong>: Efficiency naturally decreases with more processes!</p>
+</section>
+</section>
+<section id="practical-usage">
+<h2><a class="toc-backref" href="#id32" role="doc-backlink">Practical Usage</a><a class="headerlink" href="#practical-usage" title="Link to this heading"></a></h2>
+<section id="command-line-interface">
+<h3><a class="toc-backref" href="#id33" role="doc-backlink">Command-Line Interface</a><a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h3>
+<p><strong>Basic Strong Scaling Study</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate strong scaling configurations</span>
+hpc-scaletest<span class="w"> </span>strong-scaling<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--baseline<span class="w"> </span>baseline_config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--nodes<span class="w"> </span><span class="s2">&quot;2 4 8 16&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--procs-per-node<span class="w"> </span><span class="m">8</span>
+
+<span class="c1"># This creates configurations for:</span>
+<span class="c1"># - 16 processes (2 nodes × 8 procs)</span>
+<span class="c1"># - 32 processes (4 nodes × 8 procs)</span>
+<span class="c1"># - 64 processes (8 nodes × 8 procs)</span>
+<span class="c1"># - 128 processes (16 nodes × 8 procs)</span>
+</pre></div>
+</div>
+<p><strong>With Custom Process Counts</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test specific process counts</span>
+hpc-scaletest<span class="w"> </span>strong-scaling<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--baseline<span class="w"> </span>baseline_config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--process-counts<span class="w"> </span><span class="s2">&quot;8 16 24 32 48 64&quot;</span>
+</pre></div>
+</div>
+<p><strong>Output</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Generated strong scaling configurations:
+✓ config_8_procs.yaml   - MPI: (2,2,2)
+✓ config_16_procs.yaml  - MPI: (4,2,2)
+✓ config_24_procs.yaml  - MPI: (4,3,2)
+✓ config_32_procs.yaml  - MPI: (4,4,2)
+✓ config_48_procs.yaml  - MPI: (4,4,3)
+✓ config_64_procs.yaml  - MPI: (4,4,4)
+
+All configurations verified for divisibility ✓
+
+Next steps:
+1. Review configurations in configs/
+2. Run: hpc-scaletest run --all
+3. Analyze: hpc-scaletest analyze results/
+</pre></div>
+</div>
+</section>
+<section id="python-api-usage">
+<h3><a class="toc-backref" href="#id34" role="doc-backlink">Python API Usage</a><a class="headerlink" href="#python-api-usage" title="Link to this heading"></a></h3>
+<p><strong>Programmatic Generation</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>from hpc_scaletest import StrongScalingGenerator
+
+# Load baseline configuration
+baseline = {
+    &#39;num_processes&#39;: 8,
+    &#39;mpi_topology&#39;: (2, 2, 2),
+    &#39;grid_dimensions&#39;: (256, 256, 128)
+}
+
+# Create generator
+generator = StrongScalingGenerator(baseline)
+
+# Generate configurations for different process counts
+configs = generator.generate([16, 32, 64, 128])
+
+# Examine results
+for config in configs:
+    print(f&quot;Processes: {config.num_processes}&quot;)
+    print(f&quot;MPI Topology: {config.mpi_topology}&quot;)
+    print(f&quot;Work per process: {config.work_per_process:.0f} cells&quot;)
+    print(f&quot;Expected speedup: {config.expected_speedup:.2f}×&quot;)
+    print()
+</pre></div>
+</div>
+<p><strong>Output</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Processes: 16
+MPI Topology: (4, 2, 2)
+Work per process: 524288 cells
+Expected speedup: 1.82×
+
+Processes: 32
+MPI Topology: (4, 4, 2)
+Work per process: 262144 cells
+Expected speedup: 3.33×
+
+Processes: 64
+MPI Topology: (4, 4, 4)
+Work per process: 131072 cells
+Expected speedup: 5.88×
+
+Processes: 128
+MPI Topology: (8, 4, 4)
+Work per process: 65536 cells
+Expected speedup: 10.00×
+</pre></div>
+</div>
+</section>
+<section id="advanced-usage">
+<h3><a class="toc-backref" href="#id35" role="doc-backlink">Advanced Usage</a><a class="headerlink" href="#advanced-usage" title="Link to this heading"></a></h3>
+<p><strong>Testing Different Grid Sizes</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Test if your grid size is suitable for strong scaling
+from hpc_scaletest import verify_strong_scaling
+
+grid = (256, 256, 128)
+process_counts = [8, 16, 32, 64, 128, 256]
+
+results = verify_strong_scaling(grid, process_counts)
+
+for procs, status in results.items():
+    if status[&#39;divisible&#39;]:
+        print(f&quot;✓ {procs} processes: OK - MPI {status[&#39;topology&#39;]}&quot;)
+    else:
+        print(f&quot;✗ {procs} processes: Cannot evenly divide grid&quot;)
+</pre></div>
+</div>
+<p><strong>Custom MPI Topology Constraints</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Prefer certain dimensions (e.g., minimize Z-direction splitting)</span>
+<span class="n">generator</span> <span class="o">=</span> <span class="n">StrongScalingGenerator</span><span class="p">(</span>
+    <span class="n">baseline</span><span class="p">,</span>
+    <span class="n">topology_preference</span><span class="o">=</span><span class="s1">&#39;xy&#39;</span>  <span class="c1"># Prefer splitting X and Y over Z</span>
+<span class="p">)</span>
+
+<span class="n">configs</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">generate</span><span class="p">([</span><span class="mi">64</span><span class="p">])</span>
+<span class="c1"># Result: Might get (8, 8, 1) instead of (4, 4, 4)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="testing-and-validation">
+<h2><a class="toc-backref" href="#id36" role="doc-backlink">Testing and Validation</a><a class="headerlink" href="#testing-and-validation" title="Link to this heading"></a></h2>
+<section id="unit-tests">
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">Unit Tests</a><a class="headerlink" href="#unit-tests" title="Link to this heading"></a></h3>
+<p><strong>Test 1: MPI Topology Calculation</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_mpi_topology_calculation</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify MPI topology is correctly calculated.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Test powers of 2</span>
+    <span class="k">assert</span> <span class="n">calculate_mpi_topology</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">calculate_mpi_topology</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># Test non-cubic numbers</span>
+    <span class="n">topo</span> <span class="o">=</span> <span class="n">calculate_mpi_topology</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">topo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">topo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">topo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">24</span>
+
+    <span class="c1"># Test prime numbers</span>
+    <span class="n">topo</span> <span class="o">=</span> <span class="n">calculate_mpi_topology</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">topo</span> <span class="o">==</span> <span class="p">(</span><span class="mi">17</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="n">topo</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="n">topo</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Test 2: Work Distribution</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_work_distribution</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify work is correctly calculated per process.&quot;&quot;&quot;</span>
+
+    <span class="n">baseline_work</span> <span class="o">=</span> <span class="mi">1_048_576</span>  <span class="c1"># cells per process at 8 procs</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+
+    <span class="c1"># Test 16 processes</span>
+    <span class="n">work_16</span> <span class="o">=</span> <span class="n">calculate_work_per_process</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">work_16</span> <span class="o">==</span> <span class="mi">524_288</span>
+    <span class="k">assert</span> <span class="n">work_16</span> <span class="o">==</span> <span class="n">baseline_work</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># Half the work</span>
+
+    <span class="c1"># Test 64 processes</span>
+    <span class="n">work_64</span> <span class="o">=</span> <span class="n">calculate_work_per_process</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">work_64</span> <span class="o">==</span> <span class="mi">131_072</span>
+    <span class="k">assert</span> <span class="n">work_64</span> <span class="o">==</span> <span class="n">baseline_work</span> <span class="o">/</span> <span class="mi">8</span>  <span class="c1"># 1/8 the work</span>
+</pre></div>
+</div>
+<p><strong>Test 3: Divisibility Verification</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_divisibility</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify divisibility checks work correctly.&quot;&quot;&quot;</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+
+    <span class="c1"># Should pass</span>
+    <span class="k">assert</span> <span class="n">verify_divisibility</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">==</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">verify_divisibility</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span> <span class="o">==</span> <span class="kc">True</span>
+
+    <span class="c1"># Should fail</span>
+    <span class="k">assert</span> <span class="n">verify_divisibility</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">==</span> <span class="kc">False</span>  <span class="c1"># 256 not divisible by 3</span>
+    <span class="k">assert</span> <span class="n">verify_divisibility</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span> <span class="o">==</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-tests">
+<h3><a class="toc-backref" href="#id38" role="doc-backlink">Integration Tests</a><a class="headerlink" href="#integration-tests" title="Link to this heading"></a></h3>
+<p><strong>End-to-End Test</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_complete_strong_scaling_workflow</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test complete workflow from input to output.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Setup</span>
+    <span class="n">baseline</span> <span class="o">=</span> <span class="n">load_baseline_config</span><span class="p">(</span><span class="s2">&quot;baseline.yaml&quot;</span><span class="p">)</span>
+    <span class="n">target_procs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">]</span>
+
+    <span class="c1"># Generate configurations</span>
+    <span class="n">generator</span> <span class="o">=</span> <span class="n">StrongScalingGenerator</span><span class="p">(</span><span class="n">baseline</span><span class="p">)</span>
+    <span class="n">configs</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">target_procs</span><span class="p">)</span>
+
+    <span class="c1"># Verify all configs</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+
+    <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+        <span class="c1"># Check MPI topology is valid</span>
+        <span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">pz</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">mpi_topology</span>
+        <span class="k">assert</span> <span class="n">px</span> <span class="o">*</span> <span class="n">py</span> <span class="o">*</span> <span class="n">pz</span> <span class="o">==</span> <span class="n">config</span><span class="o">.</span><span class="n">num_processes</span>
+
+        <span class="c1"># Check divisibility</span>
+        <span class="k">assert</span> <span class="n">verify_divisibility</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grid_dimensions</span><span class="p">,</span>
+                                  <span class="n">config</span><span class="o">.</span><span class="n">mpi_topology</span><span class="p">)</span>
+
+        <span class="c1"># Check work distribution</span>
+        <span class="n">expected_work</span> <span class="o">=</span> <span class="p">(</span><span class="n">baseline</span><span class="o">.</span><span class="n">total_cells</span> <span class="o">/</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">num_processes</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">work_per_process</span> <span class="o">-</span> <span class="n">expected_work</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span>
+</pre></div>
+</div>
+</section>
+<section id="verification-checklist">
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">Verification Checklist</a><a class="headerlink" href="#verification-checklist" title="Link to this heading"></a></h3>
+<p>Before running your strong scaling study, verify:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>✓ Grid dimensions are fixed (same for all configs)
+✓ Process counts increase (more processes = more speedup)
+✓ All MPI topologies are valid (px × py × pz = total processes)
+✓ Grid is evenly divisible for all process counts
+✓ Work per process decreases proportionally
+✓ No process has zero work
+✓ Communication pattern is reasonable
+</pre></div>
+</div>
+<p><strong>Automated Verification</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify all configurations before running</span>
+hpc-scaletest<span class="w"> </span>verify<span class="w"> </span>--type<span class="w"> </span>strong-scaling<span class="w"> </span>--configs<span class="w"> </span>configs/
+</pre></div>
+</div>
+</section>
+</section>
+<section id="common-issues-and-solutions">
+<h2><a class="toc-backref" href="#id40" role="doc-backlink">Common Issues and Solutions</a><a class="headerlink" href="#common-issues-and-solutions" title="Link to this heading"></a></h2>
+<section id="issue-1-grid-not-divisible">
+<h3><a class="toc-backref" href="#id41" role="doc-backlink">Issue 1: Grid Not Divisible</a><a class="headerlink" href="#issue-1-grid-not-divisible" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Error: 256 cells not evenly divisible by 3 processes in X dimension
+</pre></div>
+</div>
+<p><strong>Cause</strong>: Your grid size (256) cannot be evenly divided by the number of processes (3).</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p><strong>Change grid size</strong> to be divisible by common process counts:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Bad: 256 × 256 × 128 (not divisible by 3, 5, 6, 7, 9, ...)
+Good: 240 × 240 × 120 (divisible by 2, 3, 4, 5, 6, 8, ...)
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use power-of-2 process counts</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Use: 8, 16, 32, 64, 128, 256, 512, 1024
+Avoid: 12, 18, 24, 36, 48 (unless grid matches)
+</pre></div>
+</div>
+</li>
+<li><p><strong>Adjust process count</strong> to match grid:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find compatible process counts</span>
+hpc-scaletest<span class="w"> </span>find-divisible-counts<span class="w"> </span>--grid<span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="m">128</span>
+<span class="c1"># Output: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="issue-2-poor-speedup">
+<h3><a class="toc-backref" href="#id42" role="doc-backlink">Issue 2: Poor Speedup</a><a class="headerlink" href="#issue-2-poor-speedup" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Expected: 8× faster with 64 processes
+Actual: Only 4× faster
+</pre></div>
+</div>
+<p><strong>Causes</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Communication overhead</strong>: Processes spend too much time communicating</p></li>
+<li><p><strong>Load imbalance</strong>: Some processes have more work than others</p></li>
+<li><p><strong>Serial bottlenecks</strong>: Parts of code that can’t be parallelized</p></li>
+<li><p><strong>I/O contention</strong>: All processes writing to same disk</p></li>
+</ol>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p><strong>Profile your application</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use profiling tools to find bottlenecks</span>
+mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">64</span><span class="w"> </span>scalasca<span class="w"> </span>-analyze<span class="w"> </span>./myapp
+<span class="c1"># or</span>
+mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">64</span><span class="w"> </span>tau_exec<span class="w"> </span>./myapp
+</pre></div>
+</div>
+</li>
+<li><p><strong>Optimize communication</strong>:
+- Use non-blocking MPI calls
+- Reduce frequency of global synchronization
+- Overlap communication with computation</p></li>
+<li><p><strong>Check load balance</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify each process has equal work</span>
+<span class="n">work_per_proc</span> <span class="o">=</span> <span class="p">[</span><span class="n">proc</span><span class="o">.</span><span class="n">cell_count</span> <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="n">all_processes</span><span class="p">]</span>
+<span class="k">assert</span> <span class="nb">max</span><span class="p">(</span><span class="n">work_per_proc</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">work_per_proc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">100</span>  <span class="c1"># Small difference</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="issue-3-memory-limitations">
+<h3><a class="toc-backref" href="#id43" role="doc-backlink">Issue 3: Memory Limitations</a><a class="headerlink" href="#issue-3-memory-limitations" title="Link to this heading"></a></h3>
+<p><strong>Problem</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Out of memory error with many processes
+</pre></div>
+</div>
+<p><strong>Cause</strong>: Each process needs its own memory copy of shared data.</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p><strong>Reduce per-process memory</strong>:
+- More processes = less data per process
+- Strong scaling naturally helps with memory!</p></li>
+<li><p><strong>Check memory usage</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Monitor memory per process</span>
+mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">64</span><span class="w"> </span>/usr/bin/time<span class="w"> </span>-v<span class="w"> </span>./myapp
+<span class="c1"># Look for &quot;Maximum resident set size&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use memory-efficient algorithms</strong>:
+- Streaming algorithms
+- Out-of-core methods
+- Data compression</p></li>
+</ol>
+</section>
+</section>
+<section id="best-practices">
+<h2><a class="toc-backref" href="#id44" role="doc-backlink">Best Practices</a><a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<section id="choosing-process-counts">
+<h3><a class="toc-backref" href="#id45" role="doc-backlink">Choosing Process Counts</a><a class="headerlink" href="#choosing-process-counts" title="Link to this heading"></a></h3>
+<p><strong>Rule 1: Start with powers of 2</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Good: 1, 2, 4, 8, 16, 32, 64, 128, 256
+
+Why: Most HPC systems have power-of-2 cores per node
+     Most grid sizes are powers of 2
+     Simplifies MPI topology
+</pre></div>
+</div>
+<p><strong>Rule 2: Match your node architecture</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Example: 8 cores per node
+
+Test: 1, 2, 4 nodes (8, 16, 32 processes)
+
+Example: 36 cores per node
+
+Test: 1, 2, 4, 8 nodes (36, 72, 144, 288 processes)
+</pre></div>
+</div>
+<p><strong>Rule 3: Stop when efficiency drops below 50%</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>If you&#39;re getting less than 50% efficiency:
+- Communication overhead is too high
+- Problem is too small for that many processes
+- Time to consider weak scaling instead
+</pre></div>
+</div>
+</section>
+<section id="designing-grid-sizes">
+<h3><a class="toc-backref" href="#id46" role="doc-backlink">Designing Grid Sizes</a><a class="headerlink" href="#designing-grid-sizes" title="Link to this heading"></a></h3>
+<p><strong>Highly divisible numbers are best</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Excellent: 128, 256, 512, 1024 (powers of 2)
+Good: 120, 240, 360, 480 (divisible by many numbers)
+Poor: 127, 251, 509 (prime numbers)
+</pre></div>
+</div>
+<p><strong>Calculator for grid sizes</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">suggest_grid_size</span><span class="p">(</span><span class="n">approx_size</span><span class="p">,</span> <span class="n">max_procs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Suggest grid size divisible by common process counts.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Find highly composite number near approx_size</span>
+    <span class="n">factors_needed</span> <span class="o">=</span> <span class="n">factorize</span><span class="p">(</span><span class="n">max_procs</span><span class="p">)</span>
+
+    <span class="c1"># Adjust size to be divisible by all factors</span>
+    <span class="n">adjusted</span> <span class="o">=</span> <span class="n">approx_size</span>
+    <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">factors_needed</span><span class="p">):</span>
+        <span class="k">while</span> <span class="n">adjusted</span> <span class="o">%</span> <span class="n">factor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">adjusted</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">adjusted</span>
+
+<span class="c1"># Example</span>
+<span class="n">size</span> <span class="o">=</span> <span class="n">suggest_grid_size</span><span class="p">(</span><span class="mi">250</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>  <span class="c1"># 256 (divisible by 1,2,4,8,16,32,64)</span>
+</pre></div>
+</div>
+</section>
+<section id="running-studies-efficiently">
+<h3><a class="toc-backref" href="#id47" role="doc-backlink">Running Studies Efficiently</a><a class="headerlink" href="#running-studies-efficiently" title="Link to this heading"></a></h3>
+<p><strong>1. Test locally first</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run small test on your laptop</span>
+hpc-scaletest<span class="w"> </span>strong-scaling<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--baseline<span class="w"> </span>tiny_baseline.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--process-counts<span class="w"> </span><span class="s2">&quot;1 2 4&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dry-run
+</pre></div>
+</div>
+<p><strong>2. Start with small process counts</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># First study: just 2× and 4× scaling</span>
+hpc-scaletest<span class="w"> </span>strong-scaling<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--baseline<span class="w"> </span>baseline.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--process-counts<span class="w"> </span><span class="s2">&quot;8 16 32&quot;</span>
+</pre></div>
+</div>
+<p><strong>3. Scale up gradually</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># If 32 processes worked well, try more</span>
+hpc-scaletest<span class="w"> </span>strong-scaling<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--baseline<span class="w"> </span>baseline.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--process-counts<span class="w"> </span><span class="s2">&quot;32 64 128 256&quot;</span>
+</pre></div>
+</div>
+<p><strong>4. Analyze after each batch</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check results before running more</span>
+hpc-scaletest<span class="w"> </span>analyze<span class="w"> </span>results/
+<span class="c1"># Look at efficiency plot</span>
+<span class="c1"># If efficiency &lt; 50%, stop adding processes</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="summary">
+<h2><a class="toc-backref" href="#id48" role="doc-backlink">Summary</a><a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<section id="key-takeaways">
+<h3><a class="toc-backref" href="#id49" role="doc-backlink">Key Takeaways</a><a class="headerlink" href="#key-takeaways" title="Link to this heading"></a></h3>
+<p><strong>What is Strong Scaling?</strong></p>
+<ul class="simple">
+<li><p>Fixed problem size</p></li>
+<li><p>Increasing number of processes</p></li>
+<li><p>Goal: Faster results</p></li>
+</ul>
+<p><strong>How Does HPC-ScaleTest Help?</strong></p>
+<ul class="simple">
+<li><p>Automatically calculates MPI topologies</p></li>
+<li><p>Verifies grid divisibility</p></li>
+<li><p>Generates all configuration files</p></li>
+<li><p>Ensures proper work distribution</p></li>
+</ul>
+<p><strong>Important Concepts</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Speedup</strong>: How much faster with N processes</p></li>
+<li><p><strong>Efficiency</strong>: How well you’re using the processes</p></li>
+<li><p><strong>Amdahl’s Law</strong>: Serial parts limit maximum speedup</p></li>
+<li><p><strong>Communication Overhead</strong>: Limits practical process count</p></li>
+</ol>
+<p><strong>Best Practices</strong></p>
+<ul class="simple">
+<li><p>Use power-of-2 process counts</p></li>
+<li><p>Choose highly divisible grid sizes</p></li>
+<li><p>Stop when efficiency drops below 50%</p></li>
+<li><p>Profile to find bottlenecks</p></li>
+</ul>
+</section>
+<section id="further-reading">
+<h3><a class="toc-backref" href="#id50" role="doc-backlink">Further Reading</a><a class="headerlink" href="#further-reading" title="Link to this heading"></a></h3>
+<p><strong>Parallel Computing Concepts</strong>:
+- “Introduction to Parallel Computing” by Grama et al.
+- “Parallel Programming in C with MPI and OpenMP” by Quinn</p>
+<p><strong>Performance Analysis</strong>:
+- “Performance Optimization of Numerically Intensive Codes” by Goedecker &amp; Hoisie
+- “Tools and Technologies for Performance Analysis” by various authors</p>
+<p><strong>HPC-ScaleTest Documentation</strong>:
+- <a class="reference internal" href="weak_scaling_complete.html"><span class="doc">Weak Scaling Algorithm: Complete Technical Reference</span></a> - Weak scaling algorithm
+- <a class="reference internal" href="mpi_topology_complete.html"><span class="doc">MPI Topology Calculation: Complete Technical Reference</span></a> - MPI topology details
+- <a class="reference internal" href="../user_guide.html"><span class="doc">User Guide</span></a> - Complete user guide</p>
+</section>
+</section>
+<section id="mathematical-appendix">
+<h2><a class="toc-backref" href="#id51" role="doc-backlink">Mathematical Appendix</a><a class="headerlink" href="#mathematical-appendix" title="Link to this heading"></a></h2>
+<section id="speedup-formula-derivation">
+<h3><a class="toc-backref" href="#id52" role="doc-backlink">Speedup Formula Derivation</a><a class="headerlink" href="#speedup-formula-derivation" title="Link to this heading"></a></h3>
+<p><strong>Given</strong>:</p>
+<div class="math notranslate nohighlight">
+\[T_1 = \text{Time on 1 process}\]</div>
+<div class="math notranslate nohighlight">
+\[T_P = \text{Time on } P \text{ processes}\]</div>
+<p><strong>Speedup Definition</strong>:</p>
+<div class="math notranslate nohighlight">
+\[S(P) = \frac{T_1}{T_P}\]</div>
+<p><strong>Amdahl’s Law</strong>:</p>
+<p>Let <span class="math notranslate nohighlight">\(f\)</span> be the fraction of serial code (0 ≤ f ≤ 1):</p>
+<div class="math notranslate nohighlight">
+\[T_1 = f \cdot T_1 + (1-f) \cdot T_1\]</div>
+<div class="math notranslate nohighlight">
+\[T_P = f \cdot T_1 + \frac{(1-f) \cdot T_1}{P}\]</div>
+<p><strong>Speedup</strong>:</p>
+<div class="math notranslate nohighlight">
+\[S(P) = \frac{T_1}{f \cdot T_1 + \frac{(1-f) \cdot T_1}{P}}\]</div>
+<div class="math notranslate nohighlight">
+\[S(P) = \frac{1}{f + \frac{1-f}{P}}\]</div>
+<p><strong>Maximum Speedup</strong> (as <span class="math notranslate nohighlight">\(P \to \infty\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[S_{\max} = \lim_{P \to \infty} S(P) = \frac{1}{f}\]</div>
+<p><strong>Example</strong>: If <span class="math notranslate nohighlight">\(f = 0.05\)</span> (5% serial), then <span class="math notranslate nohighlight">\(S_{\max} = 20\)</span>.</p>
+</section>
+<section id="efficiency-formula">
+<h3><a class="toc-backref" href="#id53" role="doc-backlink">Efficiency Formula</a><a class="headerlink" href="#efficiency-formula" title="Link to this heading"></a></h3>
+<p><strong>Definition</strong>:</p>
+<div class="math notranslate nohighlight">
+\[E(P) = \frac{S(P)}{P} = \frac{T_1}{P \cdot T_P}\]</div>
+<p><strong>Perfect Efficiency</strong>: <span class="math notranslate nohighlight">\(E(P) = 1\)</span> (100%)</p>
+<p><strong>Typical</strong>: <span class="math notranslate nohighlight">\(E(P)\)</span> decreases as <span class="math notranslate nohighlight">\(P\)</span> increases</p>
+<p><strong>From Amdahl’s Law</strong>:</p>
+<div class="math notranslate nohighlight">
+\[E(P) = \frac{1}{P \left( f + \frac{1-f}{P} \right)} = \frac{1}{1 + f(P-1)}\]</div>
+</section>
+<section id="work-distribution-formula">
+<h3><a class="toc-backref" href="#id54" role="doc-backlink">Work Distribution Formula</a><a class="headerlink" href="#work-distribution-formula" title="Link to this heading"></a></h3>
+<p><strong>Total Work</strong>:</p>
+<div class="math notranslate nohighlight">
+\[W = n_x \times n_y \times n_z\]</div>
+<p><strong>Work Per Process</strong>:</p>
+<div class="math notranslate nohighlight">
+\[W_P = \frac{W}{P} = \frac{n_x \times n_y \times n_z}{p_x \times p_y \times p_z}\]</div>
+<p><strong>Per Dimension</strong>:</p>
+<div class="math notranslate nohighlight">
+\[w_x = \frac{n_x}{p_x}, \quad w_y = \frac{n_y}{p_y}, \quad w_z = \frac{n_z}{p_z}\]</div>
+<p><strong>Verification</strong>:</p>
+<div class="math notranslate nohighlight">
+\[W_P = w_x \times w_y \times w_z = \frac{n_x}{p_x} \times \frac{n_y}{p_y} \times \frac{n_z}{p_z} = \frac{W}{P} \quad \checkmark\]</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="weak_scaling_complete.html" class="btn btn-neutral float-left" title="Weak Scaling Algorithm: Complete Technical Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mpi_topology_complete.html" class="btn btn-neutral float-right" title="MPI Topology Calculation: Complete Technical Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,578 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPC-ScaleTest Documentation &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting Started" href="getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">HPC-ScaleTest Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hpc-scaletest-documentation">
+<h1>HPC-ScaleTest Documentation<a class="headerlink" href="#hpc-scaletest-documentation" title="Link to this heading"></a></h1>
+<p>Welcome to HPC-ScaleTest’s comprehensive documentation!</p>
+<p>HPC-ScaleTest is an automated framework for generating and executing scaling studies on HPC systems.
+It simplifies the process of testing how well your application performs as you increase computing resources.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#first-test">First Test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#system-requirements">System Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#id1">Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#concepts">Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#basic-usage">Basic Usage</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#yaml-configuration">YAML Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#python-api-configuration">Python API Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#command-line-interface">Command-Line Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#main-command-hpc-auto-py">Main Command: hpc_auto.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#report-generator">Report Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#validation-tool">Validation Tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#exit-codes">Exit Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_reference.html#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#strong-scaling-example">Strong Scaling Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#weak-scaling-example-2d">Weak Scaling Example (2D)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#gpu-example">GPU Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#extension-mechanisms">Extension Mechanisms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#adding-a-new-scheduler-directive">Adding a New Scheduler Directive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#adding-a-hardware-feature">Adding a Hardware Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#complete-minimal-example">Complete Minimal Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#testing-extensions">Testing Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#best-practices">Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending.html#extension-points-summary">Extension Points Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#general-questions">General Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#usage-questions">Usage Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#configuration-questions">Configuration Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#technical-questions">Technical Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#advanced-questions">Advanced Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#common-issues-and-solutions">Common Issues and Solutions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#installation-issues">Installation Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#job-submission-issues">Job Submission Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#results-issues">Results Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#build-issues">Build Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#configuration-issues">Configuration Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#performance-issues">Performance Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#system-specific-issues">System-Specific Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#getting-more-help">Getting More Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#introduction-for-non-technical-readers">Introduction for Non-Technical Readers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#what-is-this-document-about">What is This Document About?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#who-should-read-this">Who Should Read This?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#reading-guide">Reading Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#weak-scaling-definition">1.1 Weak Scaling Definition</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#mathematical-formulation">Mathematical Formulation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#domain-decomposition-mathematics">1.2 Domain Decomposition Mathematics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#d-grid-decomposition">3D Grid Decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#physical-domain-scaling">Physical Domain Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#scaling-factor-mathematics">1.3 Scaling Factor Mathematics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#definition">Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#dimension-specific-scaling">Dimension-Specific Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#dimension-rotation-strategy">2.1 Dimension Rotation Strategy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#the-problem">The Problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#the-solution-rotation">The Solution: Rotation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#id2">Mathematical Formulation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#implementation-algorithm">2.2 Implementation Algorithm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#pseudocode">Pseudocode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#detailed-implementation-with-real-code">Detailed Implementation with Real Code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#data-structure-design">2.3 Data Structure Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#configuration-dictionary">Configuration Dictionary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#invariants">Invariants</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#complete-3d-weak-scaling-example">3.1 Complete 3D Weak Scaling Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#problem-setup">Problem Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#node-1-baseline-configuration">Node 1: Baseline Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#node-2-first-scaling-step-x">Node 2: First Scaling Step (X)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#node-4-second-scaling-step-y">Node 4: Second Scaling Step (Y)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#complete-configuration-table">3.2 Complete Configuration Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#algorithmic-complexity">4.1 Algorithmic Complexity</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#time-complexity">Time Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#space-complexity">Space Complexity</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#numerical-stability">4.2 Numerical Stability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#floating-point-considerations">Floating Point Considerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#integer-arithmetic">Integer Arithmetic</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#unit-tests">5.1 Unit Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#test-constant-work-per-process">Test: Constant Work Per Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#test-constant-grid-resolution">Test: Constant Grid Resolution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#test-dimension-rotation-pattern">Test: Dimension Rotation Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#integration-tests">5.2 Integration Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#end-to-end-test">End-to-End Test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#command-line-usage">6.1 Command-Line Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#basic-3d-weak-scaling">Basic 3D Weak Scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#d-weak-scaling-fixed-z">2D Weak Scaling (Fixed Z)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#python-api-usage">6.2 Python API Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/weak_scaling_complete.html#detailed-example">Detailed Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/weak_scaling_complete.html#proof-constant-work-per-process">Proof: Constant Work Per Process</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#introduction-for-everyone">Introduction for Everyone</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#what-is-strong-scaling">What is Strong Scaling?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#why-is-strong-scaling-important">Why is Strong Scaling Important?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#strong-scaling-vs-weak-scaling">Strong Scaling vs Weak Scaling</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#conceptual-foundation">Conceptual Foundation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#how-computers-share-work">How Computers Share Work</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#the-big-challenge-amdahl-s-law">The Big Challenge: Amdahl’s Law</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#efficiency-metrics-explained">Efficiency Metrics Explained</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#mathematical-foundations">Mathematical Foundations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#problem-definition">Problem Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#mathematical-formulation">Mathematical Formulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#mpi-topology-calculation">MPI Topology Calculation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#algorithm-design">Algorithm Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#mpi-topology-calculation-algorithm">MPI Topology Calculation Algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#divisibility-verification">Divisibility Verification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#complete-implementation">Complete Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#worked-example">Worked Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#complete-strong-scaling-study">Complete Strong Scaling Study</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#performance-analysis">Performance Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#algorithmic-complexity">Algorithmic Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#space-complexity">Space Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#communication-overhead">Communication Overhead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#efficiency-predictions">Efficiency Predictions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#practical-usage">Practical Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#command-line-interface">Command-Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#python-api-usage">Python API Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#advanced-usage">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#testing-and-validation">Testing and Validation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#verification-checklist">Verification Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#common-issues-and-solutions">Common Issues and Solutions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#issue-1-grid-not-divisible">Issue 1: Grid Not Divisible</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#issue-2-poor-speedup">Issue 2: Poor Speedup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#issue-3-memory-limitations">Issue 3: Memory Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#choosing-process-counts">Choosing Process Counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#designing-grid-sizes">Designing Grid Sizes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#running-studies-efficiently">Running Studies Efficiently</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#key-takeaways">Key Takeaways</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/strong_scaling_complete.html#mathematical-appendix">Mathematical Appendix</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#speedup-formula-derivation">Speedup Formula Derivation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#efficiency-formula">Efficiency Formula</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/strong_scaling_complete.html#work-distribution-formula">Work Distribution Formula</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#introduction-for-everyone">Introduction for Everyone</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#what-is-mpi-topology">What is MPI Topology?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#why-do-we-need-this">Why Do We Need This?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#who-should-read-this">Who Should Read This?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#conceptual-foundation">Conceptual Foundation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#understanding-dimensions">Understanding Dimensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#communication-patterns">Communication Patterns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#load-balancing-principles">Load Balancing Principles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#mathematical-foundations">Mathematical Foundations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#topology-notation">Topology Notation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#process-coordinate-system">Process Coordinate System</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#prime-factorization">Prime Factorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#optimal-topology-criteria">Optimal Topology Criteria</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#algorithm-design">Algorithm Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#complete-implementation">Complete Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#worked-examples">Worked Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#example-1-8-processes-cube">Example 1: 8 Processes (Cube)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#example-2-24-processes">Example 2: 24 Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#example-3-64-processes">Example 3: 64 Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#example-4-prime-number-17-processes">Example 4: Prime Number (17 Processes)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#performance-analysis">Performance Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#algorithmic-complexity">Algorithmic Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#communication-overhead-analysis">Communication Overhead Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#surface-to-volume-ratio">Surface-to-Volume Ratio</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#practical-usage">Practical Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#using-hpc-scaletest">Using HPC-ScaleTest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#python-api">Python API</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#common-issues-and-solutions">Common Issues and Solutions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#issue-1-prime-process-counts">Issue 1: Prime Process Counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#issue-2-non-cubic-results">Issue 2: Non-Cubic Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#issue-3-large-aspect-ratios">Issue 3: Large Aspect Ratios</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#choosing-process-counts">Choosing Process Counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#matching-hardware">Matching Hardware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#testing-topologies">Testing Topologies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#key-concepts">Key Concepts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/mpi_topology_complete.html#mathematical-appendix">Mathematical Appendix</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#neighbor-calculation-formulas">Neighbor Calculation Formulas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/mpi_topology_complete.html#optimal-topology-proof">Optimal Topology Proof</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#introduction-for-everyone">Introduction for Everyone</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#what-is-domain-decomposition">What is Domain Decomposition?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#why-is-this-important">Why is This Important?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#conceptual-foundation">Conceptual Foundation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#types-of-decomposition">Types of Decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#boundary-communication">Boundary Communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#load-balancing">Load Balancing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#mathematical-foundations">Mathematical Foundations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#domain-and-grid-definitions">Domain and Grid Definitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#decomposition-mathematics">Decomposition Mathematics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#implementation-in-hpc-scaletest">Implementation in HPC-ScaleTest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#algorithm-overview">Algorithm Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#worked-example">Worked Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#complete-domain-decomposition">Complete Domain Decomposition</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms/domain_decomposition_complete.html#key-takeaways">Key Takeaways</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#system-overview">System Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#core-components">Core Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#design-patterns">Design Patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#data-flow">Data Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#module-dependencies">Module Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#extension-points">Extension Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#security-considerations">Security Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#testing-strategy">Testing Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#development-setup">Development Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#adding-a-new-scheduler">Adding a New Scheduler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#adding-a-new-launcher">Adding a New Launcher</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#custom-input-parsers">Custom Input Parsers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#testing-guidelines">Testing Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#documentation-guidelines">Documentation Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#code-style-guidelines">Code Style Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#pull-request-process">Pull Request Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#release-process">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_reference.html#core-modules">Core Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference.html#quick-reference">Quick Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html#module-core-test-definition">Module: core.test_definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html#module-core-config">Module: core.config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html#module-core-abstracts">Module: core.abstracts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html#module-core-factory">Module: core.factory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html#module-core-types">Module: core.types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/engine.html#module-engine-orchestrator">Module: engine.orchestrator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/engine.html#module-engine-runner">Module: engine.runner</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/engine.html#module-engine-scaling">Module: engine.scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/engine.html#module-engine-job-builder">Module: engine.job_builder</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/backends.html#schedulers">Schedulers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/backends.html#launchers">Launchers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/backends.html#module-system">Module System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/backends.html#build-systems">Build Systems</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#configuration-utilities">Configuration Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#input-file-handling">Input File Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#ai-assisted-utilities">AI-Assisted Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#code-acquisition">Code Acquisition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#reporting-and-visualization">Reporting and Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#system-information">System Information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#job-management">Job Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#validation">Validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#file-utilities">File Utilities</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+</div>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting_started.html" class="btn btn-neutral float-right" title="Getting Started" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

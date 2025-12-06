@@ -1,0 +1,448 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Guide &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api_reference.html" />
+    <link rel="prev" title="Architecture" href="architecture.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#development-setup">Development Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clone-and-install">Clone and Install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-tests">Run Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-quality">Code Quality</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-overview">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core-concepts">Core Concepts</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-new-scheduler">Adding a New Scheduler</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-backend-class">1. Create Backend Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#register-backend">2. Register Backend</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-to-factory">3. Add to Factory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-tests">4. Add Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-new-launcher">Adding a New Launcher</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-input-parsers">Custom Input Parsers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-guidelines">Testing Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mock-external-dependencies">Mock External Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation-guidelines">Documentation Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#docstring-format">Docstring Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rst-documentation">RST Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#code-style-guidelines">Code Style Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pull-request-process">Pull Request Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#release-process">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Developer Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/developer_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="developer-guide">
+<h1>Developer Guide<a class="headerlink" href="#developer-guide" title="Link to this heading"></a></h1>
+<p>This guide helps developers contribute to and extend HPC-ScaleTest.</p>
+<section id="development-setup">
+<h2>Development Setup<a class="headerlink" href="#development-setup" title="Link to this heading"></a></h2>
+<section id="clone-and-install">
+<h3>Clone and Install<a class="headerlink" href="#clone-and-install" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/yourusername/hpc-scaletest.git
+<span class="nb">cd</span><span class="w"> </span>hpc-scaletest
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="run-tests">
+<h3>Run Tests<a class="headerlink" href="#run-tests" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/<span class="w"> </span>-v
+pytest<span class="w"> </span>tests/<span class="w"> </span>--cov<span class="o">=</span>.<span class="w"> </span>--cov-report<span class="o">=</span>html
+</pre></div>
+</div>
+</section>
+<section id="code-quality">
+<h3>Code Quality<a class="headerlink" href="#code-quality" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Format code</span>
+black<span class="w"> </span>.
+
+<span class="c1"># Lint</span>
+flake8<span class="w"> </span>.
+
+<span class="c1"># Type checking</span>
+mypy<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+</section>
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
+<p>See <a class="reference internal" href="architecture.html"><span class="doc">Architecture</span></a> for detailed architecture documentation.</p>
+<section id="core-concepts">
+<h3>Core Concepts<a class="headerlink" href="#core-concepts" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Abstraction</strong>: All backends implement abstract base classes</p></li>
+<li><p><strong>Factory Pattern</strong>: Backends created via factory</p></li>
+<li><p><strong>Registry</strong>: Plugin system for custom backends</p></li>
+<li><p><strong>Configuration</strong>: Dataclasses for type-safe config</p></li>
+</ul>
+</section>
+</section>
+<section id="adding-a-new-scheduler">
+<h2>Adding a New Scheduler<a class="headerlink" href="#adding-a-new-scheduler" title="Link to this heading"></a></h2>
+<section id="create-backend-class">
+<h3>1. Create Backend Class<a class="headerlink" href="#create-backend-class" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># backends/schedulers/pbs.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchedulerBackend</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PBSScheduler</span><span class="p">(</span><span class="n">SchedulerBackend</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submit PBS job and return job ID.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;qsub&quot;</span><span class="p">,</span> <span class="n">script_path</span><span class="p">],</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_job_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get job status.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;qstat&quot;</span><span class="p">,</span> <span class="n">job_id</span><span class="p">],</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="c1"># Parse and return status</span>
+        <span class="k">return</span> <span class="n">status</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cancel job.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;qdel&quot;</span><span class="p">,</span> <span class="n">job_id</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="register-backend">
+<h3>2. Register Backend<a class="headerlink" href="#register-backend" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In backends/schedulers/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.pbs</span><span class="w"> </span><span class="kn">import</span> <span class="n">PBSScheduler</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PBSScheduler&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="add-to-factory">
+<h3>3. Add to Factory<a class="headerlink" href="#add-to-factory" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># core/factory.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backends.schedulers.pbs</span><span class="w"> </span><span class="kn">import</span> <span class="n">PBSScheduler</span>
+
+<span class="n">SCHEDULER_MAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;slurm&#39;</span><span class="p">:</span> <span class="n">SlurmScheduler</span><span class="p">,</span>
+    <span class="s1">&#39;pbs&#39;</span><span class="p">:</span> <span class="n">PBSScheduler</span><span class="p">,</span>  <span class="c1"># Add this</span>
+    <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">LocalScheduler</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="add-tests">
+<h3>4. Add Tests<a class="headerlink" href="#add-tests" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># tests/test_pbs_scheduler.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_pbs_submit</span><span class="p">():</span>
+    <span class="n">scheduler</span> <span class="o">=</span> <span class="n">PBSScheduler</span><span class="p">()</span>
+    <span class="c1"># Test submission logic</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="adding-a-new-launcher">
+<h2>Adding a New Launcher<a class="headerlink" href="#adding-a-new-launcher" title="Link to this heading"></a></h2>
+<p>Similar process to schedulers:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># backends/launchers/aprun.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">LauncherBackend</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AprunLauncher</span><span class="p">(</span><span class="n">LauncherBackend</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executable</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">num_tasks</span><span class="p">,</span>
+                     <span class="n">tasks_per_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;aprun&quot;</span><span class="p">,</span> <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">num_tasks</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">tasks_per_node</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;-N&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">tasks_per_node</span><span class="p">)])</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">executable</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-input-parsers">
+<h2>Custom Input Parsers<a class="headerlink" href="#custom-input-parsers" title="Link to this heading"></a></h2>
+<p>For application-specific input formats:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># utils/custom_parser.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utils.generic_input_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenericInputParser</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FortranNamelistParser</span><span class="p">(</span><span class="n">GenericInputParser</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        \<span class="s2">&quot;</span><span class="se">\&quot;\&quot;</span><span class="s2">Parse Fortran namelist format.</span><span class="se">\&quot;\&quot;\&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Parse namelist format</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">updates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        \<span class="s2">&quot;</span><span class="se">\&quot;\&quot;</span><span class="s2">Update namelist parameters.</span><span class="se">\&quot;\&quot;\&quot;</span>
+        <span class="c1"># Update and return new content</span>
+        <span class="k">return</span> <span class="n">new_content</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-guidelines">
+<h2>Testing Guidelines<a class="headerlink" href="#testing-guidelines" title="Link to this heading"></a></h2>
+<section id="unit-tests">
+<h3>Unit Tests<a class="headerlink" href="#unit-tests" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># tests/test_myfeature.py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.test_definition</span><span class="w"> </span><span class="kn">import</span> <span class="n">Test</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_basic_configuration</span><span class="p">():</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">Test</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;./app&quot;</span><span class="p">])</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">set_resources</span><span class="p">(</span><span class="n">max_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">test</span><span class="o">.</span><span class="n">resource_config</span><span class="o">.</span><span class="n">max_nodes</span> <span class="o">==</span> <span class="mi">4</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-tests">
+<h3>Integration Tests<a class="headerlink" href="#integration-tests" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_full_workflow</span><span class="p">():</span>
+    <span class="c1"># Test complete workflow</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="mock-external-dependencies">
+<h3>Mock External Dependencies<a class="headerlink" href="#mock-external-dependencies" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span><span class="p">,</span> <span class="n">MagicMock</span>
+
+<span class="nd">@patch</span><span class="p">(</span><span class="s1">&#39;subprocess.run&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_job_submission</span><span class="p">(</span><span class="n">mock_run</span><span class="p">):</span>
+    <span class="n">mock_run</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span>
+        <span class="n">stdout</span><span class="o">=</span><span class="s2">&quot;12345&quot;</span><span class="p">,</span> <span class="n">returncode</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
+    <span class="c1"># Test with mocked subprocess</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="documentation-guidelines">
+<h2>Documentation Guidelines<a class="headerlink" href="#documentation-guidelines" title="Link to this heading"></a></h2>
+<section id="docstring-format">
+<h3>Docstring Format<a class="headerlink" href="#docstring-format" title="Link to this heading"></a></h3>
+<p>Use Google-style docstrings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_function</span><span class="p">(</span><span class="n">param1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    \<span class="s2">&quot;</span><span class="se">\&quot;\&quot;</span><span class="s2">Short description.</span>
+
+    <span class="n">Longer</span> <span class="n">description</span> <span class="k">with</span> <span class="n">more</span> <span class="n">details</span> <span class="n">about</span> <span class="n">what</span>
+    <span class="n">this</span> <span class="n">function</span> <span class="n">does</span><span class="o">.</span>
+
+    <span class="n">Args</span><span class="p">:</span>
+        <span class="n">param1</span><span class="p">:</span> <span class="n">Description</span> <span class="n">of</span> <span class="n">param1</span>
+        <span class="n">param2</span><span class="p">:</span> <span class="n">Description</span> <span class="n">of</span> <span class="n">param2</span>
+
+    <span class="n">Returns</span><span class="p">:</span>
+        <span class="n">Description</span> <span class="n">of</span> <span class="k">return</span> <span class="n">value</span>
+
+    <span class="n">Raises</span><span class="p">:</span>
+        <span class="ne">ValueError</span><span class="p">:</span> <span class="n">When</span> <span class="nb">input</span> <span class="ow">is</span> <span class="n">invalid</span>
+
+    <span class="n">Example</span><span class="p">:</span>
+        <span class="o">&gt;&gt;&gt;</span> <span class="n">my_function</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
+        <span class="kc">True</span>
+    \<span class="s2">&quot;</span><span class="se">\&quot;\&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="rst-documentation">
+<h3>RST Documentation<a class="headerlink" href="#rst-documentation" title="Link to this heading"></a></h3>
+<p>Update relevant .rst files when adding features.</p>
+</section>
+</section>
+<section id="code-style-guidelines">
+<h2>Code Style Guidelines<a class="headerlink" href="#code-style-guidelines" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Follow PEP 8</p></li>
+<li><p>Use type hints</p></li>
+<li><p>Maximum line length: 88 characters (Black default)</p></li>
+<li><p>Use descriptive variable names</p></li>
+<li><p>Add docstrings to all public functions/classes</p></li>
+</ul>
+</section>
+<section id="pull-request-process">
+<h2>Pull Request Process<a class="headerlink" href="#pull-request-process" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Fork the repository</p></li>
+<li><p>Create a feature branch</p></li>
+<li><p>Make your changes</p></li>
+<li><p>Add tests</p></li>
+<li><p>Run test suite</p></li>
+<li><p>Update documentation</p></li>
+<li><p>Submit pull request</p></li>
+</ol>
+</section>
+<section id="release-process">
+<h2>Release Process<a class="headerlink" href="#release-process" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Update version in setup.py</p></li>
+<li><p>Update CHANGELOG.md</p></li>
+<li><p>Create Git tag</p></li>
+<li><p>Build and publish to PyPI</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>setup.py<span class="w"> </span>sdist<span class="w"> </span>bdist_wheel
+twine<span class="w"> </span>upload<span class="w"> </span>dist/*
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="architecture.html"><span class="doc">Architecture</span></a> - Architecture details</p></li>
+<li><p><a class="reference internal" href="contributing.html"><span class="doc">Contributing</span></a> - Contribution guidelines</p></li>
+<li><p><a class="reference internal" href="api_reference.html"><span class="doc">API Reference</span></a> - API documentation</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="architecture.html" class="btn btn-neutral float-left" title="Architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api_reference.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
