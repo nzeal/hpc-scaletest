@@ -610,6 +610,26 @@ class ScalingEngine:
         Returns:
             Tuple (nproc_x, nproc_y, nproc_z) that satisfies both constraints
         """
+        # Get the number of dimensions we're scaling in (from config or default to 3)
+        scaling_dims = getattr(self, 'dims', 3)
+        
+        # Force pz=1 if nz=1 or if we're only doing 2D scaling
+        if nz == 1 or scaling_dims == 2:
+            logger.info(f"    {'nz=1' if nz == 1 else '2D scaling'} detected, forcing pz=1 to prevent Z-decomposition")
+            # Distribute ranks only in X and Y directions
+            remaining_xy = required_ranks  # Since pz=1
+            
+            # Find best px and py such that px * py = required_ranks
+            # and they divide nx and ny as evenly as possible
+            best_px, best_py = self._find_best_2d_decomposition(remaining_xy, nx, ny)
+            
+            logger.info(f"    Best 2D decomposition: px={best_px}, py={best_py}, pz=1")
+            logger.info(f"    Verification: {best_px}*{best_py}*1 = {best_px * best_py * 1}")
+            logger.info(f"    Divisibility check: {nx}%{best_px}={nx % best_px}, {ny}%{best_py}={ny % best_py}")
+            
+            return (best_px, best_py, 1)
+        
+        # For 3D problems, find the best decomposition
         # Get divisors of required_ranks
         rank_divisors = self._get_divisors(required_ranks)
         logger.debug(f"    Divisors of required_ranks {required_ranks}: {rank_divisors}")
@@ -669,113 +689,124 @@ class ScalingEngine:
                               f"(incompatibility score: {best_score})")
             return best_decomp
         
-        # Fallback: use the approach from the original code
-        if self.initial_procs:
-            # Use the initial processor decomposition as a base
-            base_x, base_y, base_z = self.initial_procs
-            logger.info(f"    Base MPI decomposition: {base_x} × {base_y} × {base_z}")
-            
-            # Calculate scaling factors to reach required ranks
-            # We want to maintain the same ratio as the initial decomposition
-            total_base = base_x * base_y * base_z
-            if total_base > 0:
-                # Scale each dimension proportionally
-                scale_factor = (required_ranks / total_base) ** (1/3)
-                
-                # Try to find integer factors that multiply to required_ranks
-                # and are close to the scaled values
-                new_x = max(1, round(base_x * scale_factor))
-                new_y = max(1, round(base_y * scale_factor))
-                new_z = max(1, round(base_z * scale_factor))
-                
-                # Adjust to ensure we get exactly the required number of ranks
-                # We'll adjust one dimension at a time to get closer to required_ranks
-                actual_ranks = new_x * new_y * new_z
-                
-                # Iteratively adjust to get closer to required_ranks
-                adjustments = 0
-                max_adjustments = 20
-                
-                while actual_ranks != required_ranks and adjustments < max_adjustments:
-                    if actual_ranks < required_ranks:
-                        # Need more ranks, increase the largest dimension
-                        if new_x >= new_y and new_x >= new_z:
-                            new_x += 1
-                        elif new_y >= new_x and new_y >= new_z:
-                            new_y += 1
-                        else:
-                            new_z += 1
-                    else:
-                        # Need fewer ranks, decrease the largest dimension (but not below 1)
-                        if new_x >= new_y and new_x >= new_z and new_x > 1:
-                            new_x -= 1
-                        elif new_y >= new_x and new_y >= new_z and new_y > 1:
-                            new_y -= 1
-                        elif new_z > 1:
-                            new_z -= 1
-                        else:
-                            # Can't decrease further, break
-                            break
-                    
-                    actual_ranks = new_x * new_y * new_z
-                    adjustments += 1
-                
-                # If we still don't have the exact number, try a different approach
-                if actual_ranks != required_ranks:
-                    # Try to find factors of required_ranks
-                    factors = self._find_factors(required_ranks)
-                    if len(factors) >= 3:
-                        new_x, new_y, new_z = factors[0], factors[1], factors[2]
-                        actual_ranks = new_x * new_y * new_z
-                
-                logger.info(f"    Adjusted MPI decomposition: {new_x} × {new_y} × {new_z} = {actual_ranks}")
-                
-                # Update configuration
-                cfg['nproc_x'] = new_x
-                cfg['nproc_y'] = new_y
-                cfg['nproc_z'] = new_z
-            else:
-                # Fallback: distribute evenly across dimensions
-                cube_root = round(required_ranks ** (1/3))
-                new_x = new_y = new_z = cube_root
-                
-                # Adjust to get exactly required_ranks
-                actual_ranks = new_x * new_y * new_z
-                if actual_ranks != required_ranks:
-                    # Simple adjustment - increase one dimension
-                    new_x = required_ranks // (new_y * new_z)
-                    if new_x * new_y * new_z != required_ranks:
-                        # Try another approach
-                        new_y = required_ranks // (new_x * new_z)
-                        if new_x * new_y * new_z != required_ranks:
-                            new_z = required_ranks // (new_x * new_y)
-                
-                logger.info(f"    Fallback MPI decomposition: {new_x} × {new_y} × {new_z} = {new_x * new_y * new_z}")
-                cfg['nproc_x'] = new_x
-                cfg['nproc_y'] = new_y
-                cfg['nproc_z'] = new_z
-        else:
-            # No initial processor decomposition provided, distribute evenly
-            cube_root = round(required_ranks ** (1/3))
-            new_x = new_y = new_z = cube_root
-            
-            # Adjust to get exactly required_ranks
-            actual_ranks = new_x * new_y * new_z
-            if actual_ranks != required_ranks:
-                # Simple adjustment - increase one dimension
-                new_x = required_ranks // (new_y * new_z)
-                if new_x * new_y * new_z != required_ranks:
-                    # Try another approach
-                    new_y = required_ranks // (new_x * new_z)
-                    if new_x * new_y * new_z != required_ranks:
-                        new_z = required_ranks // (new_x * new_y)
-            
-            logger.info(f"    Default MPI decomposition: {new_x} × {new_y} × {new_z} = {new_x * new_y * new_z}")
-            cfg['nproc_x'] = new_x
-            cfg['nproc_y'] = new_y
-            cfg['nproc_z'] = new_z
+        # If we get here, we couldn't find a good decomposition
+        # Fallback to a simple approach that ensures we get the right number of ranks
+        # and tries to maintain reasonable aspect ratios
         
-        return cfg
+        # Try to maintain aspect ratio of grid
+        total_grid = nx * ny * nz
+        grid_aspect_x = nx / ny if ny > 0 else float('inf')
+        grid_aspect_y = ny / nz if nz > 0 else float('inf')
+        
+        # Start with cube root
+        cube_root = round(required_ranks ** (1/3))
+        
+        # Try to find factors that are close to the grid aspect ratios
+        px = max(1, min(nx, round(cube_root * (grid_aspect_x ** 0.5))))
+        py = max(1, min(ny, round(cube_root * (1 / (grid_aspect_x ** 0.5)))))
+        pz = max(1, min(nz, required_ranks // (px * py)))
+        
+        # Adjust to get exactly required_ranks
+        actual_ranks = px * py * pz
+        adjustments = 0
+        max_adjustments = 20
+        
+        while actual_ranks != required_ranks and adjustments < max_adjustments:
+            if actual_ranks < required_ranks:
+                # Need more ranks
+                if px <= py and px <= pz and px < nx:
+                    px = min(nx, px + 1)
+                elif py <= pz and py < ny:
+                    py = min(ny, py + 1)
+                elif pz < nz:
+                    pz = min(nz, pz + 1)
+                else:
+                    # Can't increase any further, try a different approach
+                    if px < nx:
+                        px = min(nx, px + 1)
+                    elif py < ny:
+                        py = min(ny, py + 1)
+                    else:
+                        break
+            else:
+                # Need fewer ranks
+                if px >= py and px >= pz and px > 1:
+                    px = max(1, px - 1)
+                elif py >= pz and py > 1:
+                    py = max(1, py - 1)
+                elif pz > 1:
+                    pz = max(1, pz - 1)
+                else:
+                    # Can't decrease any further, break
+                    break
+            
+            actual_ranks = px * py * pz
+            adjustments += 1
+        
+        logger.info(f"    Fallback decomposition: {px} × {py} × {pz} = {actual_ranks}")
+        return (px, py, pz)
+
+    def _find_best_2d_decomposition(self, required_ranks, nx, ny):
+        """
+        Find the best 2D decomposition (px, py) such that:
+        1. nx % px == 0 and ny % py == 0 (divisible) - HIGHEST PRIORITY
+        2. px * py = required_ranks (as close as possible) - HIGH PRIORITY
+        3. Maintain good aspect ratio similar to grid - LOWER PRIORITY
+        
+        Args:
+            required_ranks: Total MPI ranks needed (pz=1 for 2D)
+            nx, ny: Grid dimensions in X and Y
+            
+        Returns:
+            Tuple (px, py) that best satisfies the constraints
+        """
+        logger.info(f"    Finding best 2D decomposition for {required_ranks} ranks with grid {nx}x{ny}")
+        
+        # Get all divisors of nx and ny
+        nx_divisors = self._get_divisors(nx)
+        ny_divisors = self._get_divisors(ny)
+        
+        logger.debug(f"    X divisors: {nx_divisors}")
+        logger.debug(f"    Y divisors: {ny_divisors}")
+        
+        best_pair = None
+        best_score = float('inf')
+        
+        # Try all combinations of divisors and score them
+        for px in nx_divisors:
+            for py in ny_divisors:
+                product = px * py
+                product_diff = abs(product - required_ranks)
+                
+                # Score based on multiple factors:
+                # 1. How far off the product is (most important)
+                score = product_diff * 100
+                
+                # 2. Aspect ratio similarity (less important)
+                grid_aspect = nx / ny if ny > 0 else float('inf')
+                decomp_aspect = px / py if py > 0 else float('inf')
+                aspect_diff = abs(grid_aspect - decomp_aspect)
+                score += aspect_diff * 1  # Light weighting for aspect ratio
+                
+                if score < best_score:
+                    best_score = score
+                    best_pair = (px, py)
+        
+        if best_pair:
+            px, py = best_pair
+            product = px * py
+            x_divisible = (nx % px == 0)
+            y_divisible = (ny % py == 0)
+            
+            logger.info(f"    Best 2D decomposition: {px} × {py} = {product}")
+            logger.info(f"    Divisibility: X={x_divisible}, Y={y_divisible}")
+            logger.info(f"    Product difference: {abs(product - required_ranks)}")
+            
+            return best_pair
+        
+        # This should never happen since we're using divisors, but just in case:
+        logger.warning("    Could not find valid 2D decomposition, using fallback")
+        return (1, 1)
     
     def _get_divisors(self, n):
         """
