@@ -11,7 +11,7 @@ long_description = readme_file.read_text() if readme_file.exists() else ""
 
 setup(
     name="hpc-scaletest",
-    version="1.0.0",
+    version="2.0.0",
     author="HPC ScaleTest Contributors",
     description="A modular framework for running benchmark scaling tests on HPC systems",
     long_description=long_description,
@@ -28,6 +28,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.8",
     install_requires=[
@@ -45,7 +46,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "scaletest=scaletest:main",
+            "hpc-scaletest=hpc_auto:main",
+            "scaletest=hpc_auto:main",  # Backward compatibility
         ],
     },
     include_package_data=True,

@@ -66,16 +66,58 @@ def scale_int(value, factor):
 
 # ------------------- Input File Parser -------------------
 class InputFileParser:
-    """Parse and extract parameters from PIC input files."""
+    """
+    Parse and extract parameters from simulation input files.
     
-    def __init__(self):
-        # Map of parameter names to extract
-        self.param_names = [
-            'Lx', 'Ly', 'Lz',
-            'nxc', 'nyc', 'nzc',
-            'XLEN', 'YLEN', 'ZLEN',
-            'npcelx', 'npcely', 'npcelz'
-        ]
+    Supports configurable parameter names via variable_map to work with
+    different simulation codes beyond iPIC3D.
+    """
+    
+    # Default parameter mappings (compatible with iPIC3D)
+    DEFAULT_PARAM_NAMES = {
+        'domain': {
+            'x': ['Lx', 'domain_x', 'xmax', 'length_x'],
+            'y': ['Ly', 'domain_y', 'ymax', 'length_y'],
+            'z': ['Lz', 'domain_z', 'zmax', 'length_z'],
+        },
+        'cells': {
+            'x': ['nxc', 'nx', 'ncells_x', 'num_cells_x'],
+            'y': ['nyc', 'ny', 'ncells_y', 'num_cells_y'],
+            'z': ['nzc', 'nz', 'ncells_z', 'num_cells_z'],
+        },
+        'mpi': {
+            'x': ['XLEN', 'nprocx', 'nproc_x', 'px'],
+            'y': ['YLEN', 'nprocy', 'nproc_y', 'py'],
+            'z': ['ZLEN', 'nprocz', 'nproc_z', 'pz'],
+        },
+        'particles': {
+            'x': ['npcelx', 'particles_per_cell_x', 'ppc_x'],
+            'y': ['npcely', 'particles_per_cell_y', 'ppc_y'],
+            'z': ['npcelz', 'particles_per_cell_z', 'ppc_z'],
+        }
+    }
+    
+    def __init__(self, variable_map: dict = None):
+        """
+        Initialize parser with optional custom variable mapping.
+        
+        Args:
+            variable_map: Custom mapping of parameter types to variable names.
+                         If None, uses DEFAULT_PARAM_NAMES.
+        """
+        self.variable_map = variable_map or self.DEFAULT_PARAM_NAMES
+        
+        # Build flat list of all parameter names to search for
+        self.param_names = []
+        for category in self.variable_map.values():
+            if isinstance(category, dict):
+                for variants in category.values():
+                    if isinstance(variants, list):
+                        self.param_names.extend(variants)
+                    else:
+                        self.param_names.append(variants)
+            elif isinstance(category, list):
+                self.param_names.extend(category)
     
     def parse_input_file(self, input_file):
         """Parse input file and extract parameter values."""
@@ -125,6 +167,37 @@ class InputFileParser:
         except ValueError:
             # Not numeric - return as string (could be placeholder)
             return value_str
+    
+    def find_parameter(self, params: dict, category: str, dimension: str):
+        """
+        Find a parameter value by category and dimension.
+        
+        Searches through all known aliases for the parameter.
+        
+        Args:
+            params: Parsed parameters dict
+            category: Parameter category ('domain', 'cells', 'mpi', 'particles')
+            dimension: Dimension ('x', 'y', 'z')
+        
+        Returns:
+            Parameter value or None
+        """
+        if category not in self.variable_map:
+            return None
+        
+        category_map = self.variable_map[category]
+        if dimension not in category_map:
+            return None
+        
+        variants = category_map[dimension]
+        if isinstance(variants, str):
+            variants = [variants]
+        
+        for variant in variants:
+            if variant in params:
+                return params[variant]
+        
+        return None
     
     def generate_scaled_input(self, base_input, output_file, config):
         """Generate scaled input file with new parameter values."""
@@ -749,9 +822,9 @@ class ScalingEngine:
     def _find_best_2d_decomposition(self, required_ranks, nx, ny):
         """
         Find the best 2D decomposition (px, py) such that:
-        1. nx % px == 0 and ny % py == 0 (divisible) - HIGHEST PRIORITY
-        2. px * py = required_ranks (as close as possible) - HIGH PRIORITY
-        3. Maintain good aspect ratio similar to grid - LOWER PRIORITY
+        1. px * py = required_ranks (EXACT MATCH - REQUIRED)
+        2. nx % px == 0 and ny % py == 0 (divisible - PREFERRED)
+        3. Maintain good aspect ratio similar to grid - NICE TO HAVE
         
         Args:
             required_ranks: Total MPI ranks needed (pz=1 for 2D)
@@ -762,51 +835,88 @@ class ScalingEngine:
         """
         logger.info(f"    Finding best 2D decomposition for {required_ranks} ranks with grid {nx}x{ny}")
         
-        # Get all divisors of nx and ny
-        nx_divisors = self._get_divisors(nx)
-        ny_divisors = self._get_divisors(ny)
+        # Get all divisors of required_ranks (MUST multiply exactly)
+        rank_divisors = self._get_divisors(required_ranks)
+        logger.debug(f"    Rank divisors: {rank_divisors}")
         
-        logger.debug(f"    X divisors: {nx_divisors}")
-        logger.debug(f"    Y divisors: {ny_divisors}")
+        # Get all divisors of nx and ny (for checking divisibility)
+        nx_divisors = set(self._get_divisors(nx))
+        ny_divisors = set(self._get_divisors(ny))
+        
+        logger.debug(f"    X divisors: {sorted(nx_divisors)}")
+        logger.debug(f"    Y divisors: {sorted(ny_divisors)}")
         
         best_pair = None
         best_score = float('inf')
+        perfect_divisibility = False
         
-        # Try all combinations of divisors and score them
-        for px in nx_divisors:
-            for py in ny_divisors:
-                product = px * py
-                product_diff = abs(product - required_ranks)
-                
-                # Score based on multiple factors:
-                # 1. How far off the product is (most important)
-                score = product_diff * 100
-                
-                # 2. Aspect ratio similarity (less important)
-                grid_aspect = nx / ny if ny > 0 else float('inf')
-                decomp_aspect = px / py if py > 0 else float('inf')
-                aspect_diff = abs(grid_aspect - decomp_aspect)
-                score += aspect_diff * 1  # Light weighting for aspect ratio
-                
-                if score < best_score:
-                    best_score = score
-                    best_pair = (px, py)
+        # Try all combinations where px * py = required_ranks EXACTLY
+        for px in rank_divisors:
+            py = required_ranks // px  # Calculate exact complement
+            
+            if px * py != required_ranks:
+                continue  # Must be exact
+            
+            # Check divisibility
+            x_divisible = (px in nx_divisors)
+            y_divisible = (py in ny_divisors)
+            
+            # Score based on multiple factors:
+            # 1. Perfect divisibility gets huge bonus (most important)
+            if x_divisible and y_divisible:
+                score = 0  # Perfect!
+                perfect_divisibility = True
+            else:
+                # Partial divisibility
+                score = 1000  # Start with high penalty
+                if x_divisible:
+                    score -= 500
+                if y_divisible:
+                    score -= 500
+            
+            # 2. Aspect ratio similarity (less important)
+            grid_aspect = nx / ny if ny > 0 else float('inf')
+            decomp_aspect = px / py if py > 0 else float('inf')
+            aspect_diff = abs(grid_aspect - decomp_aspect)
+            score += aspect_diff * 10  # Moderate weighting for aspect ratio
+            
+            logger.debug(f"    Testing px={px}, py={py}: divisibility=({x_divisible},{y_divisible}), score={score}")
+            
+            if score < best_score:
+                best_score = score
+                best_pair = (px, py)
         
         if best_pair:
             px, py = best_pair
             product = px * py
-            x_divisible = (nx % px == 0)
-            y_divisible = (ny % py == 0)
+            x_divisible = (px in nx_divisors)
+            y_divisible = (py in ny_divisors)
             
             logger.info(f"    Best 2D decomposition: {px} × {py} = {product}")
-            logger.info(f"    Divisibility: X={x_divisible}, Y={y_divisible}")
-            logger.info(f"    Product difference: {abs(product - required_ranks)}")
+            logger.info(f"    Divisibility: X={'YES' if x_divisible else 'NO'}, Y={'YES' if y_divisible else 'NO'}")
+            
+            if not (x_divisible and y_divisible):
+                logger.warning(f"    ⚠ WARNING: Decomposition is NOT perfectly divisible!")
+                logger.warning(f"      Grid cells per process: X={nx}/{px}={nx/px:.2f}, Y={ny}/{py}={ny/py:.2f}")
+                logger.warning(f"      This may cause MPI_Cart_create errors or uneven load distribution.")
+                logger.warning(f"      Consider adjusting procs_per_node to match a valid decomposition.")
+                
+                # Suggest better decomposition
+                self._suggest_valid_decomposition(required_ranks, nx, ny)
             
             return best_pair
         
         # This should never happen since we're using divisors, but just in case:
-        logger.warning("    Could not find valid 2D decomposition, using fallback")
-        return (1, 1)
+        logger.error(f"    ❌ ERROR: Could not find valid 2D decomposition for {required_ranks} ranks!")
+        logger.error(f"      This is a mathematical impossibility for grid {nx}×{ny}")
+        self._suggest_valid_decomposition(required_ranks, nx, ny)
+        
+        # Return closest approximation as fallback
+        import math
+        fallback_px = int(math.sqrt(required_ranks))
+        fallback_py = required_ranks // fallback_px
+        logger.warning(f"    Using fallback decomposition: {fallback_px} × {fallback_py}")
+        return (fallback_px, fallback_py)
     
     def _get_divisors(self, n):
         """
@@ -829,6 +939,51 @@ class ScalingEngine:
                     divisors.append(n // i)
         
         return sorted(divisors)
+    
+    def _suggest_valid_decomposition(self, required_ranks, nx, ny):
+        """
+        Suggest valid process counts that would work with the given grid.
+        
+        Finds nearby process counts where px × py can be factored such that
+        both px divides nx and py divides ny.
+        
+        Args:
+            required_ranks: The problematic rank count
+            nx, ny: Grid dimensions
+        """
+        logger.info(f"    Suggesting alternative process counts for grid {nx}×{ny}:")
+        
+        # Get divisors of grid dimensions
+        nx_divisors = self._get_divisors(nx)
+        ny_divisors = self._get_divisors(ny)
+        
+        # Find all valid products
+        valid_products = []
+        for px in nx_divisors:
+            for py in ny_divisors:
+                product = px * py
+                if product > 0:
+                    valid_products.append((product, px, py))
+        
+        # Sort by proximity to required_ranks
+        valid_products.sort(key=lambda x: abs(x[0] - required_ranks))
+        
+        # Show top 5 closest alternatives
+        logger.info(f"    Top 5 alternatives closest to {required_ranks} ranks:")
+        for i, (prod, px, py) in enumerate(valid_products[:5]):
+            diff = prod - required_ranks
+            diff_pct = (diff / required_ranks) * 100
+            logger.info(f"      {i+1}. {prod} ranks = {px}×{py} (diff: {diff:+d}, {diff_pct:+.1f}%)")
+        
+        # Calculate nodes needed for alternatives
+        from math import ceil
+        procs_per_node = self.test.resource_config.procs_per_node
+        logger.info(f"")
+        logger.info(f"    To use these alternatives with {procs_per_node} procs/node:")
+        for i, (prod, px, py) in enumerate(valid_products[:3]):
+            nodes_needed = ceil(prod / procs_per_node)
+            actual_procs_used = min(prod, nodes_needed * procs_per_node)
+            logger.info(f"      {prod} ranks → {nodes_needed} nodes (using {actual_procs_used}/{nodes_needed * procs_per_node} procs)")
     
     def _find_factors(self, n):
         """

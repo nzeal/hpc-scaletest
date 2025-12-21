@@ -666,11 +666,31 @@ def main():
             if 'procs_per_node' not in yaml_config:
                 config_dict['procs_per_node'] = auto_config['procs_per_node']
                 logger.info(f"  Auto-detected procs_per_node: {auto_config['procs_per_node']}")
+            else:
+                # Validate user-specified value against detection
+                if auto_config['procs_per_node'] != yaml_config['procs_per_node']:
+                    logger.warning(f"  User specified procs_per_node: {yaml_config['procs_per_node']}, " +
+                                 f"detected: {auto_config['procs_per_node']}")
+                    logger.warning(f"  Using user value (detection may be inaccurate for this partition)")
             
             if 'gpus_per_node' not in yaml_config:
                 config_dict['gpus_per_node'] = auto_config['gpus_per_node']
                 if auto_config['gpus_per_node'] > 0:
                     logger.info(f"  Auto-detected gpus_per_node: {auto_config['gpus_per_node']}")
+            else:
+                # Validate user-specified value against detection
+                user_gpus = yaml_config['gpus_per_node']
+                detected_gpus = auto_config['gpus_per_node']
+                if detected_gpus != user_gpus:
+                    if detected_gpus == 0 and user_gpus > 0:
+                        logger.warning(f"  User specified gpus_per_node: {user_gpus}, but detection found: {detected_gpus}")
+                        logger.warning(f"  This usually means:")
+                        logger.warning(f"    1. Partition detection failed to parse GPU info correctly")
+                        logger.warning(f"    2. Or sinfo doesn't report GPUs for this partition")
+                        logger.warning(f"  Using user-specified value: {user_gpus}")
+                    else:
+                        logger.info(f"  User specified gpus_per_node: {user_gpus} " +
+                                  f"(detected: {detected_gpus}, using user value)")
             
             if 'memory_per_node_gb' not in yaml_config:
                 config_dict['memory_per_node_gb'] = auto_config['memory_per_node_gb']

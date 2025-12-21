@@ -1,0 +1,68 @@
+# Leonardo Booster GPU Strong Scaling Example
+# Fixed problem size, increasing parallelism
+
+# Repository and build settings
+repository: https://github.com/Pranab-JD/iPIC3D-GPU-SPACE-CoE.git
+branch: main
+build_system: cmake
+
+# Scaling configuration
+scaling: strong              # Strong scaling test
+nodes: 32                    # Test up to 32 nodes
+scaling_factor: 2.0          # Double nodes each step
+
+# Hardware configuration
+hardware: gpu                # GPU mode
+partition: booster           # Leonardo GPU partition (4 × A100 per node)
+account: cin_staff
+
+# Initial configuration - MUST match GPU count!
+# Leonardo Booster has 4 GPUs per node
+initial_procs: [2, 2, 1]     # 2×2×1 = 4 tasks = 4 GPUs ✓
+
+# Fixed problem size for strong scaling
+initial_domain: [100.0, 100.0, 1.0]
+initial_cells: [2048, 2048, 32]
+
+# Variable mapping for iPIC3D
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nxc"
+    y: "nyc"
+    z: "nzc"
+  mpi_decomposition:
+    x: "XLEN"
+    y: "YLEN"
+    z: "ZLEN"
+
+# Modules for Leonardo Booster
+modules:
+  - cmake/4.1.2
+  - cuda/12.6
+  - hdf5/1.14.3--intel-oneapi-mpi--2021.12.1--oneapi--2024.1.0
+
+# Input file
+input_file: inputfiles/os-stdin
+
+# Job settings
+time_limit: "02:00:00"
+qos: normal
+verbose: true
+auto_submit: true
+
+# Notes:
+# - Strong scaling keeps problem size constant
+# - Framework automatically scales MPI decomposition
+# - Scaling progression (4 GPUs/node):
+#   1 node:  2×2×1 = 4 tasks    (4 GPUs)
+#   2 nodes: 2×2×2 = 8 tasks    (8 GPUs)
+#   4 nodes: 4×2×2 = 16 tasks   (16 GPUs)
+#   8 nodes: 4×4×2 = 32 tasks   (32 GPUs)
+#   16 nodes: 4×4×4 = 64 tasks  (64 GPUs)
+#   32 nodes: 8×4×4 = 128 tasks (128 GPUs)
+# - Problem size (domain & cells) stays constant
+# - More GPUs process same problem faster

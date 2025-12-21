@@ -1,0 +1,97 @@
+# Leonardo Booster GPU Example Configuration
+# For iPIC3D-GPU-SPACE-CoE weak scaling test
+#
+# Demonstrates automatic GPU detection and configuration:
+# - Detects 4 GPUs per node
+# - Allocates 32 CPU cores per node
+# - Launches 4 MPI tasks per node (1 per GPU)
+# - Each task gets 8 cores (32/4)
+
+# Repository and build settings
+repository: https://github.com/Pranab-JD/iPIC3D-GPU-SPACE-CoE.git
+branch: main
+build_system: cmake
+
+# Scaling configuration
+scaling: weak                # Weak scaling test
+scaling_dimensions: 2        # Scale in X and Y only (not Z)
+scaling_factor: 2.0          # Double each dimension per step
+nodes: 16                    # Test up to 16 nodes
+
+# Hardware configuration - FRAMEWORK WILL AUTO-DETECT!
+hardware: gpu                # GPU mode
+partition: booster           # Leonardo GPU partition
+account: cin_staff           # Your account
+
+# CRITICAL: Framework automatically detects:
+# ✓ 4 GPUs per node
+# ✓ 32 CPU cores per node
+# ✓ 8 cores per GPU
+# ✓ Generates: #SBATCH --ntasks-per-node=32 (CPU allocation)
+# ✓ Generates: #SBATCH --gres=gpu:4
+# ✓ Launches: 4 MPI tasks (1 per GPU)
+
+# Initial configuration - MUST match GPU count!
+initial_procs: [2, 2, 1]     # 2×2×1 = 4 tasks = 4 GPUs ✓
+initial_domain: [20.0, 20.0, 1.0]
+initial_cells: [800, 400, 1]
+
+# Variable mapping for iPIC3D
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nxc"
+    y: "nyc"
+    z: "nzc"
+  mpi_decomposition:
+    x: "XLEN"
+    y: "YLEN"
+    z: "ZLEN"
+
+# Modules for Leonardo Booster
+modules:
+  - cmake/4.1.2
+  - cuda/12.6
+  - hdf5/1.14.3--intel-oneapi-mpi--2021.12.1--oneapi--2024.1.0
+
+# Input file
+input_file: inputfiles/os-stdin
+
+# Launcher configuration
+launcher: srun  # Use 'srun' (default) or 'mpirun'
+
+# For mpirun instead of srun, uncomment:
+# launcher: mpirun
+# launcher_options:
+#   report_bindings: true
+
+# Job settings
+time_limit: "02:00:00"
+qos: normal
+verbose: true
+auto_submit: true
+
+# Advanced GPU options (optional):
+# launcher_options:
+#   binding_script: "./gpu_bind.sh"  # Custom GPU binding script
+
+# Expected job.sh output:
+# #SBATCH --nodes=1
+# #SBATCH --partition=booster
+# #SBATCH --ntasks=32          # CPU allocation
+# #SBATCH --ntasks-per-node=32 # 32 CPU cores
+# #SBATCH --gres=gpu:4         # 4 GPUs
+#
+# srun --ntasks-per-node 4 --gpus-per-node 4 --gpu-bind=closest $BINARY/iPIC3D os-stdin
+# or
+# mpirun -np 4 --map-by ppr:4:node:PE=8 --report-bindings $BINARY/iPIC3D os-stdin
+#
+# Scaling progression:
+#   1 node:  2×2×1 = 4 tasks   (4 GPUs, 32 CPU cores)
+#   2 nodes: 4×2×1 = 8 tasks   (8 GPUs, 64 CPU cores)
+#   4 nodes: 4×4×1 = 16 tasks  (16 GPUs, 128 CPU cores)
+#   8 nodes: 8×4×1 = 32 tasks  (32 GPUs, 256 CPU cores)
+#   16 nodes: 8×8×1 = 64 tasks (64 GPUs, 512 CPU cores)

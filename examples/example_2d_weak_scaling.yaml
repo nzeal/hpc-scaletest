@@ -1,0 +1,66 @@
+# ============================================================================
+# Example: 2D Weak Scaling Test
+# ============================================================================
+# This configuration demonstrates 2D weak scaling where:
+# - Problem size grows as we add nodes
+# - X and Y dimensions scale while Z remains constant
+# - Each node handles roughly the same workload
+# ============================================================================
+
+# Source code (replace with your application)
+repository: https://github.com/username/hpc-simulation.git
+
+# Scaling configuration
+scaling: weak
+nodes: 16               # Test up to 16 nodes
+scaling_factor: 2.0     # Double at each step: 1→2→4→8→16
+scaling_dimensions: 2   # 2D: scale X and Y only
+
+# Initial configuration
+initial_procs: [4, 4, 1]          # 16 total processes (4×4×1)
+initial_domain: [10.0, 10.0, 1.0] # Physical domain size
+initial_cells: [256, 256, 32]     # Grid resolution
+
+# Variable mapping (customize for your application)
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nx"
+    y: "ny"
+    z: "nz"
+  mpi_decomposition:
+    x: "npx"
+    y: "npy"
+    z: "npz"
+
+# Hardware configuration
+hardware: cpu
+procs_per_node: 16
+
+# Resource configuration
+partition: compute
+account: myproject
+time_limit: "01:00:00"
+
+# Environment
+modules:
+  - gcc/11.2
+  - openmpi/4.1
+
+# Build and input
+build_system: make
+input_file: inputs/config.inp
+
+# Scheduler settings
+scheduler: slurm
+launcher: srun
+module_system: lmod
+
+# Behavior
+verbose: true
+auto_submit: true
+generate_report: true
+report_format: both

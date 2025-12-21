@@ -20,8 +20,9 @@ scaling: strong
 
 # Maximum number of nodes to test
 # The framework will generate a power-of-2 sequence: 1, 2, 4, ..., nodes
-nodes: 128
-scaling_dimensions: 3
+nodes: 32
+scaling_factor: 2.0
+scaling_dimensions: 2
 
 # For strong scaling, we keep the problem size constant while increasing resources
 # Initial processor decomposition (px, py, pz)
@@ -30,11 +31,9 @@ initial_procs: [14, 8, 1]
 
 # Domain size (Lx, Ly, Lz) - remains constant for strong scaling
 # Defines the physical domain dimensions
-initial_domain: [84.0, 48.0, 1.0]
 
-# Cell count (nx, ny, nz) - remains constant for strong scaling
-# Defines the number of grid cells in each dimension
-initial_cells: [840, 480, 1]
+initial_domain: [89.6, 51.2, 1.0]  
+initial_cells: [896, 512, 1]       
 
 # Particles per cell in each direction - remains constant for strong scaling
 particles_per_cell:

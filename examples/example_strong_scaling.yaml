@@ -1,0 +1,65 @@
+# ============================================================================
+# Example: Strong Scaling Test
+# ============================================================================
+# This configuration demonstrates strong scaling where:
+# - Problem size remains constant
+# - Number of processes increases to improve performance
+# - Measure speedup and parallel efficiency
+# ============================================================================
+
+# Source code (replace with your application)
+repository: https://github.com/username/hpc-simulation.git
+
+# Scaling configuration
+scaling: strong
+nodes: 32               # Test up to 32 nodes
+scaling_factor: 2.0     # Double at each step: 1→2→4→8→16→32
+scaling_dimensions: 3   # 3D decomposition
+
+# Initial configuration (smallest run)
+initial_procs: [2, 2, 2]  # 8 total processes to start
+
+# Hardware configuration
+hardware: cpu
+procs_per_node: 128  # 2× 64-core processors
+
+# Resource configuration
+partition: compute
+account: myproject
+time_limit: "01:30:00"
+
+# Variable mapping (customize for your application)
+variable_map:
+  mpi_decomposition:
+    x: "npx"
+    y: "npy"
+    z: "npz"
+  # For strong scaling, domain and grid remain constant
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nx"
+    y: "ny"
+    z: "nz"
+
+# Environment
+modules:
+  - intel/2023.1
+  - intel-mpi/2021.9
+
+# Build and input
+build_system: make
+input_file: inputs/fixed_problem.inp
+
+# Scheduler settings
+scheduler: slurm
+launcher: srun
+module_system: lmod
+
+# Behavior
+verbose: true
+auto_submit: true
+generate_report: true
+report_format: both

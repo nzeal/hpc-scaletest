@@ -21,9 +21,9 @@ scaling: weak
 # Maximum number of nodes to test
 # The framework will generate a power-of-2 sequence: 1, 2, 4, 8, ..., up to this value
 # For larger-scale runs, use 32, 64, 128 (requires dcgp_qos_bprod QOS)
-nodes: 128
+nodes: 32
 scaling_factor: 2.0  # Scaling factor for weak scaling - generates 1,2,4,8,16,32,64,128
-scaling_dimensions: 3  # 2D scaling (X→Y pattern), Z remains constant
+scaling_dimensions: 2  # 2D scaling (X→Y pattern), Z remains constant
 
 # Initial processor decomposition (px, py, pz)
 # This defines the MPI rank distribution in 3D space

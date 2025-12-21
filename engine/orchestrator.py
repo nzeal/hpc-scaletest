@@ -70,6 +70,8 @@ class OrchestratorConfig:
     build_system: Optional[str] = None  # Auto-detect from README
     modules: Optional[List[str]] = None  # Auto-detect from README
     build_flags: Optional[Dict[str, str]] = None
+    executable_name: Optional[str] = None  # Name of the compiled executable (e.g., "iPIC3D")
+    executable_args: Optional[List[str]] = None  # Arguments to pass to the executable
     
     # Input file configuration
     input_file: Optional[str] = None  # Path to input file or directory
@@ -233,26 +235,30 @@ class HPCOrchestrator:
         if self.config.test_name is None:
             self.config.test_name = self.source_dir.name
         
-        # Find executable name (try common patterns)
-        exe_candidates = [
-            self.source_dir / "build" / self.source_dir.name,
-            self.source_dir / "build" / "bin" / self.source_dir.name,
-            self.source_dir / self.source_dir.name
-        ]
+        # IMPORTANT: Use a special placeholder that will be replaced after build
+        # The runner.py will detect the actual binary name after compilation
+        # and replace __BINARY_PLACEHOLDER__ with the real executable path
         
-        exe_path = None
-        for candidate in exe_candidates:
-            if candidate.exists():
-                exe_path = candidate
-                break
+        build_dir = self.source_dir / "build"
         
-        # Create test instance with absolute path
-        # Use resolve() to convert relative paths to absolute paths
-        # so job scripts can run after changing directories
-        if exe_path:
-            command = [str(exe_path.resolve())]
-        else:
-            command = ["./a.out"]
+        # Use placeholder - NEVER hardcode the binary name
+        # The actual binary will be detected after compilation
+        command = [f"__BINARY_PLACEHOLDER__"]
+        self.test_executable_name = None  # Will be set after build
+        
+        logger.info(f"Binary will be auto-detected after compilation")
+        logger.info(f"  Build directory: {build_dir}")
+        
+        # Store user hint if provided (for binary detection scoring)
+        if self.config.executable_name:
+            logger.info(f"  User hint for executable: {self.config.executable_name}")
+            # Store as hint, not as actual name
+            self._executable_hint = self.config.executable_name
+        
+        # Add executable arguments if specified
+        if self.config.executable_args:
+            command.extend(self.config.executable_args)
+            logger.info(f"  Executable args: {self.config.executable_args}")
         
         self.test = Test(
             name=self.config.test_name,
@@ -291,6 +297,41 @@ class HPCOrchestrator:
             account=self.config.account
         )
         
+        # Configure GPU task layout if this is a GPU run
+        if self.config.hardware_type.lower() == "gpu" and gpus > 0:
+            # Automatic hardware detection and configuration
+            logger.info(f"  Auto-detecting hardware configuration...")
+            
+            try:
+                from utils.hardware_autodetect import HardwareDetector
+                
+                detector = HardwareDetector()
+                hw_config = detector.detect_hardware(partition_name=self.config.partition)
+                
+                # Auto-configure the resource config
+                detector.configure_resource_config(self.test.resource_config)
+                
+                logger.info(f"  Configured GPU task layout (auto-detected):")
+                logger.info(f"    → {self.test.resource_config.gpus_per_node} GPUs per node")
+                logger.info(f"    → {self.test.resource_config.actual_mpi_tasks} MPI tasks per node")
+                logger.info(f"    → {self.test.resource_config.cores_per_task} CPU cores per task")
+                logger.info(f"    → MPI mapping: --map-by ppr:{hw_config.mpi_tasks_per_node}:node --bind-to core")
+                
+            except ImportError:
+                # Fallback to manual configuration if hardware_autodetect not available
+                logger.warning("  Hardware autodetect not available, using manual configuration")
+                self.test.resource_config.configure_gpu_tasks(self.config.procs_per_node)
+                logger.info(f"  Configured GPU task layout (manual):")
+                logger.info(f"    → {self.test.resource_config.actual_mpi_tasks} MPI tasks per node")
+                logger.info(f"    → {self.test.resource_config.cores_per_task} CPU cores per task")
+            except Exception as e:
+                # Fallback on any error
+                logger.warning(f"  Hardware autodetect failed: {e}, using manual configuration")
+                self.test.resource_config.configure_gpu_tasks(self.config.procs_per_node)
+                logger.info(f"  Configured GPU task layout (manual fallback):")
+                logger.info(f"    → {self.test.resource_config.actual_mpi_tasks} MPI tasks per node")
+                logger.info(f"    → {self.test.resource_config.cores_per_task} CPU cores per task")
+        
         # Configure scaling
         self.test.set_scaling(
             scaling_type=self.config.scaling_type,
@@ -299,6 +340,45 @@ class HPCOrchestrator:
             initial_domain=self.config.initial_domain,
             initial_cells=self.config.initial_cells
         )
+        
+        # VALIDATE STRONG SCALING CONFIGURATION
+        if self.config.scaling_type.lower() == "strong":
+            from utils.strong_scaling_validator import StrongScalingValidator
+            
+            logger.info("")
+            logger.info("  Performing strong scaling validation...")
+            
+            validator = StrongScalingValidator(
+                procs_per_node=self.config.procs_per_node,
+                grid_dims=tuple(self.config.initial_cells),
+                scaling_dims=self.config.scaling_dimensions if hasattr(self.config, 'scaling_dimensions') else 3,
+                initial_procs=tuple(self.config.initial_procs) if self.config.initial_procs else None
+            )
+            
+            # Generate power-of-2 node sequence
+            max_nodes = self.config.max_nodes
+            node_sequence = validator.generate_power_of_2_sequence(max_nodes)
+            
+            # Validate
+            valid_nodes, invalid_nodes, details = validator.validate_node_sequence(
+                node_sequence,
+                auto_filter=True
+            )
+            
+            # Store valid node counts for use in runner
+            self.test.valid_node_counts = valid_nodes
+            
+            # Suggest alternatives if there are invalid counts
+            if invalid_nodes:
+                validator.suggest_compatible_configs(node_sequence)
+                
+                # Option to abort if user doesn't want auto-filtering
+                if not self.config.auto_submit_jobs:
+                    logger.warning("")
+                    logger.warning("⚠ Some node counts are invalid!")
+                    logger.warning("  Framework will auto-filter and only generate valid jobs.")
+                    logger.warning("  To change configuration, edit your YAML file.")
+                    logger.warning("")
         
         # Set variable mapping (for generic input parsing)
         if self.config.variable_map:
@@ -363,8 +443,13 @@ class HPCOrchestrator:
             if self.config.build_flags:
                 self.test.build_config.build_flags = self.config.build_flags
             
-            # Set executable name
-            self.test.build_config.executable_name = self.source_dir.name
+            # Set executable name - use config if provided, otherwise use source dir name
+            if self.config.executable_name:
+                self.test.build_config.executable_name = self.config.executable_name
+                logger.info(f"  Using configured executable name: {self.config.executable_name}")
+            else:
+                self.test.build_config.executable_name = self.source_dir.name
+                logger.info(f"  Executable name (auto): {self.source_dir.name}")
         
         # Configure input files
         input_file_path = self._setup_input_files()

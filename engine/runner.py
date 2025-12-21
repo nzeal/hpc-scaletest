@@ -7,6 +7,7 @@ import json
 import time
 import os
 import subprocess
+import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -40,6 +41,22 @@ class TestRunner:
         
         # Track whether jobs actually completed
         self.jobs_completed = False
+        
+        # Initialize incremental result writer for per-run JSON output
+        try:
+            from core.result_writer import IncrementalResultWriter
+            partition = getattr(test.resource_config, 'partition', '') or ''
+            self.result_writer = IncrementalResultWriter(
+                output_dir=self.run_dir,
+                scaling_type=scaling_type,
+                partition=partition,
+                test_name=test.name
+            )
+            logger.info(f"Initialized incremental result writer")
+            logger.info(f"  Results will be written to: {self.run_dir}/data/")
+        except ImportError:
+            self.result_writer = None
+            logger.warning("Incremental result writer not available")
         
         # Load modules for build (improved for login node)
         self._load_modules_for_build()
@@ -89,15 +106,63 @@ class TestRunner:
         # Build if source_dir set
         self.install_dir = self._build_if_needed()
         
-        # Update command with built exe if built
-        if self.install_dir:
-            exe_name = test.build_config.executable_name
-            # Convert to absolute path so job scripts work after cd
-            self.test.command[0] = str((self.install_dir / exe_name).resolve())
-            logger.info(f"Using binary: {self.test.command[0]}")
+        # Update command with detected binary (replace placeholder)
+        if self.install_dir and test.build_config.executable_name:
+            binary_name = test.build_config.executable_name
+            binary_path = (self.install_dir / binary_name).resolve()
+            
+            # Find and replace placeholder in command
+            for i, arg in enumerate(self.test.command):
+                if arg == "__BINARY_PLACEHOLDER__" or "PLACEHOLDER" in arg:
+                    if binary_path.exists():
+                        self.test.command[i] = str(binary_path)
+                        logger.info(f"✓ Binary detected: {binary_name}")
+                        logger.info(f"✓ Full path: {binary_path}")
+                    else:
+                        # Search in common locations
+                        search_paths = [
+                            self.install_dir / binary_name,
+                            self.install_dir / "bin" / binary_name,
+                            self.install_dir / "src" / binary_name,
+                        ]
+                        found = None
+                        for path in search_paths:
+                            if path.exists():
+                                found = path.resolve()
+                                break
+                        
+                        if found:
+                            self.test.command[i] = str(found)
+                            logger.info(f"✓ Binary found: {found}")
+                        else:
+                            logger.error(f"✗ Binary not found: {binary_name}")
+                            logger.error(f"  Build directory: {self.install_dir}")
+                            raise RuntimeError(f"Compiled binary '{binary_name}' not found")
+                    break
+            else:
+                # No placeholder found - might be pre-set command
+                if self.test.command[0] == "__BINARY_PLACEHOLDER__":
+                    self.test.command[0] = str(binary_path)
+                    logger.info(f"✓ Using compiled binary: {binary_path}")
+        elif self.install_dir:
+            logger.error("Build completed but no executable was detected!")
+            logger.error("This indicates a problem with the build process.")
+            raise RuntimeError("No executable detected after build")
+        else:
+            # No build needed - check if command is valid
+            if self.test.command[0] == "__BINARY_PLACEHOLDER__":
+                logger.error("No build performed and no pre-built binary specified")
+                raise RuntimeError("No binary available - build failed or no source provided")
         
-        # Create node sequence from scaling config
-        node_sequence = test.scaling_config.get_node_sequence()
+        # Create node sequence from scaling config or use validated sequence
+        if hasattr(test, 'valid_node_counts') and test.valid_node_counts:
+            # Use pre-validated node counts (from strong scaling validator)
+            node_sequence = test.valid_node_counts
+            logger.info(f"Using validated node sequence (filtered): {node_sequence}")
+        else:
+            # Use default sequence generation
+            node_sequence = test.scaling_config.get_node_sequence()
+            logger.info(f"Using default node sequence: {node_sequence}")
         
         # Extract initial values from scaling config
         initial_domain = test.scaling_config.initial_domain
@@ -268,30 +333,35 @@ class TestRunner:
         return executables[0]
     
     def _build_if_needed(self) -> Optional[Path]:
-        """Build if source_dir set, or use existing executable if available."""
+        """Build the code and detect the binary name.
+        
+        This method:
+        1. ALWAYS compiles if no valid binary exists
+        2. Detects the binary name automatically (no hardcoding)
+        3. Returns the build directory containing the binary
+        
+        The binary name is stored in self.test.build_config.executable_name
+        """
         source_dir = self.test.build_config.source_dir
         if not source_dir or not source_dir.exists():
+            logger.info("No source directory configured - skipping build")
             return None
         
-        # Check if build directory already exists with executable
+        source_dir = source_dir.resolve()
         build_dir = self.test.build_config.build_dir or source_dir / "build"
         build_dir = build_dir.resolve()
         
-        if build_dir.exists():
-            logger.info(f"Build directory exists: {build_dir}")
-            # Try to find existing executable
-            detected_binary = self._detect_binary_in_build_dir(build_dir)
-            if detected_binary and detected_binary.exists():
-                logger.info(f"✓ Found existing executable: {detected_binary.name}")
-                logger.info(f"  Skipping build stage - using existing binary")
-                self.test.build_config.executable_name = detected_binary.name
-                return build_dir
-            else:
-                logger.info("  No executable found in build directory, will rebuild")
-        
         build_system = self.test.backend_config.build_system or BuildBackend.CMAKE
         
-        # Generate module load commands to pass to build system
+        logger.info(f"")
+        logger.info(f"{'='*60}")
+        logger.info(f"BUILD CONFIGURATION")
+        logger.info(f"{'='*60}")
+        logger.info(f"  Source:     {source_dir}")
+        logger.info(f"  Build:      {build_dir}")
+        logger.info(f"  System:     {build_system.value}")
+        
+        # Prepare module commands for build
         build_options = dict(self.test.backend_config.build_options or {})
         modules = self.test.environment_config.modules
         if modules:
@@ -299,44 +369,95 @@ class TestRunner:
             module_system = BackendFactory.create_module_system(module_backend)
             module_commands = module_system.generate_load_commands(modules)
             build_options['module_commands'] = module_commands
-            logger.info(f"Build will use modules: {', '.join(modules)}")
+            logger.info(f"  Modules:    {', '.join(modules)}")
         
+        # Create the build backend
         builder = BackendFactory.create_build_system(build_system, build_options)
         
-        # build_dir already resolved above, just get install_dir
-        install_dir = self.test.build_config.install_dir or self.run_dir / "install"
-        install_dir = install_dir.resolve()  # Convert to absolute path
+        # Prepare CMake flags
+        effective_flags = dict(self.test.build_config.build_flags or {})
+        effective_flags["CMAKE_BUILD_TYPE"] = "Release"
         
-        # Flags with MPI env (now set)
-        effective_flags = {
-            **self.test.build_config.build_flags,
-            "CMAKE_BUILD_TYPE": "Release"
-        }
-        
-        # Only add HDF5_ROOT if environment variable is set
+        # Add HDF5 paths if available
         if 'HDF5_ROOT' in os.environ:
             effective_flags["HDF5_ROOT"] = os.environ['HDF5_ROOT']
         elif 'HDF5_HOME' in os.environ:
             effective_flags["HDF5_ROOT"] = os.environ['HDF5_HOME']
         
-        logger.info(f"Building from {source_dir} using {build_system.value}")
-        if not builder.configure(source_dir, build_dir, effective_flags):
-            logger.warning("Build configure failed—skipping auto-build (use pre-built)")
-            return None  # Non-fatal: Fall back to command[0] as-is
-        if not builder.build(build_dir, self.test.build_config.parallel_jobs):
-            logger.warning("Build failed")
+        logger.info(f"  Flags:      {effective_flags}")
+        
+        # Check if valid binary already exists
+        if build_dir.exists():
+            logger.info(f"")
+            logger.info(f"Checking existing build directory...")
+            
+            if hasattr(builder, 'find_executable'):
+                existing_exe = builder.find_executable(build_dir, source_dir)
+                if existing_exe and existing_exe.exists():
+                    logger.info(f"✓ Found existing binary: {existing_exe.name}")
+                    self.test.build_config.executable_name = existing_exe.name
+                    return build_dir
+            
+            # No valid binary - clean and rebuild
+            logger.info(f"No valid binary found - cleaning for rebuild...")
+            try:
+                shutil.rmtree(build_dir)
+                logger.info(f"✓ Cleaned build directory")
+            except Exception as e:
+                logger.warning(f"Could not clean: {e}")
+        
+        # COMPILE THE CODE
+        logger.info(f"")
+        logger.info(f"Starting build process...")
+        
+        if hasattr(builder, 'build_and_find'):
+            # Use automatic build method
+            executable = builder.build_and_find(
+                source_dir=source_dir,
+                build_dir=build_dir,
+                flags=effective_flags,
+                parallel_jobs=self.test.build_config.parallel_jobs or 4
+            )
+            
+            if executable:
+                # IMPORTANT: Store the detected binary name
+                self.test.build_config.executable_name = executable.name
+                logger.info(f"")
+                logger.info(f"{'='*60}")
+                logger.info(f"BUILD SUCCESSFUL")
+                logger.info(f"{'='*60}")
+                logger.info(f"  Detected binary: {executable.name}")
+                logger.info(f"  Full path:       {executable}")
+                return build_dir
+            else:
+                logger.error(f"")
+                logger.error(f"{'='*60}")
+                logger.error(f"BUILD FAILED")
+                logger.error(f"{'='*60}")
+                logger.error(f"  No executable was produced")
+                logger.error(f"  Check the build logs above for errors")
+                return None
+        else:
+            # Fallback: manual steps
+            logger.info("Using manual build steps...")
+            
+            if not builder.configure(source_dir, build_dir, effective_flags):
+                logger.error("Configure step failed")
+                return None
+            
+            if not builder.build(build_dir, self.test.build_config.parallel_jobs or 4):
+                logger.error("Build step failed")
+                return None
+            
+            # Detect the binary
+            detected = self._detect_binary_in_build_dir(build_dir)
+            if detected:
+                self.test.build_config.executable_name = detected.name
+                logger.info(f"✓ Detected binary: {detected.name}")
+                return build_dir
+            
+            logger.error("Build succeeded but no binary found")
             return None
-        
-        # After successful build, auto-detect the actual binary name
-        detected_binary = self._detect_binary_in_build_dir(build_dir)
-        if detected_binary:
-            # Update the executable name with what we actually found
-            self.test.build_config.executable_name = detected_binary.name
-            logger.info(f"Auto-detected binary: {detected_binary.name}")
-        
-        # Use the build directory - this is where the compiled binary actually is
-        logger.info(f"Build completed - binary located in: {build_dir}")
-        return build_dir
     
     def run(self) -> bool:
         logger.info(f"Starting {self.test.name} ({self.test.scaling_config.scaling_type.value})")
@@ -359,6 +480,27 @@ class TestRunner:
             logger.info(f"[{idx}/{len(job_configs)}] Processing: {job_config.job_id}")
             logger.info(f"  Folder: output/.../{ job_config.job_id}/")
             
+            # Create pending result entry BEFORE submission (incremental tracking)
+            if self.result_writer:
+                try:
+                    # Extract MPI configuration
+                    px, py, pz = job_config.procs_decomposition
+                    gpus_per_node = getattr(self.test.resource_config, 'gpus_per_node', 0)
+                    mpi_ranks_per_node = gpus_per_node if gpus_per_node > 0 else self.test.resource_config.procs_per_node
+                    cores_per_rank = self.test.resource_config.procs_per_node // mpi_ranks_per_node if mpi_ranks_per_node > 0 else 1
+                    
+                    self.result_writer.create_pending_result(
+                        node_count=job_config.num_nodes,
+                        total_mpi_ranks=job_config.num_procs,
+                        mpi_ranks_per_node=mpi_ranks_per_node,
+                        cores_per_rank=cores_per_rank,
+                        gpus_per_node=gpus_per_node,
+                        procs_decomp=(px, py, pz),
+                        job_directory=str(self.run_dir / job_config.job_id),
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to create pending result: {e}")
+            
             try:
                 job_id = self._submit_job(job_config)
                 
@@ -371,9 +513,25 @@ class TestRunner:
                         job_ids[job_config.job_id] = job_id
                         logger.info(f"  Status: Submitted ✓")
                         logger.info(f"  Slurm ID: {job_id}\n")
+                        
+                        # Update result with SLURM job ID
+                        if self.result_writer:
+                            result = self.result_writer.get_result(job_config.num_nodes)
+                            if result:
+                                result.slurm_job_id = job_id
+                                result.status = "submitted"
+                                self.result_writer.write_run_result(result)
                 else:
                     submission_failures += 1
                     logger.error(f"  Status: Failed (returned None) ✗\n")
+                    
+                    # Mark result as failed
+                    if self.result_writer:
+                        self.result_writer.update_run_status(
+                            node_count=job_config.num_nodes,
+                            status="failed",
+                            error_message="Job submission returned None"
+                        )
                     
             except subprocess.CalledProcessError as e:
                 # sbatch command failed - this is CRITICAL
@@ -802,22 +960,21 @@ class TestRunner:
         return results
     
     def _generate_summary(self, job_configs: List[JobConfig], results: Dict[str, JobStatus]):
-        summary = {
-            'test_name': self.test.name,
-            'scaling_type': self.test.scaling_config.scaling_type.value,
-            'completed_at': datetime.now().isoformat(),
-            'jobs': []
-        }
+        """
+        Generate summary after all jobs complete.
+        
+        This method:
+        1. Updates results in the incremental result writer
+        2. Writes per-node JSON files to data/
+        3. Generates summary.json and aggregated report
+        """
         parser = DefaultResultParser()
+        
+        # Process each job and extract timing
         for config in job_configs:
             job_dir = self.run_dir / config.job_id
-            job_info = {
-                'job_id': config.job_id,
-                'num_nodes': config.num_nodes,
-                'num_procs': config.num_procs,
-                'procs_decomposition': list(config.procs_decomposition),  # Add decomposition
-                'status': results.get(config.job_id, JobStatus.UNKNOWN).value
-            }
+            job_status = results.get(config.job_id, JobStatus.UNKNOWN)
+            wall_time = 0.0
             
             # Try multiple output file patterns (in priority order)
             out_files = (
@@ -827,33 +984,81 @@ class TestRunner:
                 list(job_dir.glob("*.out"))
             )
             
-            # Also check for timing.json
+            # Check for timing.json first
             timing_json = job_dir / "timing.json"
             if timing_json.exists():
                 try:
                     with open(timing_json, 'r') as f:
                         timing_data = json.load(f)
                     if 'wall_time' in timing_data:
-                        job_info['wall_time'] = timing_data['wall_time']
-                        job_info['metrics'] = timing_data
-                        logger.info(f"  Loaded timing from {timing_json.name}: {timing_data.get('wall_time')}s")
+                        wall_time = float(timing_data['wall_time'])
+                        logger.info(f"  Loaded timing from {timing_json.name}: {wall_time}s")
                 except Exception as e:
                     logger.warning(f"  Failed to parse timing.json in {job_dir.name}: {e}")
             
             # Fallback: parse from output files
-            if 'wall_time' not in job_info and out_files:
+            if wall_time == 0.0 and out_files:
                 logger.debug(f"  Parsing timing from output file: {out_files[0].name}")
                 try:
                     metrics = parser.parse_output(out_files[0])
-                    job_info['metrics'] = metrics
                     if 'wall_time' in metrics:
-                        job_info['wall_time'] = metrics['wall_time']
-                        logger.info(f"  Extracted timing from {out_files[0].name}: {metrics['wall_time']}s")
+                        wall_time = float(metrics['wall_time'])
+                        logger.info(f"  Extracted timing from {out_files[0].name}: {wall_time}s")
                 except Exception as e:
                     logger.warning(f"  Failed to parse output file {out_files[0].name}: {e}")
             
-            if 'wall_time' not in job_info:
+            if wall_time == 0.0:
                 logger.warning(f"  No timing data found for {config.job_id} in {job_dir}")
+            
+            # Update result writer with completion status and timing
+            if self.result_writer:
+                status_str = "completed" if job_status == JobStatus.COMPLETED else "failed"
+                exit_code = 0 if job_status == JobStatus.COMPLETED else 1
+                
+                self.result_writer.update_run_status(
+                    node_count=config.num_nodes,
+                    status=status_str,
+                    wall_time=wall_time,
+                    exit_code=exit_code
+                )
+        
+        # Use result writer to generate summary and aggregated reports
+        if self.result_writer:
+            try:
+                self.result_writer.write_summary()
+                self.result_writer.write_aggregated_report()
+                logger.info(f"✓ Incremental results written to: {self.run_dir}/data/")
+            except Exception as e:
+                logger.warning(f"Failed to write incremental results: {e}")
+        
+        # Also generate legacy summary.json in run_dir for backward compatibility
+        summary = {
+            'test_name': self.test.name,
+            'scaling_type': self.test.scaling_config.scaling_type.value,
+            'completed_at': datetime.now().isoformat(),
+            'jobs': []
+        }
+        
+        for config in job_configs:
+            job_dir = self.run_dir / config.job_id
+            job_info = {
+                'job_id': config.job_id,
+                'num_nodes': config.num_nodes,
+                'num_procs': config.num_procs,
+                'procs_decomposition': list(config.procs_decomposition),
+                'status': results.get(config.job_id, JobStatus.UNKNOWN).value
+            }
+            
+            # Get timing from result writer if available
+            if self.result_writer:
+                result = self.result_writer.get_result(config.num_nodes)
+                if result and result.wall_time_seconds > 0:
+                    job_info['wall_time'] = result.wall_time_seconds
+                    job_info['metrics'] = {
+                        'wall_time': result.wall_time_seconds,
+                        'speedup': result.speedup,
+                        'efficiency': result.efficiency
+                    }
             
             summary['jobs'].append(job_info)
         

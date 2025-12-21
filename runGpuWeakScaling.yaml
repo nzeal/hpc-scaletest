@@ -9,44 +9,98 @@
 # SOURCE CONFIGURATION (REQUIRED)
 # ----------------------------------------------------------------------------
 # Specify either a local path or a Git repository URL
-repository: https://github.com/iPIC3D/iPIC3D-GPU.git
+repository:  https://github.com/Pranab-JD/iPIC3D-GPU-SPACE-CoE.git
 # repository: /path/to/local/code
 
-# ----------------------------------------------------------------------------
-# SCALING CONFIGURATION
-# ----------------------------------------------------------------------------
-# Type of scaling test: 'strong' or 'weak'
+# ============================================================================
+# GPU SCALING CONFIGURATION
+# ============================================================================
+hardware_type: "gpu"
+
+# Leonardo Booster: 4 NVIDIA A100 GPUs per node, 32 CPU cores per node
+gpus_per_node: 4          # Number of GPUs per node
+procs_per_node: 4         # Number of MPI tasks per node (1 per GPU for weak scaling)
+                          # Note: Total CPU cores (32) are divided among MPI tasks
+                          # Each MPI task gets: 32 / 4 = 8 CPU cores
+
+# Alternative explicit configuration (for advanced users):
+# cpus_per_node: 32       # Total CPU cores per node (auto-calculated if not set)
+# cpus_per_task: 8        # CPU cores per MPI task (auto-calculated: 32/4 = 8)
+
+# ============================================================================
+# WEAK SCALING - CONSTANT WORK PER GPU
+# ============================================================================
 scaling: weak
+scaling_factor: 2.0          # Double problem size each step
+scaling_dimensions: 2        # Scale in X and Y directions
+max_nodes: 16
 
-# Maximum number of nodes to test
-# The framework will generate a power-of-2 sequence: 1, 2, 4, 8, ..., up to this value
-nodes: 64
-scaling_factor: 2.0  # Scaling factor for weak scaling
-scaling_dimensions: 2  # 2D scaling (X→Y pattern), Z remains constant
+# Initial configuration for 1 node (4 GPUs)
+# This defines the per-GPU workload that stays CONSTANT
+initial_domain: [5.12, 5.12, 1]
+initial_cells: [128, 128, 1]    # Per-GPU workload
+initial_procs: [2, 2, 1]        # 4 MPI tasks (one per GPU)
 
-# Initial processor decomposition (px, py, pz)
-# This defines the MPI rank distribution in 3D space
-initial_procs: [8, 4, 1]
+# For 1 node (4 GPUs in 2×2 layout):
+#   Total grid: 512×512×128
+#   Per GPU: 256×256×128 cells
 
-# Initial domain size (Lx, Ly, Lz) - required for weak scaling
-# Defines the physical domain dimensions
-initial_domain: [80.0, 40.0, 1.0]
-
-# Initial cell count (nx, ny, nz) - grid resolution
-# Defines the number of grid cells in each dimension
-initial_cells: [800, 400, 1]
-
-# Particles per cell in each direction
+# Particles per cell (constant)
 particles_per_cell:
-  x: 20
-  y: 20
+  x: 200
+  y: 200
   z: 1
 
-# ----------------------------------------------------------------------------
-# VARIABLE MAPPING (CRITICAL FOR GENERIC INPUT PARSING)
-# ----------------------------------------------------------------------------
-# Maps framework parameters to input file variable names
-# This tells the parser which variables to modify in your input file
+# ============================================================================
+# EXPECTED SCALING BEHAVIOR
+# ============================================================================
+# As nodes double, problem doubles, but work per GPU stays CONSTANT:
+#
+# 1 node (4 GPUs):
+#   MPI: 2×2×1 = 4 tasks
+#   Grid: 512×512×128 (256×256×128 per GPU)
+#   Command: mpirun -np 4 --map-by ppr:4:node:PE=28
+#
+# 2 nodes (8 GPUs):
+#   MPI: 4×2×1 = 8 tasks (double X direction)
+#   Grid: 1024×512×128 (256×256×128 per GPU) ✓ CONSTANT!
+#   Command: mpirun -np 8 --map-by ppr:4:node:PE=28
+#
+# 4 nodes (16 GPUs):
+#   MPI: 4×4×1 = 16 tasks (double Y direction)
+#   Grid: 1024×1024×128 (256×256×128 per GPU) ✓ CONSTANT!
+#   Command: mpirun -np 16 --map-by ppr:4:node:PE=28
+#
+# 8 nodes (32 GPUs):
+#   MPI: 8×4×1 = 32 tasks (double X direction)
+#   Grid: 2048×1024×128 (256×256×128 per GPU) ✓ CONSTANT!
+#   Command: mpirun -np 32 --map-by ppr:4:node:PE=28
+#
+# Work per GPU remains CONSTANT → measures weak scaling efficiency!
+
+# ============================================================================
+# LEONARDO GPU PARTITION
+# ============================================================================
+##partition: boost_usr_prod
+
+partition: "boost_usr_prod" 
+qos: "boost_qos_bprod"
+account: "cin_staff"
+time_limit: "02:00:00"
+
+# ============================================================================
+# MODULES
+# ============================================================================
+modules:
+  - cmake/4.1.2
+  - cuda/12.6
+  - nvhpc/24.5
+  - hpcx-mpi/2.19
+  - hdf5/1.14.3--hpcx-mpi--2.19--nvhpc--24.5  
+
+# ============================================================================
+# VARIABLE MAPPING
+# ============================================================================
 variable_map:
   length:
     x: "Lx"
@@ -65,84 +119,21 @@ variable_map:
     y: "npcely"
     z: "npcelz"
 
-# ----------------------------------------------------------------------------
-# HARDWARE CONFIGURATION
-# ----------------------------------------------------------------------------
-# Hardware type: 'cpu' or 'gpu'
-hardware: gpu
-
-# GPUs per node (adjust based on your GPU hardware)
-gpus_per_node: 4
-
-# Processors per node (must match your hardware)
-procs_per_node: 32  # 8 × 4 × 1 = 32 for baseline
-
-# ----------------------------------------------------------------------------
-# RESOURCE CONFIGURATION
-# ----------------------------------------------------------------------------
-# Partition/queue name for job submission
-partition: booster_usr_prod
-
-# Account/project allocation
-account: cin_staff
-
-# Time limit for each job (HH:MM:SS format)
-time_limit: "02:00:00"
-
-# ----------------------------------------------------------------------------
-# ENVIRONMENT & MODULES
-# ----------------------------------------------------------------------------
-# List of modules to load before compilation and execution
-modules:
-  - cuda/11.8
-  - hdf5/1.14.3--intel-oneapi-mpi--2021.12.1--oneapi--2024.1.0
-
-# ----------------------------------------------------------------------------
-# BUILD CONFIGURATION
-# ----------------------------------------------------------------------------
-# Build system: 'cmake', 'make', 'autotools'
-# If not specified, auto-detected from source repository
-build_system: cmake
-
-# Build flags specific to GPU compilation
-build_flags:
-  CMAKE_BUILD_TYPE: "Release"
-  ENABLE_CUDA: "ON"
-  CUDA_ARCHITECTURES: "80"  # Adjust based on your GPU architecture
-
-# ----------------------------------------------------------------------------
-# INPUT FILE CONFIGURATION
-# ----------------------------------------------------------------------------
-# Path to input file or directory containing input files
-# Supports relative paths from repository root
+# ============================================================================
+# INPUT FILE
+# ============================================================================
 input_file: inputfiles/os-stdin
 
-# Specific input file name (if input_file is a directory)
-# input_name: os-stdin
-
-# ----------------------------------------------------------------------------
-# SCHEDULER & LAUNCHER CONFIGURATION
-# ----------------------------------------------------------------------------
-# Job scheduler: 'slurm', 'pbs', 'local'
-# Auto-detected if not specified
+# ============================================================================
+# BACKEND
+# ============================================================================
 scheduler: slurm
-
-# MPI launcher: 'srun', 'mpirun', 'mpiexec'
-# Auto-selected based on scheduler if not specified
-launcher: srun
-
-# Module system: 'lmod', 'tmod', 'tmod4', 'nomod'
-# Auto-detected if not specified
+launcher: mpirun
 module_system: lmod
 
-# ----------------------------------------------------------------------------
-# BEHAVIOR CONFIGURATION
-# ----------------------------------------------------------------------------
-# Enable verbose logging
+# ============================================================================
+# BEHAVIOR
+# ============================================================================
 verbose: true
-
-# Automatically submit jobs after generation
 auto_submit: true
-
-# Disable LLM-based discovery (use generic parser only)
 use_llm_discovery: false

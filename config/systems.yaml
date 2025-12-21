@@ -1,0 +1,186 @@
+# HPC-ScaleTest System Configurations
+# 
+# This file contains pre-defined configurations for various HPC systems.
+# Users can add their own system configurations or override defaults.
+#
+# Environment variables can override values:
+#   HPC_SCALETEST_SYSTEM: Name of system to use
+#   HPC_SCALETEST_PARTITION: Override partition
+#   HPC_SCALETEST_PROCS_PER_NODE: Override cores per node
+
+systems:
+  # Generic defaults - auto-detected where possible
+  generic:
+    description: "Generic HPC system with auto-detection"
+    scheduler: slurm
+    launcher: srun
+    module_system: lmod
+    partitions:
+      default:
+        cores_per_node: auto  # Will be auto-detected
+        gpus_per_node: 0
+        memory_gb: 128
+        time_limit: "01:00:00"
+
+  # CINECA Leonardo Booster (GPU partition)
+  leonardo_booster:
+    description: "CINECA Leonardo Booster partition (4x NVIDIA A100 GPUs)"
+    scheduler: slurm
+    launcher: srun
+    module_system: lmod
+    partitions:
+      boost_usr_prod:
+        cores_per_node: 32
+        gpus_per_node: 4
+        gpu_model: "NVIDIA A100"
+        memory_gb: 512
+        time_limit: "24:00:00"
+        qos: normal
+      boost_qos_dbg:
+        cores_per_node: 32
+        gpus_per_node: 4
+        gpu_model: "NVIDIA A100"
+        memory_gb: 512
+        time_limit: "00:30:00"
+        qos: boost_qos_dbg
+      boost_qos_bprod:
+        cores_per_node: 32
+        gpus_per_node: 4
+        gpu_model: "NVIDIA A100"
+        memory_gb: 512
+        time_limit: "24:00:00"
+        qos: boost_qos_bprod
+    # Partition aliases for convenience
+    partition_aliases:
+      booster: boost_usr_prod
+      gpu: boost_usr_prod
+
+  # CINECA Leonardo DCGP (CPU partition)
+  leonardo_dcgp:
+    description: "CINECA Leonardo DCGP partition (CPU-only)"
+    scheduler: slurm
+    launcher: srun
+    module_system: lmod
+    partitions:
+      dcgp_usr_prod:
+        cores_per_node: 112
+        gpus_per_node: 0
+        memory_gb: 512
+        time_limit: "24:00:00"
+        qos: normal
+      dcgp_qos_bprod:
+        cores_per_node: 112
+        gpus_per_node: 0
+        memory_gb: 512
+        time_limit: "24:00:00"
+        qos: dcgp_qos_bprod
+    partition_aliases:
+      dcgp: dcgp_usr_prod
+      cpu: dcgp_usr_prod
+
+  # LUMI (CSC Finland)
+  lumi:
+    description: "LUMI supercomputer at CSC"
+    scheduler: slurm
+    launcher: srun
+    module_system: lmod
+    partitions:
+      standard-g:
+        cores_per_node: 64
+        gpus_per_node: 8
+        gpu_model: "AMD MI250X"
+        memory_gb: 512
+        time_limit: "48:00:00"
+      standard:
+        cores_per_node: 128
+        gpus_per_node: 0
+        memory_gb: 256
+        time_limit: "48:00:00"
+
+  # NVIDIA DGX A100 (generic)
+  dgx_a100:
+    description: "NVIDIA DGX A100 system"
+    scheduler: slurm
+    launcher: mpirun
+    module_system: lmod
+    partitions:
+      default:
+        cores_per_node: 128
+        gpus_per_node: 8
+        gpu_model: "NVIDIA A100"
+        memory_gb: 1024
+        time_limit: "24:00:00"
+
+  # AWS ParallelCluster (generic)
+  aws_parallelcluster:
+    description: "AWS ParallelCluster"
+    scheduler: slurm
+    launcher: srun
+    module_system: lmod
+    partitions:
+      compute:
+        cores_per_node: auto
+        gpus_per_node: 0
+        memory_gb: auto
+        time_limit: "24:00:00"
+      gpu:
+        cores_per_node: auto
+        gpus_per_node: auto
+        memory_gb: auto
+        time_limit: "24:00:00"
+
+# MPI implementations and their capabilities
+mpi_implementations:
+  openmpi:
+    supports_map_by: true
+    supports_bind_to: true
+    supports_report_bindings: true
+    launcher: mpirun
+    # Correct syntax for GPU mapping
+    gpu_mapping_args:
+      - "--map-by"
+      - "ppr:{tasks_per_node}:node"
+      - "--bind-to"
+      - "core"
+      - "--cpus-per-proc"
+      - "{cores_per_task}"
+  
+  intelmpi:
+    supports_map_by: true
+    supports_bind_to: true
+    supports_report_bindings: false  # Intel MPI doesn't support this
+    launcher: mpirun
+    gpu_mapping_args:
+      - "-np"
+      - "{total_tasks}"
+      - "-ppn"
+      - "{tasks_per_node}"
+  
+  mpich:
+    supports_map_by: false
+    supports_bind_to: false
+    supports_report_bindings: false
+    launcher: mpiexec
+    gpu_mapping_args:
+      - "-np"
+      - "{total_tasks}"
+
+# GPU vendors and their environment variables
+gpu_vendors:
+  nvidia:
+    device_env_var: CUDA_VISIBLE_DEVICES
+    detection_commands:
+      - nvidia-smi
+      - nvcc --version
+  
+  amd:
+    device_env_var: ROCR_VISIBLE_DEVICES
+    detection_commands:
+      - rocm-smi
+      - hipcc --version
+  
+  intel:
+    device_env_var: ZE_AFFINITY_MASK
+    detection_commands:
+      - sycl-ls
+      - clinfo

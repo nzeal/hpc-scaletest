@@ -1,0 +1,82 @@
+# ============================================================================
+# Example: 3D Weak Scaling Test
+# ============================================================================
+# This configuration demonstrates 3D weak scaling where:
+# - Problem size grows as we add nodes
+# - X, Y, and Z dimensions all scale
+# - Each node handles roughly the same workload
+# ============================================================================
+
+# Source code (replace with your application)
+repository: https://github.com/username/hpc-simulation.git
+
+# Scaling configuration
+scaling: weak
+nodes: 64               # Test up to 64 nodes
+scaling_factor: 2.0     # Double at each step: 1→2→4→8→16→32→64
+scaling_dimensions: 3   # 3D: scale X, Y, and Z
+
+# Initial configuration
+initial_procs: [2, 2, 2]             # 8 total processes (2×2×2)
+initial_domain: [10.0, 10.0, 10.0]   # Physical domain size
+initial_cells: [128, 128, 128]       # Grid resolution
+
+# Variable mapping (customize for your application)
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nx"
+    y: "ny"
+    z: "nz"
+  mpi_decomposition:
+    x: "npx"
+    y: "npy"
+    z: "npz"
+
+# Hardware configuration
+hardware: cpu
+procs_per_node: 128  # 2× 64-core processors
+
+# Resource configuration
+partition: compute
+account: myproject
+time_limit: "02:00:00"
+
+# Optional: Multi-tier QoS mapping
+qos_mapping:
+  small:
+    max_nodes: 16
+    qos: "normal"
+  large:
+    min_nodes: 17
+    max_nodes: 128
+    qos: "large"
+
+# Environment
+modules:
+  - gcc/11.2
+  - openmpi/4.1
+  - hdf5/1.12
+
+# Build and input
+build_system: cmake
+input_file: inputs/simulation.inp
+
+# Scheduler settings
+scheduler: slurm
+launcher: srun
+module_system: lmod
+
+# Launcher options for better performance
+launcher_options:
+  - "--cpu-bind=cores"
+  - "--distribution=block:block"
+
+# Behavior
+verbose: true
+auto_submit: true
+generate_report: true
+report_format: both

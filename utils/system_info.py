@@ -136,10 +136,32 @@ class SystemDetector:
             self.resources.partition_name = partition
             logger.info(f"Querying Slurm partition: {partition}")
         
-        # Use sinfo directly - this MUST work on HPC systems
-        if not self._query_sinfo_direct(partition):
+        # Try multiple detection methods in order of reliability
+        success = False
+        
+        # Method 1: sinfo with GRES (most common)
+        logger.info("Trying Method 1: sinfo with GRES field...")
+        if self._query_sinfo_direct(partition):
+            success = True
+            logger.info("✓ Method 1 succeeded")
+        
+        # Method 2: scontrol show partition (more detailed)
+        if not success or self.resources.gpus_per_node == 0:
+            logger.info("Trying Method 2: scontrol show partition...")
+            if self._query_scontrol_partition(partition):
+                success = True
+                logger.info("✓ Method 2 succeeded")
+        
+        # Method 3: Query individual node from partition
+        if not success or self.resources.gpus_per_node == 0:
+            logger.info("Trying Method 3: Node-level query...")
+            if self._query_partition_node(partition):
+                success = True
+                logger.info("✓ Method 3 succeeded")
+        
+        if not success:
             raise RuntimeError(
-                f"Failed to query Slurm partition '{partition}'. "
+                f"Failed to query Slurm partition '{partition}' with all methods. "
                 "Ensure you are on an HPC login node with Slurm access."
             )
     
@@ -262,17 +284,24 @@ class SystemDetector:
             # Parse GPU info if available
             if len(parts) >= 4:
                 gpus_info = parts[3]
-                logger.info(f"GPU field: '{gpus_info}'")
+                logger.info(f"GPU field from sinfo: '{gpus_info}'")
                 
                 if gpus_info and gpus_info != '(null)' and 'gpu' in gpus_info.lower():
                     self.resources.gpus_per_node = self._parse_slurm_gres(gpus_info)
                     logger.info(f"✓ GPUs/node: {self.resources.gpus_per_node}")
                 else:
                     self.resources.gpus_per_node = 0
-                    logger.info(f"✓ GPUs/node: 0 (CPU-only partition)")
+                    if gpus_info == '(null)':
+                        logger.info(f"✓ GPUs/node: 0 (GRES field is '(null)')")
+                        logger.info(f"  If this partition has GPUs, they may not be configured in Slurm GRES")
+                        logger.info(f"  Specify gpus_per_node explicitly in your config YAML")
+                    else:
+                        logger.info(f"✓ GPUs/node: 0 (no GPU info in GRES field: '{gpus_info}')")
             else:
                 self.resources.gpus_per_node = 0
-                logger.info(f"✓ GPUs/node: 0 (no GPU field)")
+                logger.info(f"✓ GPUs/node: 0 (no GRES field in sinfo output)")
+                logger.info(f"  sinfo only returned {len(parts)} fields, expected at least 4")
+                logger.info(f"  If this partition has GPUs, specify gpus_per_node in your config")
             
             return True
             
@@ -305,30 +334,187 @@ class SystemDetector:
         except Exception as e:
             logger.debug(f"Failed to list partitions: {e}")
     
+    def _query_scontrol_partition(self, partition: Optional[str] = None) -> bool:
+        """
+        Query partition info using scontrol show partition.
+        This method can extract GPU info from TRESPerNode.
+        
+        Args:
+            partition: Partition name
+            
+        Returns:
+            True if successful and got useful info, False otherwise
+        """
+        if not partition:
+            return False
+            
+        try:
+            cmd = ['scontrol', 'show', 'partition', partition]
+            logger.info(f"Executing: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode != 0:
+                logger.warning(f"scontrol command failed")
+                return False
+            
+            if not result.stdout.strip():
+                return False
+            
+            output = result.stdout.strip()
+            logger.debug(f"scontrol output length: {len(output)} chars")
+            
+            # Extract TotalNodes
+            nodes_match = re.search(r'TotalNodes=(\d+)', output)
+            if nodes_match and self.resources.total_nodes == 0:
+                self.resources.total_nodes = int(nodes_match.group(1))
+                logger.info(f"  From scontrol - TotalNodes: {self.resources.total_nodes}")
+            
+            # Try to extract from TRESPerNode if present
+            tres_match = re.search(r'TRESPerNode=([^\s]+)', output)
+            if tres_match:
+                tres_str = tres_match.group(1)
+                logger.info(f"  Found TRESPerNode: {tres_str}")
+                
+                # Parse TRES format: cpu=32,mem=512000M,gres/gpu=4
+                cpu_match = re.search(r'cpu=(\d+)', tres_str)
+                if cpu_match:
+                    self.resources.cores_per_node = int(cpu_match.group(1))
+                    logger.info(f"  From TRES - CPUs/node: {self.resources.cores_per_node}")
+                
+                mem_match = re.search(r'mem=(\d+)([KMG]?)', tres_str)
+                if mem_match:
+                    mem_val = int(mem_match.group(1))
+                    mem_unit = mem_match.group(2) if mem_match.group(2) else 'M'
+                    if mem_unit == 'K':
+                        mem_val = mem_val / 1024 / 1024
+                    elif mem_unit == 'M':
+                        mem_val = mem_val / 1024
+                    self.resources.memory_per_node_gb = float(mem_val)
+                    logger.info(f"  From TRES - Memory/node: {self.resources.memory_per_node_gb:.1f} GB")
+                
+                gpu_match = re.search(r'gres/gpu[:\w]*[=:](\d+)', tres_str)
+                if gpu_match:
+                    self.resources.gpus_per_node = int(gpu_match.group(1))
+                    logger.info(f"  From TRES - GPUs/node: {self.resources.gpus_per_node}")
+                    return True
+            
+            # If we got something useful, return True
+            return self.resources.cores_per_node > 0 or self.resources.total_nodes > 0
+            
+        except Exception as e:
+            logger.debug(f"scontrol query failed: {e}")
+            return False
+    
+    def _query_partition_node(self, partition: Optional[str] = None) -> bool:
+        """
+        Query a sample node from the partition to get per-node specs.
+        
+        Args:
+            partition: Partition name
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not partition:
+            return False
+        
+        try:
+            # Get list of nodes in this partition
+            cmd = ['sinfo', '-p', partition, '-N', '-h', '-o', '%N']
+            logger.info(f"Getting nodes: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode != 0 or not result.stdout.strip():
+                return False
+            
+            nodes = [n.strip() for n in result.stdout.strip().split('\n') if n.strip()]
+            if not nodes:
+                return False
+            
+            first_node = nodes[0]
+            logger.info(f"  Querying sample node: {first_node}")
+            
+            # Query node directly
+            cmd = ['sinfo', '-n', first_node, '-o', '%c %m %G', '-h']
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode != 0 or not result.stdout.strip():
+                return False
+            
+            output = result.stdout.strip()
+            parts = output.split()
+            logger.info(f"  Node query returned: {output}")
+            
+            if len(parts) >= 2:
+                self.resources.cores_per_node = int(parts[0])
+                self.resources.memory_per_node_gb = float(parts[1]) / 1024.0
+                logger.info(f"  From node - Cores: {self.resources.cores_per_node}")
+                logger.info(f"  From node - Memory: {self.resources.memory_per_node_gb:.1f} GB")
+                
+                # Parse GPU info if present
+                if len(parts) >= 3:
+                    gres_str = parts[2]
+                    if gres_str and gres_str != '(null)':
+                        self.resources.gpus_per_node = self._parse_slurm_gres(gres_str)
+                        logger.info(f"  From node - GPUs: {self.resources.gpus_per_node}")
+                
+                # Count total nodes if needed
+                if self.resources.total_nodes == 0:
+                    self.resources.total_nodes = len(nodes)
+                    logger.info(f"  Total nodes: {self.resources.total_nodes}")
+                
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.debug(f"Node query failed: {e}")
+            return False
 
     
     def _parse_slurm_gres(self, gres_str: str) -> int:
         """
         Parse Slurm GRES string to extract GPU count.
         
+        Handles various GRES formats from different systems:
+        - 'gpu:4' (standard)
+        - 'gpu:tesla:2' (with GPU type)
+        - 'gpu:a100:4(S:0-1)' (with socket info)
+        - 'gpu' (assume 1)
+        - '(null)' or empty (0 GPUs)
+        
         Args:
-            gres_str: GRES string (e.g., 'gpu:4', 'gpu:tesla:2')
+            gres_str: GRES string from sinfo
             
         Returns:
             Number of GPUs
         """
-        if not gres_str or gres_str == '(null)':
+        if not gres_str or gres_str == '(null)' or gres_str == 'N/A':
             return 0
         
-        # Match patterns like 'gpu:4' or 'gpu:tesla:2'
-        match = re.search(r'gpu[:\w]*:(\d+)', gres_str)
-        if match:
-            return int(match.group(1))
+        # Try multiple regex patterns for different GRES formats
+        patterns = [
+            r'gpu[:\w]*:(\d+)',           # gpu:4 or gpu:tesla:2
+            r'gpu.*\(IDX:[\d,-]+\)',      # Count GPUs from index list
+            r'gpu',                        # Just 'gpu' without count
+        ]
         
-        # If just 'gpu' without count, assume 1
-        if 'gpu' in gres_str.lower():
-            return 1
+        for pattern in patterns:
+            if pattern == r'gpu':
+                # Just 'gpu' - assume 1 GPU
+                if gres_str.lower() == 'gpu':
+                    logger.debug(f"  GRES '{gres_str}' → assuming 1 GPU")
+                    return 1
+            else:
+                match = re.search(pattern, gres_str, re.IGNORECASE)
+                if match:
+                    count = int(match.group(1))
+                    logger.debug(f"  GRES '{gres_str}' → {count} GPUs (pattern: {pattern})")
+                    return count
         
+        # If we get here, we couldn't parse it
+        logger.warning(f"  Could not parse GRES string: '{gres_str}' - assuming 0 GPUs")
+        logger.warning(f"  If this system has GPUs, please specify gpus_per_node in your config")
         return 0
     
     def _detect_pbs_resources(self, partition: Optional[str] = None):
@@ -539,6 +725,7 @@ def get_partition_info(partition: str) -> Dict[str, Any]:
         Dictionary with partition hardware details
     """
     logger.info(f"Querying hardware info for partition: {partition}")
+    
     resources = detect_system_resources(partition)
     
     info = {

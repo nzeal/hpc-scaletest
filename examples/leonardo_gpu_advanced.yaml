@@ -1,0 +1,211 @@
+# Leonardo Booster - Advanced GPU Configuration Example
+# Demonstrates all automatic GPU detection features
+#
+# IMPORTANT: Framework automatically handles partition name variations:
+# - You can use: booster, boost_usr_prod, boost_qos_dbg, etc.
+# - Framework will find the correct name on your system
+#
+# This example shows the framework automatically configuring:
+# 1. GPU count detection (4 on Leonardo Booster)
+# 2. CPU core detection (32 on Leonardo Booster)
+# 3. Cores-per-GPU calculation (32/4 = 8)
+# 4. Proper SLURM directives
+# 5. Optimal mpirun command with ppr mapping
+# 6. Custom GPU binding script support
+
+# Repository settings
+repository: https://github.com/Pranab-JD/iPIC3D-GPU-SPACE-CoE.git
+branch: main
+build_system: cmake
+
+# Scaling configuration
+scaling: weak
+scaling_dimensions: 2
+scaling_factor: 2.0
+nodes: 4  # Start small for testing
+
+# Hardware configuration
+hardware: gpu
+
+# Partition: Use ANY of these names (framework will find the right one):
+# - booster (canonical name)
+# - boost_usr_prod (production queue)
+# - boost_qos_dbg (debug queue)
+# - boost_qos_bprod (high-priority production)
+partition: boost_usr_prod  # Framework auto-detects actual name
+
+account: cin_staff
+
+# Initial MPI decomposition - MUST equal GPU count
+# Leonardo Booster: 4 GPUs → initial_procs product must = 4
+initial_procs: [2, 2, 1]  # 2×2×1 = 4 ✓
+
+# Problem size
+initial_domain: [20.0, 20.0, 1.0]
+initial_cells: [800, 400, 1]
+
+# Variable mapping
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nxc"
+    y: "nyc"
+    z: "nzc"
+  mpi_decomposition:
+    x: "XLEN"
+    y: "YLEN"
+    z: "ZLEN"
+
+# Environment modules
+modules:
+  - cmake/4.1.2
+  - cuda/12.6
+  - hdf5/1.14.3--intel-oneapi-mpi--2021.12.1--oneapi--2024.1.0
+
+# Input file
+input_file: inputfiles/os-stdin
+
+# Launcher configuration - TWO OPTIONS:
+
+# OPTION 1: Use SLURM's native launcher (srun) - RECOMMENDED FOR LEONARDO
+launcher: srun
+
+# OPTION 2: Use mpirun with advanced mapping
+# Uncomment the lines below to use mpirun instead:
+#
+# launcher: mpirun
+# launcher_options:
+#   # report_bindings: false  # DEFAULT: false (safe for all MPI)
+#   # NOTE: Leonardo uses Intel MPI which does NOT support --report-bindings
+#   # Enabling this flag will cause job failure!
+#   # See MPI_FLAG_COMPATIBILITY.md for details
+#   
+#   # Optional: use custom GPU binding script like user's bind.sh
+#   # binding_script: "./gpu_bind.sh"
+
+# Job settings
+time_limit: "00:30:00"
+qos: normal
+verbose: true
+auto_submit: false  # Set to true when ready
+
+# ============================================================================
+# WHAT THE FRAMEWORK WILL DO AUTOMATICALLY:
+# ============================================================================
+#
+# 1. DETECT HARDWARE:
+#    ✓ Detects 4 NVIDIA A100 GPUs per node
+#    ✓ Detects 32 CPU cores per node
+#    ✓ Calculates 8 cores per GPU (32/4)
+#
+# 2. GENERATE SLURM DIRECTIVES:
+#    #SBATCH --nodes=1
+#    #SBATCH --partition=booster
+#    #SBATCH --ntasks=32              # CPU cores allocated
+#    #SBATCH --ntasks-per-node=32     # All CPU cores
+#    #SBATCH --cpus-per-task=1
+#    #SBATCH --gres=gpu:4             # All 4 GPUs
+#    #SBATCH --qos=normal
+#    #SBATCH --time=00:30:00
+#
+# 3. GENERATE LAUNCHER COMMAND:
+#
+#    OPTION A (srun):
+#    srun --ntasks-per-node 4 \
+#         --gpus-per-node 4 \
+#         --gpu-bind=closest \
+#         --cpu-bind=cores \
+#         $BINARY/iPIC3D os-stdin
+#
+#    OPTION B (mpirun):
+#    mpirun -np 4 \
+#           --map-by ppr:4:node:PE=8 \
+#           $BINARY/iPIC3D os-stdin
+#
+#    Note: --report-bindings NOT included (Intel MPI doesn't support it)
+#    Framework auto-detects MPI and omits unsupported flags
+#
+#    Where:
+#    - np 4: Launch 4 MPI tasks (1 per GPU)
+#    - ppr:4:node: 4 processes per node
+#    - PE=8: Each process gets 8 cores (32/4)
+#
+# 4. SCALING PROGRESSION (weak scaling):
+#    1 node:  2×2×1 = 4 tasks   → 4 GPUs, 32 cores
+#    2 nodes: 4×2×1 = 8 tasks   → 8 GPUs, 64 cores
+#    4 nodes: 4×4×1 = 16 tasks  → 16 GPUs, 128 cores
+#
+# ============================================================================
+# EXPECTED CONSOLE OUTPUT:
+# ============================================================================
+#
+# ✓ Advanced GPU configuration detected:
+#   GPUs per node: 4
+#   CPUs per node: 32
+#   Cores per GPU: 8
+#   → SLURM allocation: 32 CPU slots
+#   → Actual MPI tasks: 4 (1 per GPU)
+#   → Each task gets: 8 cores
+#
+# ✓ SLURM GPU allocation:
+#   --gres=gpu:4
+#   --ntasks-per-node=32 (CPU slots)
+#   → Will launch 4 MPI tasks per node
+#
+# ✓ mpirun GPU mapping:
+#   -np 4 (total tasks)
+#   --map-by ppr:4:node:PE=8
+#     → 4 tasks per node
+#     → 8 cores per task
+#
+# ============================================================================
+# TESTING PROCEDURE:
+# ============================================================================
+#
+# 1. Test GPU detection:
+#    python3 utils/advanced_gpu_manager.py booster
+#
+# 2. Validate configuration:
+#    python3 utils/config_validator.py examples/leonardo_gpu_advanced.yaml
+#
+# 3. Generate job script (dry run):
+#    python3 hpc_auto.py --config examples/leonardo_gpu_advanced.yaml --dry-run
+#
+# 4. Check generated job.sh:
+#    cat output/iPIC3D-GPU-SPACE-CoE_weak_*/node1/job.sh
+#
+#    Verify:
+#    - #SBATCH --gres=gpu:4 ✓
+#    - #SBATCH --ntasks-per-node=32 ✓
+#    - mpirun -np 4 --map-by ppr:4:node:PE=8 ✓
+#    - OR srun --ntasks-per-node 4 --gpus-per-node 4 ✓
+#
+# 5. Submit when ready:
+#    python3 hpc_auto.py --config examples/leonardo_gpu_advanced.yaml
+#
+# ============================================================================
+# CUSTOMIZATION FOR YOUR APPLICATION:
+# ============================================================================
+#
+# 1. Change repository:
+#    repository: https://github.com/YourUser/YourApp.git
+#
+# 2. Update modules:
+#    modules:
+#      - cuda/12.6
+#      - your_lib/version
+#
+# 3. Adjust problem size:
+#    initial_domain: [your_x, your_y, your_z]
+#    initial_cells: [nx, ny, nz]
+#
+# 4. Set variable mapping for your input file:
+#    variable_map:
+#      length:
+#        x: "YOUR_LX_VAR"
+#      # etc.
+#
+# ============================================================================

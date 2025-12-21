@@ -2,6 +2,7 @@
 Configuration dataclasses for test definition.
 """
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Dict, List
@@ -12,6 +13,8 @@ from .types import (
     ProcsDecomposition, DomainSize, CellCount,
     DEFAULT_PROCS_PER_NODE, DEFAULT_TIME_LIMIT
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -40,6 +43,10 @@ class ResourceConfig:
     exclusive: bool = False
     qos: Optional[str] = None
     qos_mapping: Optional[Dict[str, Dict]] = None  # QoS selection based on node count
+    
+    # GPU-specific settings
+    actual_mpi_tasks: Optional[int] = None  # For GPU runs: tasks per node (usually = gpus_per_node)
+    cores_per_task: Optional[int] = None    # For GPU runs: CPU cores per MPI task
     
     # Optional scheduler-specific settings
     partition: Optional[str] = None
@@ -80,6 +87,38 @@ class ResourceConfig:
         
         # No matching tier found, return default
         return self.qos
+    
+    def configure_gpu_tasks(self, cores_per_node: int):
+        """
+        Configure MPI task layout for GPU runs.
+        
+        For GPU runs, we typically want:
+        - One MPI task per GPU
+        - Multiple CPU cores per task for threading
+        
+        Args:
+            cores_per_node: Total CPU cores per node
+            
+        Example (Leonardo with 4 GPUs, 112 cores):
+            - actual_mpi_tasks = 4 (one per GPU)
+            - cores_per_task = 112 / 4 = 28
+            - For 2 nodes: 8 MPI tasks total
+        """
+        if self.gpus_per_node > 0:
+            # One MPI task per GPU
+            self.actual_mpi_tasks = self.gpus_per_node
+            
+            # Divide CPU cores among GPU tasks
+            self.cores_per_task = cores_per_node // self.gpus_per_node
+            
+            logger.info(f"✓ GPU task configuration:")
+            logger.info(f"  GPUs per node: {self.gpus_per_node}")
+            logger.info(f"  MPI tasks per node: {self.actual_mpi_tasks}")
+            logger.info(f"  CPU cores per task: {self.cores_per_task}")
+        else:
+            # CPU-only: use all cores as MPI tasks
+            self.actual_mpi_tasks = None
+            self.cores_per_task = None
 
 
 @dataclass

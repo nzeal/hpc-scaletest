@@ -1,0 +1,65 @@
+# Leonardo GPU Example - With Proper Binary Paths and GPU Binding
+#
+# This example demonstrates:
+# 1. Automatic GPU detection (4 GPUs, 32 cores, 8 cores/GPU)
+# 2. Automatic binary path handling ($BINARY variable)
+# 3. Automatic GPU binding script generation (bind_gpu)
+# 4. MPI-agnostic launch commands
+#
+# Expected job.sh structure:
+#   export BINARY=/path/to/compiled/binary
+#   mpirun -np 4 --map-by ppr:4:node:PE=8 ./bind_gpu $BINARY/ECsim scaling
+
+# Repository settings
+repository: https://github.com/Pranab-JD/iPIC3D-GPU-SPACE-CoE.git
+branch: main
+build_system: cmake
+
+# Build configuration
+build_options:
+  cmake_opts: "-DCMAKE_BUILD_TYPE=Release"
+
+# Scaling configuration
+scaling: weak
+scaling_dimensions: 2
+scaling_factor: 2.0
+nodes: 4
+
+# Hardware configuration
+hardware: gpu
+partition: boost_usr_prod  # Framework accepts any variation
+account: cin_staff
+
+# Application settings
+# Framework will automatically set:
+#   $BINARY = directory containing the compiled executable
+#   $BINARY/iPIC3D = full path to executable
+executable: iPIC3D  # Relative to build directory
+args: os-stdin      # Application arguments
+
+# Initial MPI decomposition (must match GPU count)
+initial_procs: [2, 2, 1]  # 2×2×1 = 4 GPUs
+
+# Environment modules
+modules:
+  - cmake/4.1.2
+  - cuda/12.6
+  - hdf5/1.14.3--intel-oneapi-mpi--2021.12.1--oneapi--2024.1.0
+
+# Launcher configuration (optional - framework auto-detects)
+launcher: mpirun
+launcher_options:
+  # Optional: Enable verbose output (only if MPI supports it)
+  report_bindings: true
+  
+  # Optional: Custom binding script (framework generates one if not provided)
+  # binding_script: ./my_custom_bind.sh
+
+# Job parameters
+time_limit: "00:30:00"
+job_name: "ipic3d_gpu_test"
+
+# Output configuration
+output:
+  dir: "results"
+  format: "csv"

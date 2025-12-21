@@ -221,6 +221,35 @@ class YAMLConfigParser:
             elif isinstance(modules, str):
                 config['modules'] = [m.strip() for m in modules.split(',')]
         
+        # Executable configuration
+        if 'executable' in self.config_data:
+            config['executable_name'] = self.config_data['executable']
+        if 'args' in self.config_data:
+            args = self.config_data['args']
+            if isinstance(args, list):
+                config['executable_args'] = args
+            elif isinstance(args, str):
+                config['executable_args'] = [args]
+        
+        # Build options (cmake flags, etc.)
+        if 'build_options' in self.config_data:
+            build_opts = self.config_data['build_options']
+            if isinstance(build_opts, dict):
+                if 'cmake_opts' in build_opts:
+                    # Parse cmake options into a dict
+                    cmake_opts = build_opts['cmake_opts']
+                    if isinstance(cmake_opts, str):
+                        # Parse "-DKEY=VALUE -DKEY2=VALUE2" format
+                        flags = {}
+                        for part in cmake_opts.split():
+                            if part.startswith('-D') and '=' in part:
+                                key_val = part[2:].split('=', 1)
+                                if len(key_val) == 2:
+                                    flags[key_val[0]] = key_val[1]
+                        config['build_flags'] = flags
+                    elif isinstance(cmake_opts, dict):
+                        config['build_flags'] = cmake_opts
+        
         # Input file configuration
         if 'input_file' in self.config_data:
             config['input_file'] = self.config_data['input_file']
