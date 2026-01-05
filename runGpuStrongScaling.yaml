@@ -1,0 +1,147 @@
+# ============================================================================
+# HPC-ScaleTest Configuration File (runGpuWeakScaling2D.yaml)
+# ============================================================================
+# This YAML file provides a configuration for 2D weak scaling tests on GPU.
+# Usage: python hpc_auto.py --config runGpuWeakScaling2D.yaml
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# SOURCE CONFIGURATION (REQUIRED)
+# ----------------------------------------------------------------------------
+# Specify either a local path or a Git repository URL
+repository:  https://github.com/Pranab-JD/iPIC3D-GPU-SPACE-CoE.git
+# repository: /path/to/local/code
+
+# ============================================================================
+# GPU SCALING CONFIGURATION
+# ============================================================================
+hardware_type: "gpu"
+
+# Leonardo Booster: 4 NVIDIA A100 GPUs per node, 32 CPU cores per node
+gpus_per_node: 4          # Number of GPUs per node
+cpus_per_node: 32         # REQUIRED: Total CPU cores per node (for SLURM allocation)
+procs_per_node: 4         # Number of MPI tasks per node (1 per GPU for weak scaling)
+                          # Note: Total CPU cores (32) are divided among MPI tasks
+                          # Each MPI task gets: 32 / 4 = 8 CPU cores
+
+# ============================================================================
+# WEAK SCALING - CONSTANT WORK PER GPU
+# ============================================================================
+scaling: strong
+scaling_factor: 2.0          # Double problem size each step
+scaling_dimensions: 2        # Scale in X and Y directions
+max_nodes: 128
+
+# Initial configuration for 1 node (4 GPUs)
+# This defines the per-GPU workload that stays CONSTANT
+initial_domain: [5.12, 5.12, 1]
+initial_cells: [256, 256, 1]    # Per-GPU workload
+initial_procs: [2, 2, 1]        # 4 MPI tasks (one per GPU)
+
+# For 1 node (4 GPUs in 2×2 layout):
+#   Total grid: 512×512×128
+#   Per GPU: 256×256×128 cells
+
+# Particles per cell (constant)
+particles_per_cell:
+  x: 200
+  y: 200
+  z: 1
+
+# ============================================================================
+# EXPECTED SCALING BEHAVIOR
+# ============================================================================
+# As nodes double, problem doubles, but work per GPU stays CONSTANT:
+#
+# 1 node (4 GPUs):
+#   MPI: 2×2×1 = 4 tasks
+#   Grid: 512×512×128 (256×256×128 per GPU)
+#   Command: mpirun -np 4 --map-by ppr:4:node:PE=28
+#
+# 2 nodes (8 GPUs):
+#   MPI: 4×2×1 = 8 tasks (double X direction)
+#   Grid: 1024×512×128 (256×256×128 per GPU) ✓ CONSTANT!
+#   Command: mpirun -np 8 --map-by ppr:4:node:PE=28
+#
+# 4 nodes (16 GPUs):
+#   MPI: 4×4×1 = 16 tasks (double Y direction)
+#   Grid: 1024×1024×128 (256×256×128 per GPU) ✓ CONSTANT!
+#   Command: mpirun -np 16 --map-by ppr:4:node:PE=28
+#
+# 8 nodes (32 GPUs):
+#   MPI: 8×4×1 = 32 tasks (double X direction)
+#   Grid: 2048×1024×128 (256×256×128 per GPU) ✓ CONSTANT!
+#   Command: mpirun -np 32 --map-by ppr:4:node:PE=28
+#
+# Work per GPU remains CONSTANT → measures weak scaling efficiency!
+
+# ============================================================================
+# LEONARDO GPU PARTITION
+# ============================================================================
+##partition: boost_usr_prod
+
+partition: "boost_usr_prod" 
+
+qos_mapping:
+  small:
+    max_nodes: 64
+    qos: "normal"
+  large:
+    min_nodes: 65
+    max_nodes: 128
+    qos: "boost_qos_bprod"
+
+
+###qos: "boost_qos_bprod"
+account: "cin_staff"
+time_limit: "02:00:00"
+
+# ============================================================================
+# MODULES
+# ============================================================================
+modules:
+  - cmake/4.1.2
+  - cuda/12.6
+  - nvhpc/24.5
+  - hpcx-mpi/2.19
+  - hdf5/1.14.3--hpcx-mpi--2.19--nvhpc--24.5  
+
+# ============================================================================
+# VARIABLE MAPPING
+# ============================================================================
+variable_map:
+  length:
+    x: "Lx"
+    y: "Ly"
+    z: "Lz"
+  cells:
+    x: "nxc"
+    y: "nyc"
+    z: "nzc"
+  mpi_decomposition:
+    x: "XLEN"
+    y: "YLEN"
+    z: "ZLEN"
+  particles:
+    x: "npcelx"
+    y: "npcely"
+    z: "npcelz"
+
+# ============================================================================
+# INPUT FILE
+# ============================================================================
+input_file: inputfiles/os-stdin
+
+# ============================================================================
+# BACKEND
+# ============================================================================
+scheduler: slurm
+launcher: mpirun
+module_system: lmod
+
+# ============================================================================
+# BEHAVIOR
+# ============================================================================
+verbose: true
+auto_submit: true
+use_llm_discovery: false

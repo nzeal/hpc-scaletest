@@ -27,19 +27,19 @@ class SmartDirectionalScaling:
                  initial_procs: Tuple[int, int, int],
                  grid_dims: Tuple[int, int, int],
                  procs_per_node: int,
+                 max_nodes: int,  # REQUIRED - must be provided from YAML
                  scaling_factor: float = 2.0,
-                 scaling_dimensions: int = 2,
-                 max_nodes: int = 128):
+                 scaling_dimensions: int = 2):
         """
         Initialize smart directional scaling.
         
         Args:
             initial_procs: Base MPI decomposition (px0, py0, pz0)
             grid_dims: Fixed grid dimensions (nx, ny, nz)
-            procs_per_node: Hardware constraint (e.g., 112 for Leonardo)
+            procs_per_node: Hardware constraint (from YAML or detection)
+            max_nodes: Maximum number of nodes (REQUIRED - from YAML)
             scaling_factor: Scaling factor (typically 2.0)
             scaling_dimensions: Dimensions to scale (2 or 3)
-            max_nodes: Maximum number of nodes
         """
         self.px0, self.py0, self.pz0 = initial_procs
         self.nx, self.ny, self.nz = grid_dims
@@ -256,7 +256,7 @@ class SmartDirectionalScaling:
         print(f"Configuration:")
         print(f"  Grid (FIXED): {self.nx}×{self.ny}×{self.nz} = {self.nx*self.ny*self.nz:,} cells")
         print(f"  Base decomposition: {self.px0}×{self.py0}×{self.pz0} = {self.px0*self.py0*self.pz0} ranks")
-        print(f"  Hardware: {self.procs_per_node} cores/node (Leonardo DCGP)")
+        print(f"  Hardware: {self.procs_per_node} cores/node")
         print(f"  Scaling: {self.scaling_factor}x per step in {['X', 'Y'] if self.scaling_dims == 2 else ['X', 'Y', 'Z']} directions")
         print()
         

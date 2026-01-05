@@ -66,6 +66,7 @@ class Test:
         self,
         max_nodes: int = 1,
         procs_per_node: int = 32,
+        cpus_per_node: Optional[int] = None,
         gpus_per_node: int = 0,
         time_limit: str = "02:00:00",
         partition: str = "X_usr_prod",
@@ -78,6 +79,7 @@ class Test:
         """Simple resource setup."""
         self.resource_config.max_nodes = max_nodes
         self.resource_config.procs_per_node = procs_per_node
+        self.resource_config.cpus_per_node = cpus_per_node
         self.resource_config.gpus_per_node = gpus_per_node
         self.resource_config.time_limit = time_limit
         self.resource_config.partition = partition

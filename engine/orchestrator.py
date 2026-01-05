@@ -1,6 +1,12 @@
 """
 High-level orchestrator for end-to-end HPC scaling workflow.
 Automates code acquisition, analysis, compilation, testing, and reporting.
+
+Design Principles:
+- FULLY AUTOMATED: From git clone to scaling results
+- SYSTEM AGNOSTIC: Works on any HPC system
+- COMPILER AGNOSTIC: Detects and uses available compilers
+- APPLICATION AGNOSTIC: Analyzes source to determine requirements
 """
 
 import logging
@@ -17,12 +23,31 @@ from utils.report_generator import ReportGenerator
 from utils.parameter_suggestion import ParameterSuggestion, suggest_parameters
 from utils.system_info import get_partition_info
 
+# Import build strategy for automated configuration
+try:
+    from engine.build_strategy import (
+        auto_configure_build, 
+        ApplicationAnalyzer, 
+        SystemDetector,
+        BuildStrategySelector,
+        ExecutionModel,
+        BuildType
+    )
+    HAS_BUILD_STRATEGY = True
+except ImportError:
+    HAS_BUILD_STRATEGY = False
+
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class OrchestratorConfig:
-    """Configuration for the orchestrator."""
+    """
+    Configuration for the orchestrator.
+    
+    IMPORTANT: All hardware-specific values should come from YAML configuration.
+    Default values here are only placeholders - user MUST provide actual values.
+    """
     # Source configuration
     source: str  # Local path or Git URL
     
@@ -30,9 +55,9 @@ class OrchestratorConfig:
     scaling_type: str = "strong"  # "strong" or "weak"
     hardware_type: str = "cpu"  # "cpu" or "gpu"
     
-    # Scaling parameters
-    max_nodes: int = 4
-    initial_procs: tuple = (2, 2, 2)
+    # Scaling parameters - NO HARDCODED DEFAULTS for hardware-specific values
+    max_nodes: Optional[int] = None  # MUST be set by user in YAML
+    initial_procs: Optional[tuple] = None  # MUST be set by user in YAML
     initial_domain: Optional[tuple] = None
     initial_cells: Optional[tuple] = None
     particles_per_cell: Optional[tuple] = None  # (npcelx, npcely, npcelz)
@@ -50,16 +75,16 @@ class OrchestratorConfig:
     # GENERIC: Variable mapping for application-agnostic input parsing
     variable_map: Optional[Dict] = None  # Maps parameter types to variable names
     
-    # Resource configuration
-    procs_per_node: int = 128
-    gpus_per_node: int = 0
-    memory_per_node_gb: float = 256.0  # Memory in GB
+    # Resource configuration - NO HARDCODED DEFAULTS
+    procs_per_node: Optional[int] = None  # MPI ranks per node (for GPU = GPUs per node)
+    cpus_per_node: Optional[int] = None   # Total CPU cores per node (for SLURM allocation)
+    gpus_per_node: int = 0  # 0 means CPU-only, user sets for GPU
+    memory_per_node_gb: Optional[float] = None  # Auto-detected if not set
     time_limit: str = "02:00:00"
-    partition: str = "X_usr_prod"
+    partition: Optional[str] = None  # MUST be set by user in YAML
     qos: Optional[str] = None  # QoS specification for job submission
     qos_mapping: Optional[Dict[str, Dict]] = None  # QoS threshold mapping by node count
-    # Example: {"small": {"max_nodes": 16, "qos": "normal"}, "large": {"min_nodes": 17, "qos": "dcgp_qos_bprod"}}
-    account: str = "cin_X"
+    account: Optional[str] = None  # MUST be set by user in YAML
     
     # Backend configuration (auto-detected if None)
     scheduler: str = "slurm"
@@ -93,6 +118,13 @@ class OrchestratorConfig:
     openai_api_key: Optional[str] = None
     llm_model: str = "gpt-4"
     parameter_mapping: Optional[Dict[str, List[str]]] = None  # Custom parameter name mappings
+    
+    def __post_init__(self):
+        """Validate that required fields are set."""
+        if self.max_nodes is None:
+            raise ValueError("max_nodes MUST be specified in YAML configuration")
+        if self.partition is None:
+            raise ValueError("partition MUST be specified in YAML configuration")
 
 
 class HPCOrchestrator:
@@ -200,7 +232,102 @@ class HPCOrchestrator:
         logger.info(f"Source type: {'Git clone' if self.is_cloned else 'Local path'}")
     
     def _analyze_code(self):
-        """Step 2: Analyze README and build files for dependencies."""
+        """
+        Step 2: Analyze application and detect build configuration.
+        
+        This method:
+        1. Analyzes source code for requirements (CUDA, MPI, OpenMP, etc.)
+        2. Detects system hardware capabilities
+        3. Selects appropriate build strategy
+        4. Configures CMake flags and modules accordingly
+        
+        The process is fully automated and system/compiler agnostic.
+        """
+        # Use new build strategy module if available
+        if HAS_BUILD_STRATEGY:
+            logger.info("Using automated build strategy detection...")
+            
+            try:
+                # Auto-configure build based on source analysis and hardware detection
+                strategy, app_req, sys_caps = auto_configure_build(
+                    source_dir=self.source_dir,
+                    partition=self.config.partition,
+                    hardware_type=self.config.hardware_type
+                )
+                
+                # Store for later use
+                self.build_strategy = strategy
+                self.app_requirements = app_req
+                self.system_capabilities = sys_caps
+                
+                # Create BuildInfo for compatibility with existing code
+                self.build_info = BuildInfo()
+                self.build_info.build_system = app_req.build_system
+                self.build_info.mpi_required = app_req.requires_mpi
+                self.build_info.cuda_required = app_req.requires_cuda
+                self.build_info.openmp_required = app_req.requires_openmp
+                self.build_info.confidence_score = app_req.confidence
+                
+                # Log detected configuration
+                logger.info(f"Application Analysis:")
+                logger.info(f"  Build system: {app_req.build_system}")
+                logger.info(f"  Execution model: {app_req.execution_model.value}")
+                logger.info(f"  MPI required: {app_req.requires_mpi}")
+                logger.info(f"  CUDA required: {app_req.requires_cuda}")
+                logger.info(f"  OpenMP required: {app_req.requires_openmp}")
+                logger.info(f"  Confidence: {app_req.confidence:.2f}")
+                
+                logger.info(f"System Capabilities:")
+                logger.info(f"  CPU cores/node: {sys_caps.cpu_cores_per_node}")
+                logger.info(f"  GPUs/node: {sys_caps.gpus_per_node}")
+                if sys_caps.gpu_vendor:
+                    logger.info(f"  GPU vendor: {sys_caps.gpu_vendor}")
+                
+                logger.info(f"Build Strategy:")
+                logger.info(f"  Build type: {strategy.build_type.value}")
+                logger.info(f"  Execution model: {strategy.execution_model.value}")
+                
+                # Apply build configuration
+                if self.config.build_system is None:
+                    self.config.build_system = app_req.build_system
+                
+                if self.config.modules is None:
+                    self.config.modules = strategy.modules
+                
+                if self.config.build_flags is None:
+                    self.config.build_flags = strategy.cmake_flags
+                else:
+                    # Merge strategy flags with user flags (user takes precedence)
+                    merged_flags = dict(strategy.cmake_flags)
+                    merged_flags.update(self.config.build_flags)
+                    self.config.build_flags = merged_flags
+                
+                # Auto-configure hardware if not explicitly set
+                if self.config.procs_per_node is None and sys_caps.cpu_cores_per_node:
+                    self.config.procs_per_node = sys_caps.cpu_cores_per_node
+                    logger.info(f"  Auto-configured procs_per_node: {sys_caps.cpu_cores_per_node}")
+                
+                if self.config.gpus_per_node == 0 and sys_caps.gpus_per_node > 0:
+                    if self.config.hardware_type.lower() == 'gpu':
+                        self.config.gpus_per_node = sys_caps.gpus_per_node
+                        logger.info(f"  Auto-configured gpus_per_node: {sys_caps.gpus_per_node}")
+                
+                # Validate hardware type matches detected capabilities
+                if self.config.hardware_type.lower() == 'gpu':
+                    if sys_caps.gpus_per_node == 0:
+                        logger.warning("⚠ GPU mode requested but no GPUs detected!")
+                        logger.warning("  Check partition or set gpus_per_node manually")
+                    elif not app_req.requires_cuda and not app_req.requires_hip:
+                        logger.warning("⚠ GPU mode requested but no GPU code detected in source!")
+                        logger.warning("  Application may not benefit from GPU acceleration")
+                
+                return
+                
+            except Exception as e:
+                logger.warning(f"Build strategy detection failed: {e}")
+                logger.warning("Falling back to legacy analysis...")
+        
+        # Fallback: Use legacy ReadmeAnalyzer
         analyzer = ReadmeAnalyzer(self.source_dir)
         self.build_info = analyzer.analyze()
         
@@ -289,6 +416,7 @@ class HPCOrchestrator:
         self.test.set_resources(
             max_nodes=self.config.max_nodes,
             procs_per_node=self.config.procs_per_node,
+            cpus_per_node=self.config.cpus_per_node,
             gpus_per_node=gpus,
             time_limit=self.config.time_limit,
             partition=self.config.partition,
@@ -333,6 +461,11 @@ class HPCOrchestrator:
                 logger.info(f"    → {self.test.resource_config.cores_per_task} CPU cores per task")
         
         # Configure scaling
+        logger.info(f"  Configuring scaling:")
+        logger.info(f"    → Type: {self.config.scaling_type}")
+        logger.info(f"    → Max nodes (from config): {self.config.max_nodes}")
+        logger.info(f"    → Initial procs: {self.config.initial_procs}")
+        
         self.test.set_scaling(
             scaling_type=self.config.scaling_type,
             max_nodes=self.config.max_nodes,
@@ -341,6 +474,8 @@ class HPCOrchestrator:
             initial_cells=self.config.initial_cells
         )
         
+        logger.info(f"    → Node sequence will be: {self.test.scaling_config.get_node_sequence()}")
+        
         # VALIDATE STRONG SCALING CONFIGURATION
         if self.config.scaling_type.lower() == "strong":
             from utils.strong_scaling_validator import StrongScalingValidator
@@ -348,8 +483,17 @@ class HPCOrchestrator:
             logger.info("")
             logger.info("  Performing strong scaling validation...")
             
+            # For GPU jobs, MPI ranks per node = GPUs per node
+            # For CPU jobs, MPI ranks per node = procs_per_node
+            if self.config.hardware_type.lower() == "gpu" and gpus > 0:
+                effective_procs_per_node = gpus
+                logger.info(f"  GPU mode: Using {effective_procs_per_node} MPI ranks per node (1 per GPU)")
+            else:
+                effective_procs_per_node = self.config.procs_per_node
+                logger.info(f"  CPU mode: Using {effective_procs_per_node} MPI ranks per node")
+            
             validator = StrongScalingValidator(
-                procs_per_node=self.config.procs_per_node,
+                procs_per_node=effective_procs_per_node,
                 grid_dims=tuple(self.config.initial_cells),
                 scaling_dims=self.config.scaling_dimensions if hasattr(self.config, 'scaling_dimensions') else 3,
                 initial_procs=tuple(self.config.initial_procs) if self.config.initial_procs else None
@@ -682,7 +826,7 @@ class HPCOrchestrator:
 def create_simple_workflow(
     source: str,
     scaling_type: str = "strong",
-    max_nodes: int = 4,
+    max_nodes: int = None,  # REQUIRED - must be provided by user
     hardware_type: str = "cpu",
     **kwargs
 ) -> HPCOrchestrator:
@@ -692,13 +836,19 @@ def create_simple_workflow(
     Args:
         source: Local path or Git URL
         scaling_type: "strong" or "weak"
-        max_nodes: Maximum number of nodes to test
+        max_nodes: Maximum number of nodes to test (REQUIRED)
         hardware_type: "cpu" or "gpu"
         **kwargs: Additional configuration options
         
     Returns:
         Configured HPCOrchestrator instance
+        
+    Raises:
+        ValueError: If max_nodes is not provided
     """
+    if max_nodes is None:
+        raise ValueError("max_nodes MUST be specified - no hardcoded defaults allowed")
+    
     config = OrchestratorConfig(
         source=source,
         scaling_type=scaling_type,

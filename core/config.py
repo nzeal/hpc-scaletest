@@ -37,6 +37,7 @@ class ResourceConfig:
     """Configuration for computational resources."""
     max_nodes: int = 1
     procs_per_node: int = DEFAULT_PROCS_PER_NODE
+    cpus_per_node: Optional[int] = None  # Total CPU cores per node (for SLURM allocation)
     gpus_per_node: int = 0
     memory_per_node: Optional[str] = None
     time_limit: str = DEFAULT_TIME_LIMIT

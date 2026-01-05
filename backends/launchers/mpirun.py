@@ -1,15 +1,21 @@
 """
 MPI Run Launcher Backend
 
-This launcher uses the centralized topology detection (core/topology.py) and
-MPI command generation (core/mpi_command.py) modules to produce correct
-mpirun commands without hardcoded assumptions.
+This launcher uses the unified execution module (core/unified_execution.py)
+to generate correct mpirun commands with automatic topology detection.
+
+Key Features:
+=============
+- Automatic topology detection (CPUs, GPUs per node)
+- Correct mpirun syntax: -np N --map-by ppr:X:node:PE=Y
+- GPU binding via CUDA_VISIBLE_DEVICES (NVIDIA) or ROCR_VISIBLE_DEVICES (AMD)
+- Support for OpenMPI, Intel MPI, MPICH, and other implementations
 
 Design Principles:
-1. All topology detection delegated to core/topology.py
-2. All MPI command generation delegated to core/mpi_command.py
-3. No hardcoded values in this module
-4. Graceful fallback if new modules not available
+==================
+- NO HARDCODED VALUES - All topology detected at runtime
+- SYSTEM AGNOSTIC - Works on any HPC system
+- SINGLE SOURCE OF TRUTH - Uses core/unified_execution.py
 
 Author: HPC-ScaleTest Contributors
 """
@@ -17,40 +23,21 @@ Author: HPC-ScaleTest Contributors
 import logging
 import os
 from typing import List, Optional
-from pathlib import Path
 
 from core.abstracts import LauncherInterface
 from core.config import JobConfig, ResourceConfig
 
 logger = logging.getLogger(__name__)
 
-# Import centralized topology and MPI command modules
+# Import unified execution module
 try:
-    from core.topology import (
-        TopologyDetector, NodeTopology, MPIMapping,
-        get_topology_detector, GPUVendor
+    from core.unified_execution import (
+        UnifiedExecutor, TopologyDetector, HardwareTopology, GPUVendor
     )
-    from core.mpi_command import (
-        MPICommandGenerator, MPIDetector, MPIInfo,
-        generate_gpu_binding_script, MPIImplementation
-    )
-    HAS_TOPOLOGY_MODULE = True
+    HAS_UNIFIED_EXECUTION = True
 except ImportError:
-    HAS_TOPOLOGY_MODULE = False
-    logger.warning("Centralized topology module not available")
-
-# Legacy imports for fallback
-try:
-    from utils.mpi_detector import MPIDetector as LegacyMPIDetector
-    HAS_LEGACY_MPI_DETECTOR = True
-except ImportError:
-    HAS_LEGACY_MPI_DETECTOR = False
-
-try:
-    from utils.gpu_bind_generator import generate_gpu_bind_script
-    HAS_LEGACY_GPU_BIND = True
-except ImportError:
-    HAS_LEGACY_GPU_BIND = False
+    HAS_UNIFIED_EXECUTION = False
+    logger.warning("Unified execution module not available")
 
 
 class MpiRunLauncher(LauncherInterface):
@@ -60,18 +47,18 @@ class MpiRunLauncher(LauncherInterface):
     This launcher automatically:
     1. Detects hardware topology (CPUs, GPUs per node)
     2. Computes optimal MPI mapping (ranks, cores per rank)
-    3. Generates correct mpirun command with proper syntax
-    4. Handles GPU binding via CUDA_VISIBLE_DEVICES
+    3. Generates correct mpirun command
+    4. Handles GPU binding via bind.sh
     
-    The launcher supports:
-    - OpenMPI: --map-by ppr:N:node --bind-to core --cpus-per-proc M
-    - Intel MPI: -ppn N
-    - MPICH: -np N
-    - Generic fallback for unknown implementations
+    MPI Command Format (OpenMPI):
+    =============================
+    mpirun -np <total_ranks> --map-by ppr:<ranks_per_node>:node:PE=<cores_per_rank> [--report-bindings] [./bind.sh] <executable> [args]
     
-    Usage:
-        launcher = MpiRunLauncher(options={'verbose': True})
-        cmd = launcher.generate_launch_command(job_config, executable, resource_config)
+    Example (Leonardo Booster, 4 nodes):
+    - 32 CPU cores per node, 4 GPUs per node
+    - ranks_per_node = 4 (1 per GPU)
+    - cores_per_rank = 8 (32/4)
+    - Command: mpirun -np 16 --map-by ppr:4:node:PE=8 --report-bindings ./bind.sh $BINARY/iPIC3D os-stdin
     """
     
     def __init__(self, options: dict = None):
@@ -80,29 +67,22 @@ class MpiRunLauncher(LauncherInterface):
         
         Args:
             options: Optional configuration dict with keys:
-                - launcher: Override launcher name (default: auto-detect)
+                - launcher: Override launcher name (default: mpirun)
                 - verbose: Enable verbose output (default: False)
                 - gpu_binding: Enable GPU binding script (default: True for GPU jobs)
+                - report_bindings: Include --report-bindings (default: True)
         """
         super().__init__(options)
-        self._topology_detector = None
-        self._mpi_detector = None
-        self._mpi_info = None
+        self._executor: Optional[UnifiedExecutor] = None
     
-    @property
-    def topology_detector(self) -> Optional['TopologyDetector']:
-        """Get or create topology detector."""
-        if self._topology_detector is None and HAS_TOPOLOGY_MODULE:
-            self._topology_detector = get_topology_detector()
-        return self._topology_detector
-    
-    @property
-    def mpi_info(self) -> Optional['MPIInfo']:
-        """Get or detect MPI information."""
-        if self._mpi_info is None and HAS_TOPOLOGY_MODULE:
-            self._mpi_detector = MPIDetector()
-            self._mpi_info = self._mpi_detector.detect()
-        return self._mpi_info
+    def _get_executor(self, partition: str = "") -> UnifiedExecutor:
+        """Get or create unified executor."""
+        if not HAS_UNIFIED_EXECUTION:
+            raise RuntimeError("Unified execution module not available")
+        
+        if self._executor is None or (partition and self._executor.partition != partition):
+            self._executor = UnifiedExecutor(partition=partition)
+        return self._executor
     
     def supports_gpu_binding(self) -> bool:
         """Check if launcher supports GPU binding."""
@@ -119,9 +99,8 @@ class MpiRunLauncher(LauncherInterface):
         
         This method:
         1. Detects hardware topology for the partition
-        2. Computes optimal MPI mapping
-        3. Generates correct mpirun command for detected MPI implementation
-        4. Includes GPU binding script if GPUs are present
+        2. Computes MPI mapping (ranks per node, cores per rank)
+        3. Generates correct mpirun command
         
         Args:
             job_config: Job configuration
@@ -130,96 +109,72 @@ class MpiRunLauncher(LauncherInterface):
         
         Returns:
             List of command components (launcher + arguments + executable)
+        
+        Example output for Leonardo (32 cores, 4 GPUs), 4 nodes:
+            ['mpirun', '-np', '16', '--map-by', 'ppr:4:node:PE=8', 
+             '--report-bindings', './bind.sh', '$BINARY/iPIC3D', 'os-stdin']
         """
-        if HAS_TOPOLOGY_MODULE:
-            return self._generate_with_topology(job_config, executable, resource_config)
+        if HAS_UNIFIED_EXECUTION:
+            return self._generate_with_unified_execution(
+                job_config, executable, resource_config
+            )
         else:
             return self._generate_legacy(job_config, executable, resource_config)
     
-    def _generate_with_topology(
+    def _generate_with_unified_execution(
         self,
         job_config: JobConfig,
         executable: List[str],
         resource_config: ResourceConfig
     ) -> List[str]:
-        """Generate command using centralized topology detection."""
+        """Generate command using unified execution module."""
         
-        # Step 1: Detect or use provided topology
-        partition = getattr(resource_config, 'partition', None)
+        # Get partition
+        partition = getattr(resource_config, 'partition', None) or ''
         
-        try:
-            topology = self.topology_detector.detect(partition)
-        except Exception as e:
-            logger.warning(f"Topology detection failed: {e}, using resource_config values")
-            # Create topology from resource_config
-            topology = NodeTopology(
-                cpu_cores=resource_config.procs_per_node,
-                gpus=getattr(resource_config, 'gpus_per_node', 0),
-                gpu_vendor=GPUVendor.NVIDIA if getattr(resource_config, 'gpus_per_node', 0) > 0 else GPUVendor.NONE,
+        # Get executor and detect topology
+        executor = self._get_executor(partition)
+        topology = executor.detect_topology()
+        
+        # Check for user overrides
+        user_gpus = getattr(resource_config, 'gpus_per_node', 0)
+        if user_gpus > topology.gpus_per_node:
+            # User configured more GPUs - rebuild topology
+            topology = HardwareTopology(
+                cpu_cores_per_node=topology.cpu_cores_per_node,
+                gpus_per_node=user_gpus,
+                gpu_vendor=topology.gpu_vendor if topology.gpus_per_node > 0 else GPUVendor.NVIDIA,
+                partition=partition,
+                detection_method=topology.detection_method + " + user_override"
             )
+            executor._topology = topology
         
-        # Step 2: Determine MPI mapping
-        # Check for user overrides in resource_config
-        user_ranks = getattr(resource_config, 'actual_mpi_tasks', None)
-        user_cores = getattr(resource_config, 'cores_per_task', None)
+        # Calculate MPI layout
+        total_ranks = job_config.num_nodes * topology.ranks_per_node
         
-        try:
-            mapping = self.topology_detector.compute_mpi_mapping(
-                topology=topology,
-                num_nodes=job_config.num_nodes,
-                user_ranks_per_node=user_ranks,
-                user_cores_per_rank=user_cores,
-            )
-        except ValueError as e:
-            logger.error(f"Invalid MPI mapping: {e}")
-            raise
+        # Build command
+        launcher = self.options.get('launcher', 'mpirun')
+        report_bindings = self.options.get('report_bindings', True)
+        gpu_binding = self.options.get('gpu_binding', True)
         
-        # Step 3: Generate MPI command
-        mpi_info = self.mpi_info
+        cmd = [
+            launcher,
+            '-np', str(total_ranks),
+            '--map-by', f'ppr:{topology.ranks_per_node}:node:PE={topology.cores_per_rank}',
+            '--report-bindings'
+        ]
         
-        # Override launcher if specified
-        launcher = self.options.get('launcher')
-        if launcher:
-            mpi_info = MPIInfo(
-                implementation=mpi_info.implementation if mpi_info else MPIImplementation.UNKNOWN,
-                version=mpi_info.version if mpi_info else "",
-                launcher=launcher,
-                supports_ppr=mpi_info.supports_ppr if mpi_info else False,
-                supports_bind_to=mpi_info.supports_bind_to if mpi_info else False,
-                supports_cpus_per_proc=mpi_info.supports_cpus_per_proc if mpi_info else False,
-                supports_report_bindings=mpi_info.supports_report_bindings if mpi_info else False,
-            )
+        # GPU binding wrapper - use bind.sh for GPU jobs
+        if gpu_binding and topology.gpus_per_node > 0:
+            cmd.append('./bind.sh')
         
-        generator = MPICommandGenerator(mpi_info)
+        # Add executable and arguments
+        cmd.extend(executable)
         
-        # Determine if we need GPU binding
-        gpu_binding_script = None
-        enable_gpu_binding = self.options.get('gpu_binding', True)
-        
-        if enable_gpu_binding and topology.gpus > 0:
-            # Generate GPU binding script inline
-            gpu_binding_script = './bind.sh'
-        
-        verbose = self.options.get('verbose', False)
-        
-        # Generate command
-        exe_path = executable[0] if executable else ''
-        exe_args = executable[1:] if len(executable) > 1 else []
-        
-        cmd = generator.generate(
-            topology=topology,
-            mapping=mapping,
-            executable=exe_path,
-            args=exe_args,
-            num_nodes=job_config.num_nodes,
-            verbose=verbose,
-            gpu_binding_script=gpu_binding_script,
-        )
-        
-        # Log the command
-        logger.info(f"Generated MPI command for {mpi_info.implementation.value if mpi_info else 'unknown'} MPI:")
-        logger.info(f"  Topology: {topology.cpu_cores} CPUs, {topology.gpus} GPUs per node")
-        logger.info(f"  Mapping: {mapping.ranks_per_node} ranks/node × {mapping.cores_per_rank} cores/rank")
+        logger.info(f"Generated MPI command:")
+        logger.info(f"  Topology: {topology.cpu_cores_per_node} CPUs, {topology.gpus_per_node} GPUs per node")
+        logger.info(f"  Mapping: {topology.ranks_per_node} ranks/node × {topology.cores_per_rank} cores/rank")
+        logger.info(f"  Total ranks: {total_ranks}")
         logger.info(f"  Command: {' '.join(cmd)}")
         
         return cmd
@@ -231,34 +186,37 @@ class MpiRunLauncher(LauncherInterface):
         resource_config: ResourceConfig
     ) -> List[str]:
         """
-        Legacy command generation (fallback if topology module unavailable).
+        Legacy command generation (fallback if unified execution unavailable).
         
-        This provides backward compatibility but may not generate optimal commands.
+        This uses resource_config values directly without automatic detection.
         """
-        logger.warning("Using legacy MPI command generation (topology module not available)")
+        logger.warning("Using legacy MPI command generation")
         
         launcher = self.options.get('launcher', 'mpirun')
         cmd = [launcher]
         
-        # Determine task count
-        if hasattr(resource_config, 'actual_mpi_tasks') and resource_config.actual_mpi_tasks:
-            tasks_per_node = resource_config.actual_mpi_tasks
-            total_tasks = tasks_per_node * job_config.num_nodes
-            cores_per_task = getattr(resource_config, 'cores_per_task', 1)
-            is_gpu_job = True
+        # Determine MPI layout from resource config
+        gpus_per_node = getattr(resource_config, 'gpus_per_node', 0)
+        procs_per_node = resource_config.procs_per_node
+        
+        if gpus_per_node > 0:
+            # GPU job: 1 rank per GPU
+            ranks_per_node = gpus_per_node
+            cores_per_rank = procs_per_node // gpus_per_node if gpus_per_node > 0 else 1
+            total_ranks = job_config.num_nodes * ranks_per_node
+            
+            cmd.extend(['-np', str(total_ranks)])
+            cmd.extend(['--map-by', f'ppr:{ranks_per_node}:node:PE={cores_per_rank}'])
+            
+            if self.options.get('report_bindings', True):
+                cmd.append('--report-bindings')
+            
+            if self.options.get('gpu_binding', True):
+                cmd.append('./bind.sh')
         else:
-            total_tasks = job_config.num_nodes * resource_config.procs_per_node
-            tasks_per_node = resource_config.procs_per_node
-            cores_per_task = 1
-            is_gpu_job = getattr(resource_config, 'gpus_per_node', 0) > 0
-        
-        # Number of processes
-        cmd.extend(['-np', str(total_tasks)])
-        
-        # Process mapping for GPU jobs with PE (Processing Elements)
-        if is_gpu_job:
-            # Use ppr:X:node:PE=Y syntax for process mapping with cores per rank
-            cmd.extend(['--map-by', f'ppr:{tasks_per_node}:node:PE={cores_per_task}'])
+            # CPU job: all processes
+            total_procs = job_config.num_nodes * procs_per_node
+            cmd.extend(['-np', str(total_procs)])
         
         # Add executable
         cmd.extend(executable)
@@ -268,9 +226,6 @@ class MpiRunLauncher(LauncherInterface):
     def get_gpu_binding_script_content(self, gpu_vendor: str = 'nvidia') -> str:
         """
         Get the content of the GPU binding script.
-        
-        This can be used by job generators that need to embed the script
-        directly in the job script.
         
         Args:
             gpu_vendor: GPU vendor ('nvidia', 'amd', 'intel')
@@ -291,12 +246,14 @@ class MpiRunLauncher(LauncherInterface):
 
 if [ -n "$OMPI_COMM_WORLD_LOCAL_RANK" ]; then
     LOCAL_RANK=$OMPI_COMM_WORLD_LOCAL_RANK
-elif [ -n "$PMI_LOCAL_RANK" ]; then
-    LOCAL_RANK=$PMI_LOCAL_RANK
 elif [ -n "$MPI_LOCALRANKID" ]; then
     LOCAL_RANK=$MPI_LOCALRANKID
+elif [ -n "$PMI_LOCAL_RANK" ]; then
+    LOCAL_RANK=$PMI_LOCAL_RANK
 elif [ -n "$SLURM_LOCALID" ]; then
     LOCAL_RANK=$SLURM_LOCALID
+elif [ -n "$MV2_COMM_WORLD_LOCAL_RANK" ]; then
+    LOCAL_RANK=$MV2_COMM_WORLD_LOCAL_RANK
 else
     LOCAL_RANK=0
 fi

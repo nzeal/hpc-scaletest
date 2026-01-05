@@ -19,13 +19,10 @@ hardware_type: "gpu"
 
 # Leonardo Booster: 4 NVIDIA A100 GPUs per node, 32 CPU cores per node
 gpus_per_node: 4          # Number of GPUs per node
+cpus_per_node: 32         # REQUIRED: Total CPU cores per node (for SLURM allocation)
 procs_per_node: 4         # Number of MPI tasks per node (1 per GPU for weak scaling)
                           # Note: Total CPU cores (32) are divided among MPI tasks
                           # Each MPI task gets: 32 / 4 = 8 CPU cores
-
-# Alternative explicit configuration (for advanced users):
-# cpus_per_node: 32       # Total CPU cores per node (auto-calculated if not set)
-# cpus_per_task: 8        # CPU cores per MPI task (auto-calculated: 32/4 = 8)
 
 # ============================================================================
 # WEAK SCALING - CONSTANT WORK PER GPU
@@ -33,7 +30,7 @@ procs_per_node: 4         # Number of MPI tasks per node (1 per GPU for weak sca
 scaling: weak
 scaling_factor: 2.0          # Double problem size each step
 scaling_dimensions: 2        # Scale in X and Y directions
-max_nodes: 16
+max_nodes: 128
 
 # Initial configuration for 1 node (4 GPUs)
 # This defines the per-GPU workload that stays CONSTANT
@@ -84,7 +81,18 @@ particles_per_cell:
 ##partition: boost_usr_prod
 
 partition: "boost_usr_prod" 
-qos: "boost_qos_bprod"
+
+qos_mapping:
+  small:
+    max_nodes: 64
+    qos: "normal"
+  large:
+    min_nodes: 65
+    max_nodes: 128
+    qos: "boost_qos_bprod"
+
+
+###qos: "boost_qos_bprod"
 account: "cin_staff"
 time_limit: "02:00:00"
 

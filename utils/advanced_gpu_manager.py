@@ -60,42 +60,31 @@ class AdvancedGPUManager(object):
     """
     Manages GPU resources with full awareness of CPU/GPU topology.
     
+    Design Principles:
+    - SYSTEM AGNOSTIC: No hardcoded partition names or system-specific values
+    - All configuration discovered at runtime from SLURM
+    - Works on any HPC system with GPUs
+    
     Distinguishes between:
-    - CPU cores available (e.g., 32 on Leonardo Booster)
-    - GPU count (e.g., 4 on Leonardo Booster)
+    - CPU cores available (detected from SLURM)
+    - GPU count (detected from SLURM)
     - MPI tasks = GPU count (1:1 mapping)
     - Cores per MPI task = total_cores / gpu_count
-    
-    Supports flexible partition names (both 'booster' and 'boost_usr_prod')
     """
-    
-    # Known partition name mappings for different systems
-    PARTITION_ALIASES = {
-        'booster': ['booster', 'boost_usr_prod', 'boost_qos_dbg', 'boost_qos_bprod'],
-        'dcgp': ['dcgp', 'dcgp_usr_prod', 'dcgp_usr_preempt'],
-    }
     
     def __init__(self):
         self.node_config = None
+        # Partition info discovered dynamically from SLURM, not hardcoded
+        self._discovered_partitions = {}
     
     def _normalize_partition(self, partition):
         """
-        Normalize partition name to handle aliases.
+        Normalize partition name.
         
-        Examples:
-        - 'boost_usr_prod' -> 'booster'
-        - 'booster' -> 'booster'
-        - 'boost_qos_dbg' -> 'booster'
+        No hardcoded aliases - just returns the partition name as-is.
+        SLURM will validate the partition name.
         """
-        partition_lower = partition.lower()
-        
-        # Check if it matches any known aliases
-        for canonical, aliases in self.PARTITION_ALIASES.items():
-            if partition_lower in [a.lower() for a in aliases]:
-                logger.debug("Normalized partition '{}' -> '{}'".format(partition, canonical))
-                return canonical
-        
-        return partition
+        return partition.strip() if partition else partition
     
     def _find_partition(self, partition_hint):
         """
@@ -264,12 +253,13 @@ class AdvancedGPUManager(object):
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             
             if result.returncode != 0:
-                return 32, 0
+                # Detection failed - return None to indicate values must come from YAML
+                return None, None
             
             node_info = result.stdout
             
-            # Parse CPUs
-            cpus = 32
+            # Parse CPUs - no hardcoded default
+            cpus = None
             cpu_match = re.search(r'CPUTot=(\d+)', node_info)
             if cpu_match:
                 cpus = int(cpu_match.group(1))
@@ -280,10 +270,11 @@ class AdvancedGPUManager(object):
             if mem_match:
                 memory_mb = int(mem_match.group(1))
             
-            return cpus, memory_mb // 1024
+            return cpus, memory_mb // 1024 if memory_mb else None
             
         except Exception:
-            return 32, 0
+            # Detection failed - return None to indicate values must come from YAML
+            return None, None
     
     def _detect_gpu_model(self, node_name):
         """Detect GPU model and vendor."""

@@ -37,19 +37,19 @@ class NodeSequenceStrongScaling:
                  initial_procs: Tuple[int, int, int],
                  grid_dims: Tuple[int, int, int],
                  procs_per_node: int,
+                 max_nodes: int,  # REQUIRED - must be provided from YAML
                  scaling_factor: float = 2.0,
-                 scaling_dimensions: int = 2,
-                 max_nodes: int = 128):
+                 scaling_dimensions: int = 2):
         """
         Initialize node-sequence-based scaling.
         
         Args:
             initial_procs: Base MPI decomposition (px0, py0, pz0) - used EXACTLY for step 0
             grid_dims: Fixed grid dimensions (nx, ny, nz)
-            procs_per_node: Hardware cores per node
+            procs_per_node: Hardware cores per node (from YAML or detection)
+            max_nodes: Maximum nodes (REQUIRED - from YAML)
             scaling_factor: Scaling factor (2.0 for doubling, 4.0 for quadrupling)
             scaling_dimensions: Dimensions to scale (2 or 3)
-            max_nodes: Maximum nodes
         """
         self.px0, self.py0, self.pz0 = initial_procs
         self.nx, self.ny, self.nz = grid_dims

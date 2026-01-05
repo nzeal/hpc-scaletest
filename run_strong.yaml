@@ -20,7 +20,7 @@ scaling: strong
 
 # Maximum number of nodes to test
 # The framework will generate a power-of-2 sequence: 1, 2, 4, ..., nodes
-nodes: 32
+nodes: 128
 scaling_factor: 2.0
 scaling_dimensions: 2
 

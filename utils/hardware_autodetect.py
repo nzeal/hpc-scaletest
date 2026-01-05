@@ -305,6 +305,9 @@ class HardwareDetector:
         """
         Automatically configure a ResourceConfig object with detected hardware.
         
+        IMPORTANT: This method PRESERVES user-configured values.
+        If gpus_per_node was already set by the user, it will NOT be overwritten.
+        
         Args:
             resource_config: ResourceConfig instance to configure
         """
@@ -313,19 +316,50 @@ class HardwareDetector:
         
         config = self.hardware_config
         
-        # Set GPU count
-        resource_config.gpus_per_node = config.gpus_per_node
+        # CRITICAL FIX: Preserve user's gpus_per_node if already set
+        # Only use auto-detected value if user didn't specify one
+        user_gpus = getattr(resource_config, 'gpus_per_node', 0) or 0
+        if user_gpus > 0:
+            # User already set gpus_per_node - preserve it
+            logger.info(f"  Preserving user-configured gpus_per_node: {user_gpus}")
+            effective_gpus = user_gpus
+        else:
+            # Use auto-detected value
+            resource_config.gpus_per_node = config.gpus_per_node
+            effective_gpus = config.gpus_per_node
         
         # Configure GPU tasks if GPUs are present
-        if config.gpus_per_node > 0:
-            resource_config.actual_mpi_tasks = config.mpi_tasks_per_node
-            resource_config.cores_per_task = config.cores_per_task
+        if effective_gpus > 0:
+            # Calculate MPI tasks based on effective GPU count
+            # If user preserved their gpus_per_node, compute tasks from that
+            if user_gpus > 0 and config.gpus_per_node == 0:
+                # User specified GPUs but auto-detect found none
+                # Use user's cpus_per_node if available, otherwise use auto-detected or default
+                user_cpus = getattr(resource_config, 'cpus_per_node', 0) or 0
+                if user_cpus > 0:
+                    cores_per_node = user_cpus
+                elif config.cores_per_node > 0:
+                    cores_per_node = config.cores_per_node
+                else:
+                    cores_per_node = 32  # Default for modern GPU nodes
+                
+                mpi_tasks = effective_gpus
+                cores_per_task = cores_per_node // effective_gpus
+                logger.info(f"  Computing MPI layout from user config:")
+                logger.info(f"    Using {cores_per_node} cores / {effective_gpus} GPUs = {cores_per_task} cores/task")
+            else:
+                # Use auto-detected values
+                mpi_tasks = config.mpi_tasks_per_node
+                cores_per_task = config.cores_per_task
+            
+            resource_config.actual_mpi_tasks = mpi_tasks
+            resource_config.cores_per_task = cores_per_task
             
             logger.info(f"✓ Auto-configured ResourceConfig for GPU execution:")
-            logger.info(f"  gpus_per_node: {resource_config.gpus_per_node}")
+            logger.info(f"  gpus_per_node: {effective_gpus}")
             logger.info(f"  actual_mpi_tasks: {resource_config.actual_mpi_tasks}")
             logger.info(f"  cores_per_task: {resource_config.cores_per_task}")
-            logger.info(f"  → MPI mapping: --map-by ppr:{config.mpi_tasks_per_node}:node --bind-to core")
+            logger.info(f"  → MPI mapping: --map-by ppr:{mpi_tasks}:node --bind-to core")
         else:
             logger.info(f"✓ CPU-only configuration (no automatic task mapping)")
 

@@ -151,9 +151,11 @@ class YAMLConfigParser:
             if isinstance(factors, list):
                 config['strong_scaling_factors'] = [float(f) for f in factors]
         
-        # Node configuration (top-level)
-        if 'nodes' in self.config_data:
-            config['max_nodes'] = self.config_data['nodes']
+        # Node configuration (top-level) - supports both 'nodes' and 'max_nodes'
+        if 'max_nodes' in self.config_data:
+            config['max_nodes'] = int(self.config_data['max_nodes'])
+        elif 'nodes' in self.config_data:
+            config['max_nodes'] = int(self.config_data['nodes'])
         
         # Top-level initial_procs, initial_domain, initial_cells (alternative to nested in scaling)
         if 'initial_procs' in self.config_data:
@@ -176,7 +178,10 @@ class YAMLConfigParser:
                 config['particles_per_cell'] = self._parse_tuple(ppc)
         
         # Hardware configuration
-        if 'hardware' in self.config_data:
+        # Support both 'hardware' nested format and 'hardware_type' flat format
+        if 'hardware_type' in self.config_data:
+            config['hardware_type'] = self.config_data['hardware_type']
+        elif 'hardware' in self.config_data:
             hw = self.config_data['hardware']
             if isinstance(hw, str):
                 config['hardware_type'] = hw
@@ -184,12 +189,22 @@ class YAMLConfigParser:
                 config['hardware_type'] = hw.get('type', 'cpu')
                 if 'procs_per_node' in hw:
                     config['procs_per_node'] = hw['procs_per_node']
+                if 'cpus_per_node' in hw:
+                    config['cpus_per_node'] = hw['cpus_per_node']
                 if 'gpus_per_node' in hw:
                     config['gpus_per_node'] = hw['gpus_per_node']
+        
+        # GPU configuration (top-level) - used by GPU jobs
+        if 'gpus_per_node' in self.config_data:
+            config['gpus_per_node'] = int(self.config_data['gpus_per_node'])
         
         # Top-level procs_per_node (alternative to nested in hardware)
         if 'procs_per_node' in self.config_data:
             config['procs_per_node'] = int(self.config_data['procs_per_node'])
+        
+        # Top-level cpus_per_node (total CPU cores per node for SLURM allocation)
+        if 'cpus_per_node' in self.config_data:
+            config['cpus_per_node'] = int(self.config_data['cpus_per_node'])
         
         # Resource configuration
         if 'partition' in self.config_data:
@@ -310,6 +325,53 @@ class YAMLConfigParser:
         if 'repository' not in self.config_data and 'source' not in self.config_data:
             raise ValueError("Configuration must specify 'repository' or 'source'")
         
+        # REQUIRED: max_nodes must be specified (no hardcoded defaults)
+        has_max_nodes = (
+            'max_nodes' in self.config_data or
+            'nodes' in self.config_data or
+            (isinstance(self.config_data.get('scaling'), dict) and 'nodes' in self.config_data['scaling'])
+        )
+        if not has_max_nodes:
+            raise ValueError("Configuration MUST specify 'max_nodes' or 'nodes' - no hardcoded defaults allowed")
+        
+        # REQUIRED: partition must be specified for SLURM jobs
+        if 'partition' not in self.config_data:
+            raise ValueError("Configuration MUST specify 'partition' - no hardcoded defaults allowed")
+        
+        # Determine hardware type
+        hw_type = 'cpu'
+        if 'hardware_type' in self.config_data:
+            hw_type = self.config_data['hardware_type']
+        elif 'hardware' in self.config_data:
+            hw = self.config_data['hardware']
+            if isinstance(hw, str):
+                hw_type = hw
+            else:
+                hw_type = hw.get('type', 'cpu')
+        
+        # GPU-specific required fields
+        if hw_type.lower() == 'gpu':
+            # gpus_per_node is REQUIRED for GPU jobs
+            has_gpus_per_node = (
+                'gpus_per_node' in self.config_data or
+                (isinstance(self.config_data.get('hardware'), dict) and 'gpus_per_node' in self.config_data['hardware'])
+            )
+            if not has_gpus_per_node:
+                raise ValueError("GPU configuration MUST specify 'gpus_per_node' - no hardcoded defaults allowed")
+            
+            # cpus_per_node or procs_per_node is REQUIRED for GPU jobs
+            has_cpu_count = (
+                'cpus_per_node' in self.config_data or
+                'procs_per_node' in self.config_data or
+                (isinstance(self.config_data.get('hardware'), dict) and 
+                 ('cpus_per_node' in self.config_data['hardware'] or 'procs_per_node' in self.config_data['hardware']))
+            )
+            if not has_cpu_count:
+                raise ValueError(
+                    "GPU configuration MUST specify 'cpus_per_node' or 'procs_per_node' (total CPU cores per node, e.g., 32) - "
+                    "this is required for proper SLURM allocation and MPI mapping"
+                )
+        
         # Validate scaling type if specified
         if 'scaling' in self.config_data:
             scaling = self.config_data['scaling']
@@ -322,15 +384,8 @@ class YAMLConfigParser:
                 raise ValueError(f"Invalid scaling type: {scaling_type}. Must be 'strong' or 'weak'")
         
         # Validate hardware type if specified
-        if 'hardware' in self.config_data:
-            hw = self.config_data['hardware']
-            if isinstance(hw, str):
-                hw_type = hw
-            else:
-                hw_type = hw.get('type', 'cpu')
-            
-            if hw_type not in ['cpu', 'gpu']:
-                raise ValueError(f"Invalid hardware type: {hw_type}. Must be 'cpu' or 'gpu'")
+        if hw_type not in ['cpu', 'gpu']:
+            raise ValueError(f"Invalid hardware type: {hw_type}. Must be 'cpu' or 'gpu'")
         
         logger.info("Configuration validation passed")
         return True

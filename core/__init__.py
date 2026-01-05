@@ -36,24 +36,16 @@ from .registry import (
 try:
     from .unified_execution import (
         # Data classes
-        HardwareTopology as UnifiedTopology,
-        MPIConfiguration as UnifiedMPIConfig,
-        SlurmConfiguration as UnifiedSlurmConfig,
-        RunResult as UnifiedRunResult,
+        HardwareTopology,
         # Enums
         GPUVendor as UnifiedGPUVendor,
-        ScalingType as UnifiedScalingType,
-        # Functions
-        detect_topology as unified_detect_topology,
-        generate_gpu_binding_script as unified_gpu_bind_script,
-        generate_job_script as unified_job_script,
-        generate_node_sequence,
-        get_detector,
         # Classes
         TopologyDetector as UnifiedTopologyDetector,
-        IncrementalResultWriter as UnifiedResultWriter,
-        # Constants
-        GPU_BIND_SCRIPT,
+        UnifiedExecutor,
+        # Functions
+        detect_topology as unified_detect_topology,
+        generate_mpi_command as unified_generate_mpi_command,
+        get_executor as unified_get_executor,
     )
     HAS_UNIFIED_EXECUTION = True
 except ImportError:
@@ -159,20 +151,13 @@ __all__ = [
 # Add unified execution exports if available (RECOMMENDED)
 if HAS_UNIFIED_EXECUTION:
     __all__.extend([
-        'UnifiedTopology',
-        'UnifiedMPIConfig',
-        'UnifiedSlurmConfig',
-        'UnifiedRunResult',
+        'HardwareTopology',
         'UnifiedGPUVendor',
-        'UnifiedScalingType',
         'unified_detect_topology',
-        'unified_gpu_bind_script',
-        'unified_job_script',
-        'generate_node_sequence',
-        'get_detector',
+        'unified_generate_mpi_command',
+        'unified_get_executor',
         'UnifiedTopologyDetector',
-        'UnifiedResultWriter',
-        'GPU_BIND_SCRIPT',
+        'UnifiedExecutor',
     ])
 
 # Add hardware exports if available

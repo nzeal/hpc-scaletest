@@ -125,15 +125,13 @@ class ConfigValidator:
         """Validate resource configuration."""
         errors = []
         
-        # Partition
+        # Partition - must be specified (no hardcoded defaults)
         partition = config.get('partition')
-        if partition == 'X_usr_prod':
-            errors.append("Please specify actual partition name (default 'X_usr_prod' is placeholder)")
+        if partition is None or partition == '':
+            errors.append("'partition' must be specified - no hardcoded defaults allowed")
         
-        # Account
-        account = config.get('account')
-        if account == 'cin_X':
-            errors.append("Please specify actual account name (default 'cin_X' is placeholder)")
+        # Account - optional on some systems, but warn if not set
+        # Don't require it since some systems don't need it
         
         # Processors per node
         procs = config.get('procs_per_node')
@@ -150,10 +148,29 @@ class ConfigValidator:
         if gpus is not None and gpus < 0:
             errors.append(f"'gpus_per_node' cannot be negative, got {gpus}")
         
+        # CPUs per node (for GPU jobs, this is required for proper SLURM allocation)
+        cpus = config.get('cpus_per_node')
+        procs = config.get('procs_per_node')
+        if cpus is not None:
+            if not isinstance(cpus, int):
+                errors.append(f"'cpus_per_node' must be integer, got {type(cpus).__name__}")
+            elif cpus < 1:
+                errors.append(f"'cpus_per_node' must be >= 1, got {cpus}")
+            elif cpus > 512:
+                errors.append(f"'cpus_per_node' seems unreasonably large: {cpus}")
+        
         # Hardware type
         hardware = config.get('hardware', config.get('hardware_type', 'cpu'))
         if hardware not in ['cpu', 'gpu']:
             errors.append(f"Invalid hardware type: '{hardware}'. Must be 'cpu' or 'gpu'")
+        
+        # For GPU jobs, require either cpus_per_node or procs_per_node for proper SLURM allocation
+        if hardware == 'gpu' and gpus and gpus > 0:
+            if cpus is None and procs is None:
+                errors.append(
+                    "GPU jobs MUST specify 'cpus_per_node' or 'procs_per_node' (total CPU cores per node, e.g., 32). "
+                    "This is used for SLURM --ntasks-per-node allocation and MPI mapping."
+                )
         
         return errors
     

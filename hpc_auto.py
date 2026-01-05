@@ -69,14 +69,14 @@ Examples:
     scaling_group.add_argument(
         '--nodes', '-n',
         type=int,
-        default=4,
-        help='Maximum number of nodes to test (default: 4)'
+        default=None,  # NO DEFAULT - must be specified via CLI, YAML, or detection
+        help='Maximum number of nodes to test (REQUIRED - no hardcoded default)'
     )
     scaling_group.add_argument(
         '--initial-procs',
         type=str,
-        default='2,2,2',
-        help='Initial process decomposition as x,y,z (default: 2,2,2)'
+        default=None,  # NO DEFAULT - must be specified
+        help='Initial process decomposition as x,y,z (REQUIRED - no hardcoded default)'
     )
     scaling_group.add_argument(
         '--initial-domain',
@@ -100,14 +100,14 @@ Examples:
     hardware_group.add_argument(
         '--procs-per-node',
         type=int,
-        default=128,
-        help='Processes per node (default: 128)'
+        default=None,  # NO DEFAULT - must come from YAML or auto-detection
+        help='Processes per node (auto-detected or from YAML)'
     )
     hardware_group.add_argument(
         '--gpus-per-node',
         type=int,
-        default=0,
-        help='GPUs per node (default: 0, auto-set to 1 for --hardware gpu)'
+        default=None,  # NO DEFAULT - must come from YAML or auto-detection
+        help='GPUs per node (auto-detected or from YAML, required for GPU jobs)'
     )
     
     # Resource configuration
@@ -119,13 +119,13 @@ Examples:
     )
     resource_group.add_argument(
         '--partition',
-        default='X_usr_prod',
-        help='Partition/queue name (default: X_usr_prod)'
+        default=None,  # NO DEFAULT - must be specified via CLI, YAML, or detection
+        help='Partition/queue name (REQUIRED - no hardcoded default)'
     )
     resource_group.add_argument(
         '--account',
-        default='cin_X',
-        help='Account/project name (default: cin_X)'
+        default=None,  # NO DEFAULT - optional, depends on system requirements
+        help='Account/project name (from YAML or CLI)'
     )
     
     # System configuration
@@ -362,16 +362,16 @@ def apply_system_config_overrides(args, loader: Optional[SystemConfigLoader], lo
     
     logger.info(f"Applying system config from partition: {partition_name}")
     
-    # Override hardware parameters if not manually specified
+    # Override hardware parameters if not manually specified (None = not set)
     if partition.processor:
-        num_cpus = partition.processor.get('num_cpus', args.procs_per_node)
-        if args.procs_per_node == 128:  # Default value
+        num_cpus = partition.processor.get('num_cpus')
+        if args.procs_per_node is None and num_cpus:
             args.procs_per_node = num_cpus
             logger.info(f"  procs_per_node: {num_cpus} (from system config)")
     
     if partition.devices and args.hardware == 'gpu':
         num_gpus = partition.devices[0].get('num_devices', 0)
-        if args.gpus_per_node == 0:  # Default value
+        if args.gpus_per_node is None and num_gpus:
             args.gpus_per_node = num_gpus
             logger.info(f"  gpus_per_node: {num_gpus} (from system config)")
     
@@ -396,10 +396,10 @@ def apply_system_config_overrides(args, loader: Optional[SystemConfigLoader], lo
     # Override partition and account from access options
     if partition.access:
         for access in partition.access:
-            if '--partition=' in access and args.partition == 'X_usr_prod':  # Default
+            if '--partition=' in access and args.partition is None:
                 args.partition = access.split('=')[1]
                 logger.info(f"  partition: {args.partition} (from system config)")
-            elif '--account=' in access and args.account == 'cin_X':  # Default
+            elif '--account=' in access and args.account is None:
                 args.account = access.split('=')[1]
                 logger.info(f"  account: {args.account} (from system config)")
     
@@ -591,9 +591,9 @@ def main():
             sys.exit(1)
         
         partition = args.partition_name if args.partition_name else args.partition
-        if partition == 'X_usr_prod':  # Default value
+        if partition is None:
             logger.error("Please specify a valid partition name")
-            logger.error("Example: python hpc_auto.py --system-info --system Leonardo --partition booster")
+            logger.error("Example: python hpc_auto.py --system-info --system <system_name> --partition <partition_name>")
             sys.exit(1)
         
         success = display_system_info_from_config(args.system, partition, args.system_config)
@@ -601,9 +601,9 @@ def main():
     
     # Handle --check-partition mode
     if args.check_partition:
-        if not args.partition or args.partition == 'X_usr_prod':
+        if not args.partition:
             logger.error("Please specify a partition name with --partition")
-            logger.error("Example: python hpc_auto.py --check-partition --partition dcgp")
+            logger.error("Example: python hpc_auto.py --check-partition --partition <partition_name>")
             sys.exit(1)
         
         logger.info(f"Checking partition: {args.partition}")
@@ -641,21 +641,21 @@ def main():
                 logger.error("No source specified in YAML config or command line")
                 sys.exit(1)
             
-            # Apply other CLI overrides
-            if args.nodes != 4:  # Not default
+            # Apply other CLI overrides (only if explicitly set, not None)
+            if args.nodes is not None:
                 config_dict['max_nodes'] = args.nodes
-            if args.scaling != 'strong':  # Not default
+            if args.scaling != 'strong':  # scaling has a sensible default
                 config_dict['scaling_type'] = args.scaling
-            if args.partition != 'X_usr_prod':  # Not default
+            if args.partition is not None:
                 config_dict['partition'] = args.partition
-            if args.account != 'cin_X':  # Not default
+            if args.account is not None:
                 config_dict['account'] = args.account
             
             # Auto-detect system resources if not explicitly configured
             logger.info("\nDetecting system resources...")
             partition_for_detection = config_dict.get('partition', args.partition)
-            if partition_for_detection == 'X_usr_prod':  # Default placeholder
-                partition_for_detection = None
+            if partition_for_detection is None:
+                partition_for_detection = None  # Will trigger auto-detection
             
             auto_config = auto_configure_resources(
                 max_nodes=config_dict.get('max_nodes'),
@@ -707,9 +707,15 @@ def main():
                     logger.info(f"  Resolved partition '{partition_for_detection}' to '{auto_config['partition']}'")
             
             # Create configuration from merged settings
+            logger.info(f"\n  Parsed configuration summary:")
+            logger.info(f"    max_nodes: {config_dict.get('max_nodes', 'NOT SET (default: 4)')}")
+            logger.info(f"    scaling_type: {config_dict.get('scaling_type', 'NOT SET')}")
+            logger.info(f"    initial_procs: {config_dict.get('initial_procs', 'NOT SET')}")
+            
             config = OrchestratorConfig(**config_dict)
             
             logger.info("Configuration loaded from YAML")
+            logger.info(f"  Effective max_nodes: {config.max_nodes}")
             
         except Exception as e:
             logger.error(f"Failed to load YAML configuration: {e}")
@@ -729,19 +735,19 @@ def main():
         
         # Auto-detect system resources if not explicitly set
         logger.info("\nDetecting system resources...")
-        partition_for_detection = args.partition if args.partition != 'X_usr_prod' else None
+        partition_for_detection = args.partition  # None if not set
         
         auto_config = auto_configure_resources(
             max_nodes=args.nodes,
             partition=partition_for_detection
         )
         
-        # Apply detected values if using defaults (not explicitly set by user)
-        if args.procs_per_node == 128:  # Default value
+        # Apply detected values if not explicitly set by user (None = not set)
+        if args.procs_per_node is None:
             args.procs_per_node = auto_config['procs_per_node']
             logger.info(f"  Auto-detected procs_per_node: {auto_config['procs_per_node']}")
         
-        if args.gpus_per_node == 0 and args.hardware == 'gpu':  # Default for GPU
+        if args.gpus_per_node is None and args.hardware == 'gpu':
             args.gpus_per_node = auto_config['gpus_per_node']
             if auto_config['gpus_per_node'] > 0:
                 logger.info(f"  Auto-detected gpus_per_node: {auto_config['gpus_per_node']}")
@@ -757,7 +763,7 @@ def main():
         logger.info("")  # Blank line for readability
     
         # Parse tuple arguments
-        initial_procs = parse_tuple_arg(args.initial_procs)
+        initial_procs = parse_tuple_arg(args.initial_procs) if args.initial_procs else None
         initial_domain = parse_tuple_arg(args.initial_domain) if args.initial_domain else None
         initial_cells = parse_tuple_arg(args.initial_cells) if args.initial_cells else None
         
@@ -767,12 +773,61 @@ def main():
             calculated_procs_per_node = initial_procs[0] * initial_procs[1] * initial_procs[2]
             logger.info(f"  Calculated procs_per_node from initial_procs: {initial_procs} = {calculated_procs_per_node}")
             args.procs_per_node = calculated_procs_per_node  # Override with calculated value
-        elif args.procs_per_node == 128:  # Default value, not explicitly set
+        elif args.procs_per_node is None:
             args.procs_per_node = auto_config['procs_per_node']
             logger.info(f"  Auto-detected procs_per_node: {auto_config['procs_per_node']}")
         
         # Parse modules
         modules = [m.strip() for m in args.modules.split(',')] if args.modules else None
+        
+        # =================================================================
+        # VALIDATION: Ensure all required values are present
+        # No hardcoded defaults - values must come from YAML, CLI, or auto-detection
+        # =================================================================
+        missing_required = []
+        
+        if args.nodes is None:
+            missing_required.append("max_nodes/nodes (use --nodes or specify in YAML)")
+        
+        if args.partition is None:
+            missing_required.append("partition (use --partition or specify in YAML)")
+        
+        if args.procs_per_node is None:
+            missing_required.append("procs_per_node (use --procs-per-node, specify in YAML, or enable auto-detection)")
+        
+        if args.hardware == 'gpu' and (args.gpus_per_node is None or args.gpus_per_node == 0):
+            missing_required.append("gpus_per_node for GPU jobs (use --gpus-per-node or specify in YAML)")
+        
+        if initial_procs is None:
+            missing_required.append("initial_procs (use --initial-procs or specify in YAML)")
+        
+        if missing_required:
+            logger.error("=" * 70)
+            logger.error("CONFIGURATION ERROR: Required values not specified")
+            logger.error("=" * 70)
+            logger.error("")
+            logger.error("The following required configuration values are missing:")
+            for item in missing_required:
+                logger.error(f"  • {item}")
+            logger.error("")
+            logger.error("HPC-ScaleTest does NOT use hardcoded defaults.")
+            logger.error("All values must come from:")
+            logger.error("  1. YAML configuration file (--config)")
+            logger.error("  2. Command-line arguments")
+            logger.error("  3. System auto-detection (when available)")
+            logger.error("")
+            logger.error("Example YAML configuration:")
+            logger.error("  max_nodes: 16")
+            logger.error("  partition: <your_partition_name>")
+            logger.error("  procs_per_node: 32  # Or auto-detected")
+            logger.error("  gpus_per_node: 4    # For GPU jobs")
+            logger.error("  initial_procs: [2, 2, 1]")
+            logger.error("=" * 70)
+            sys.exit(1)
+        
+        # Set gpus_per_node to 0 for CPU jobs if not specified
+        if args.gpus_per_node is None:
+            args.gpus_per_node = 0
         
         # Create configuration
         config = OrchestratorConfig(
