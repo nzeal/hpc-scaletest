@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Developer Guide" href="developer_guide.html" />
+    <link rel="prev" title="Domain Decomposition: Complete Technical Reference" href="algorithms/domain_decomposition_complete.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#system-overview">System Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-components">Core Components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#test-definition-core">Test Definition (core/)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#orchestration-engine">Orchestration (engine/)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#backends-backends">Backends (backends/)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#utilities-utils">Utilities (utils/)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#design-patterns">Design Patterns</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#abstract-factory-pattern">Abstract Factory Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#registry-pattern">Registry Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#strategy-pattern">Strategy Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-flow">Data Flow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-flow">Configuration Flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#execution-flow">Execution Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-dependencies">Module Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extension-points">Extension Points</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#custom-schedulers">Custom Schedulers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-launchers">Custom Launchers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-input-parsers">Custom Input Parsers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-scaling-algorithms">Custom Scaling Algorithms</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling">Error Handling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exception-hierarchy">Exception Hierarchy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-propagation">Error Propagation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#security-considerations">Security Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-strategy">Testing Strategy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#system-tests">System Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/architecture.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h1>
+<p>This document describes the internal architecture of HPC-ScaleTest.</p>
+<section id="system-overview">
+<h2>System Overview<a class="headerlink" href="#system-overview" title="Link to this heading"></a></h2>
+<p>HPC-ScaleTest follows a layered architecture:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────┐
+│     User Interface Layer            │
+│  (CLI, Python API, YAML Config)     │
+└─────────────────────────────────────┘
+                 │
+┌─────────────────────────────────────┐
+│     Orchestration Layer             │
+│  (Orchestrator, TestRunner)         │
+└─────────────────────────────────────┘
+                 │
+┌─────────────────────────────────────┐
+│     Core Layer                      │
+│  (Test Definition, Config, Types)   │
+└─────────────────────────────────────┘
+                 │
+┌─────────────────────────────────────┐
+│     Backend Abstraction Layer       │
+│  (Abstract Base Classes, Factory)   │
+└─────────────────────────────────────┘
+                 │
+┌─────────────────────────────────────┐
+│     Backend Implementations         │
+│  (Schedulers, Launchers, Modules)   │
+└─────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="core-components">
+<h2>Core Components<a class="headerlink" href="#core-components" title="Link to this heading"></a></h2>
+<section id="test-definition-core">
+<h3>Test Definition (core/)<a class="headerlink" href="#test-definition-core" title="Link to this heading"></a></h3>
+<p>Provides user-facing API for defining tests.</p>
+<p><strong>Key Classes</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Test</span></code>: Main test configuration class</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BackendConfig</span></code>: Backend selection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ResourceConfig</span></code>: Resource allocation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ScalingConfig</span></code>: Scaling parameters</p></li>
+</ul>
+</section>
+<section id="orchestration-engine">
+<h3>Orchestration (engine/)<a class="headerlink" href="#orchestration-engine" title="Link to this heading"></a></h3>
+<p>Manages workflow execution.</p>
+<p><strong>Key Classes</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">HPCOrchestrator</span></code>: Complete workflow automation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TestRunner</span></code>: Job execution and monitoring</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ScalingEngine</span></code>: Scaling algorithm implementation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">JobBuilder</span></code>: Job script generation</p></li>
+</ul>
+</section>
+<section id="backends-backends">
+<h3>Backends (backends/)<a class="headerlink" href="#backends-backends" title="Link to this heading"></a></h3>
+<p>Pluggable implementations for different systems.</p>
+<p><strong>Schedulers</strong>: SLURM, PBS, Local
+<strong>Launchers</strong>: srun, mpirun, aprun
+<strong>Modules</strong>: Lmod, Tmod, no-modules
+<strong>Build Systems</strong>: CMake, Make, Autotools, Spack</p>
+</section>
+<section id="utilities-utils">
+<h3>Utilities (utils/)<a class="headerlink" href="#utilities-utils" title="Link to this heading"></a></h3>
+<p>Helper functions and tools.</p>
+<p><strong>Categories</strong>:</p>
+<ul class="simple">
+<li><p>Configuration parsing</p></li>
+<li><p>Code analysis</p></li>
+<li><p>Input file generation</p></li>
+<li><p>Report generation</p></li>
+<li><p>System detection</p></li>
+</ul>
+</section>
+</section>
+<section id="design-patterns">
+<h2>Design Patterns<a class="headerlink" href="#design-patterns" title="Link to this heading"></a></h2>
+<section id="abstract-factory-pattern">
+<h3>Abstract Factory Pattern<a class="headerlink" href="#abstract-factory-pattern" title="Link to this heading"></a></h3>
+<p>Used for creating backend instances:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Abstract products</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SchedulerBackend</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script</span><span class="p">):</span> <span class="k">pass</span>
+
+<span class="c1"># Concrete products</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">SchedulerBackend</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script</span><span class="p">):</span>
+        <span class="c1"># SLURM implementation</span>
+
+<span class="c1"># Factory</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BackendFactory</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SCHEDULER_MAP</span><span class="p">[</span><span class="n">name</span><span class="p">]()</span>
+</pre></div>
+</div>
+</section>
+<section id="registry-pattern">
+<h3>Registry Pattern<a class="headerlink" href="#registry-pattern" title="Link to this heading"></a></h3>
+<p>For plugin system:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Registry</span><span class="p">:</span>
+    <span class="n">_backends</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">backend_class</span><span class="p">):</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_backends</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">backend_class</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_backends</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="strategy-pattern">
+<h3>Strategy Pattern<a class="headerlink" href="#strategy-pattern" title="Link to this heading"></a></h3>
+<p>For scaling algorithms:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ScalingStrategy</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_config</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StrongScaling</span><span class="p">(</span><span class="n">ScalingStrategy</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_config</span><span class="p">):</span>
+        <span class="c1"># Strong scaling logic</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WeakScaling</span><span class="p">(</span><span class="n">ScalingStrategy</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_config</span><span class="p">):</span>
+        <span class="c1"># Weak scaling logic</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="data-flow">
+<h2>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading"></a></h2>
+<section id="configuration-flow">
+<h3>Configuration Flow<a class="headerlink" href="#configuration-flow" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>YAML File → ConfigParser → Config Objects → Test
+                 ↓
+Python API → Direct Config → Config Objects → Test
+                 ↓
+CLI Args → ArgParser → Config Objects → Test
+</pre></div>
+</div>
+</section>
+<section id="execution-flow">
+<h3>Execution Flow<a class="headerlink" href="#execution-flow" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1. Code Acquisition
+   ↓
+2. README Analysis → Build Info
+   ↓
+3. Code Compilation → Executable
+   ↓
+4. Input Analysis → Parameters
+   ↓
+5. Scaling Engine → Job Configs
+   ↓
+6. Job Builder → Job Scripts
+   ↓
+7. Job Submission → Job IDs
+   ↓
+8. Job Monitoring → Status Updates
+   ↓
+9. Results Collection → Raw Data
+   ↓
+10. Report Generation → Metrics
+</pre></div>
+</div>
+</section>
+</section>
+<section id="module-dependencies">
+<h2>Module Dependencies<a class="headerlink" href="#module-dependencies" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>core.test_definition
+    ├── core.config
+    ├── core.types
+    └── core.abstracts
+
+engine.orchestrator
+    ├── core.test_definition
+    ├── engine.runner
+    ├── utils.code_acquisition
+    ├── utils.readme_analyzer
+    └── utils.report_generator
+
+engine.runner
+    ├── core.test_definition
+    ├── engine.scaling
+    ├── engine.job_builder
+    └── backends.*
+
+backends.*
+    └── core.abstracts
+</pre></div>
+</div>
+</section>
+<section id="extension-points">
+<h2>Extension Points<a class="headerlink" href="#extension-points" title="Link to this heading"></a></h2>
+<section id="custom-schedulers">
+<h3>Custom Schedulers<a class="headerlink" href="#custom-schedulers" title="Link to this heading"></a></h3>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">SchedulerBackend</span></code> abstract class.</p>
+</section>
+<section id="custom-launchers">
+<h3>Custom Launchers<a class="headerlink" href="#custom-launchers" title="Link to this heading"></a></h3>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">LauncherBackend</span></code> abstract class.</p>
+</section>
+<section id="custom-input-parsers">
+<h3>Custom Input Parsers<a class="headerlink" href="#custom-input-parsers" title="Link to this heading"></a></h3>
+<p>Inherit from <code class="docutils literal notranslate"><span class="pre">GenericInputParser</span></code>.</p>
+</section>
+<section id="custom-scaling-algorithms">
+<h3>Custom Scaling Algorithms<a class="headerlink" href="#custom-scaling-algorithms" title="Link to this heading"></a></h3>
+<p>Implement scaling logic in <code class="docutils literal notranslate"><span class="pre">engine/scaling.py</span></code>.</p>
+</section>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<section id="exception-hierarchy">
+<h3>Exception Hierarchy<a class="headerlink" href="#exception-hierarchy" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>HPCScaleTestError (base)
+    ├── ConfigurationError
+    ├── ValidationError
+    ├── BuildError
+    ├── JobSubmissionError
+    └── ResultsCollectionError
+</pre></div>
+</div>
+</section>
+<section id="error-propagation">
+<h3>Error Propagation<a class="headerlink" href="#error-propagation" title="Link to this heading"></a></h3>
+<p>Errors are caught at the orchestrator level and logged appropriately.</p>
+</section>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Lazy loading of modules</p></li>
+<li><p>Caching of system detection</p></li>
+<li><p>Parallel job submission (future)</p></li>
+<li><p>Efficient file I/O</p></li>
+</ul>
+</section>
+<section id="security-considerations">
+<h2>Security Considerations<a class="headerlink" href="#security-considerations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>No hardcoded credentials</p></li>
+<li><p>Safe subprocess execution</p></li>
+<li><p>Input sanitization</p></li>
+<li><p>File permission checks</p></li>
+</ul>
+</section>
+<section id="testing-strategy">
+<h2>Testing Strategy<a class="headerlink" href="#testing-strategy" title="Link to this heading"></a></h2>
+<section id="unit-tests">
+<h3>Unit Tests<a class="headerlink" href="#unit-tests" title="Link to this heading"></a></h3>
+<p>Test individual components in isolation.</p>
+</section>
+<section id="integration-tests">
+<h3>Integration Tests<a class="headerlink" href="#integration-tests" title="Link to this heading"></a></h3>
+<p>Test component interactions.</p>
+</section>
+<section id="system-tests">
+<h3>System Tests<a class="headerlink" href="#system-tests" title="Link to this heading"></a></h3>
+<p>End-to-end workflow tests.</p>
+</section>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="developer_guide.html"><span class="doc">Developer Guide</span></a> - Development guide</p></li>
+<li><p><a class="reference internal" href="api_reference.html"><span class="doc">API Reference</span></a> - API documentation</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="algorithms/domain_decomposition_complete.html" class="btn btn-neutral float-left" title="Domain Decomposition: Complete Technical Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="developer_guide.html" class="btn btn-neutral float-right" title="Developer Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,593 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain Decomposition: Complete Technical Reference &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]]}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Architecture" href="../architecture.html" />
+    <link rel="prev" title="MPI Topology Calculation: Complete Technical Reference" href="mpi_topology_complete.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli_reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Domain Decomposition: Complete Technical Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction-for-everyone">Introduction for Everyone</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-is-domain-decomposition">What is Domain Decomposition?</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#real-scientific-example">Real Scientific Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#why-is-this-important">Why is This Important?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#conceptual-foundation">Conceptual Foundation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#types-of-decomposition">Types of Decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#boundary-communication">Boundary Communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#load-balancing">Load Balancing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mathematical-foundations">Mathematical Foundations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#domain-and-grid-definitions">Domain and Grid Definitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#decomposition-mathematics">Decomposition Mathematics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation-in-hpc-scaletest">Implementation in HPC-ScaleTest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#algorithm-overview">Algorithm Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#worked-example">Worked Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#complete-domain-decomposition">Complete Domain Decomposition</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#key-takeaways">Key Takeaways</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Domain Decomposition: Complete Technical Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/algorithms/domain_decomposition_complete.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="domain-decomposition-complete-technical-reference">
+<h1>Domain Decomposition: Complete Technical Reference<a class="headerlink" href="#domain-decomposition-complete-technical-reference" title="Link to this heading"></a></h1>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#introduction-for-everyone" id="id1">Introduction for Everyone</a></p>
+<ul>
+<li><p><a class="reference internal" href="#what-is-domain-decomposition" id="id2">What is Domain Decomposition?</a></p>
+<ul>
+<li><p><a class="reference internal" href="#real-scientific-example" id="id3">Real Scientific Example</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#why-is-this-important" id="id4">Why is This Important?</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#conceptual-foundation" id="id5">Conceptual Foundation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#types-of-decomposition" id="id6">Types of Decomposition</a></p></li>
+<li><p><a class="reference internal" href="#boundary-communication" id="id7">Boundary Communication</a></p></li>
+<li><p><a class="reference internal" href="#load-balancing" id="id8">Load Balancing</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#mathematical-foundations" id="id9">Mathematical Foundations</a></p>
+<ul>
+<li><p><a class="reference internal" href="#domain-and-grid-definitions" id="id10">Domain and Grid Definitions</a></p></li>
+<li><p><a class="reference internal" href="#decomposition-mathematics" id="id11">Decomposition Mathematics</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#implementation-in-hpc-scaletest" id="id12">Implementation in HPC-ScaleTest</a></p>
+<ul>
+<li><p><a class="reference internal" href="#algorithm-overview" id="id13">Algorithm Overview</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#worked-example" id="id14">Worked Example</a></p>
+<ul>
+<li><p><a class="reference internal" href="#complete-domain-decomposition" id="id15">Complete Domain Decomposition</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#summary" id="id16">Summary</a></p>
+<ul>
+<li><p><a class="reference internal" href="#key-takeaways" id="id17">Key Takeaways</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction-for-everyone">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Introduction for Everyone</a><a class="headerlink" href="#introduction-for-everyone" title="Link to this heading"></a></h2>
+<section id="what-is-domain-decomposition">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">What is Domain Decomposition?</a><a class="headerlink" href="#what-is-domain-decomposition" title="Link to this heading"></a></h3>
+<p><strong>Domain decomposition</strong> is the method of splitting a large problem into smaller pieces
+so multiple computers can work on it simultaneously.</p>
+<p><strong>Simple Analogy: Painting a House</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>You need to paint a large house.
+
+Option 1: One Painter
+- Paints the entire house alone
+- Takes 10 days
+
+Option 2: Domain Decomposition
+- Divide house into 4 sections (domain decomposition!)
+- Assign 1 painter to each section
+- Each works independently
+- Done in 2.5 days (4× faster!)
+
+The &quot;domain&quot; is the house.
+&quot;Decomposition&quot; is splitting it into sections.
+</pre></div>
+</div>
+<section id="real-scientific-example">
+<h4><a class="toc-backref" href="#id3" role="doc-backlink">Real Scientific Example</a><a class="headerlink" href="#real-scientific-example" title="Link to this heading"></a></h4>
+<p><strong>Weather Simulation Over North America</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Domain: North America (3000 km × 2000 km × 20 km atmosphere)
+
+Problem: Too large for one computer!
+- 10 billion grid points
+- Need 1TB of memory
+- Would take 1 year on 1 computer
+
+Solution: Domain Decomposition
+- Split into 1000 smaller regions
+- Each computer handles one region
+- Each needs only 1GB memory
+- Done in ~1 day using 1000 computers!
+</pre></div>
+</div>
+</section>
+</section>
+<section id="why-is-this-important">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Why is This Important?</a><a class="headerlink" href="#why-is-this-important" title="Link to this heading"></a></h3>
+<p><strong>Three Key Benefits</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Solve Bigger Problems</strong>
+- One computer: Limited memory (64 GB typical)
+- 100 computers: 6,400 GB combined!
+- Can simulate much larger domains</p></li>
+<li><p><strong>Get Results Faster</strong>
+- Parallel processing
+- 100 computers can work simultaneously
+- Near-100× speedup (if done correctly!)</p></li>
+<li><p><strong>Use Available Resources</strong>
+- Most supercomputers have 1000+ nodes
+- Domain decomposition lets you use them all
+- Get your money’s worth!</p></li>
+</ol>
+</section>
+</section>
+<section id="conceptual-foundation">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Conceptual Foundation</a><a class="headerlink" href="#conceptual-foundation" title="Link to this heading"></a></h2>
+<section id="types-of-decomposition">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Types of Decomposition</a><a class="headerlink" href="#types-of-decomposition" title="Link to this heading"></a></h3>
+<p><strong>1D Decomposition (Slicing)</strong></p>
+<p>Like slicing bread:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Original domain: [============]
+
+Split into 4 slices:
+[===][===][===][===]
+
+Comp1 Comp2 Comp3 Comp4
+
+Good for: 1D problems (rivers, pipes, transmission lines)
+Limitation: Only 2 neighbors per process
+</pre></div>
+</div>
+<p><strong>2D Decomposition (Checkerboard)</strong></p>
+<p>Like a checkerboard:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Original domain:
+[==========]
+[==========]
+[==========]
+[==========]
+
+Split into 4×4 grid:
+[==][==][==][==]
+[==][==][==][==]
+[==][==][==][==]
+[==][==][==][==]
+
+Good for: 2D problems (maps, surfaces, thin layers)
+Each process: Up to 4 neighbors
+</pre></div>
+</div>
+<p><strong>3D Decomposition (Cubes)</strong></p>
+<p>Like a Rubik’s cube:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Original domain: Solid 3D cube
+
+Split into 2×2×2 = 8 smaller cubes:
+
+Front layer:         Back layer:
+[Cube1][Cube2]      [Cube5][Cube6]
+[Cube3][Cube4]      [Cube7][Cube8]
+
+Good for: 3D problems (atmosphere, ocean, solids)
+Each process: Up to 6 neighbors
+</pre></div>
+</div>
+</section>
+<section id="boundary-communication">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Boundary Communication</a><a class="headerlink" href="#boundary-communication" title="Link to this heading"></a></h3>
+<p><strong>The Challenge: Processes Need to Talk</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>When you split a domain, processes at boundaries need to share data:
+
+Example: Temperature simulation
+
+Process 1 domain:    Process 2 domain:
+[. . . . . 50°]      [55° . . . . .]
+             ↕
+      Boundary - needs communication!
+
+To calculate temperature at boundary:
+- Process 1 needs to know Process 2&#39;s value (55°)
+- Process 2 needs to know Process 1&#39;s value (50°)
+- They must exchange data!
+</pre></div>
+</div>
+<p><strong>Ghost Cells / Halo Regions</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Solution: Each process keeps extra &quot;ghost&quot; cells
+
+Process 1&#39;s view:                Process 2&#39;s view:
+[. . . . . 50°][ghost]          [ghost][55° . . . . .]
+                 ↑                 ↑
+           Copy from P2        Copy from P1
+
+Before computation:
+1. Exchange boundary values
+2. Fill ghost cells
+3. Now each process can compute independently!
+</pre></div>
+</div>
+</section>
+<section id="load-balancing">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Load Balancing</a><a class="headerlink" href="#load-balancing" title="Link to this heading"></a></h3>
+<p><strong>Equal Work for All Processes</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Bad decomposition:
+Process 1: 10,000 cells (takes 10 sec)
+Process 2: 100,000 cells (takes 100 sec)  ← Bottleneck!
+Process 3: 5,000 cells (takes 5 sec)
+
+Total time: 100 seconds (limited by slowest!)
+Processes 1 &amp; 3 idle for 90+ seconds - wasted!
+
+Good decomposition:
+Process 1: 38,333 cells (takes 38.3 sec)
+Process 2: 38,333 cells (takes 38.3 sec)
+Process 3: 38,334 cells (takes 38.3 sec)
+
+Total time: 38.3 seconds
+All processes busy entire time!
+</pre></div>
+</div>
+</section>
+</section>
+<section id="mathematical-foundations">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Mathematical Foundations</a><a class="headerlink" href="#mathematical-foundations" title="Link to this heading"></a></h2>
+<section id="domain-and-grid-definitions">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Domain and Grid Definitions</a><a class="headerlink" href="#domain-and-grid-definitions" title="Link to this heading"></a></h3>
+<p><strong>Physical Domain</strong>: <span class="math notranslate nohighlight">\(\Omega \subset \mathbb{R}^3\)</span></p>
+<p>Represented by dimensions:</p>
+<div class="math notranslate nohighlight">
+\[\Omega = [0, L_x] \times [0, L_y] \times [0, L_z]\]</div>
+<p>Where:
+- <span class="math notranslate nohighlight">\(L_x, L_y, L_z\)</span> = domain lengths (e.g., kilometers)</p>
+<p><strong>Computational Grid</strong>: Discretization of <span class="math notranslate nohighlight">\(\Omega\)</span></p>
+<div class="math notranslate nohighlight">
+\[n_x \times n_y \times n_z \text{ grid points}\]</div>
+<p><strong>Grid Spacing</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\Delta x = \frac{L_x}{n_x}, \quad \Delta y = \frac{L_y}{n_y}, \quad \Delta z = \frac{L_z}{n_z}\]</div>
+</section>
+<section id="decomposition-mathematics">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Decomposition Mathematics</a><a class="headerlink" href="#decomposition-mathematics" title="Link to this heading"></a></h3>
+<p><strong>Given</strong>:
+- <span class="math notranslate nohighlight">\(P\)</span> processes
+- MPI topology <span class="math notranslate nohighlight">\((p_x, p_y, p_z)\)</span> where <span class="math notranslate nohighlight">\(P = p_x \cdot p_y \cdot p_z\)</span>
+- Grid <span class="math notranslate nohighlight">\((n_x, n_y, n_z)\)</span></p>
+<p><strong>Subdomain Size</strong> for process at position <span class="math notranslate nohighlight">\((i_x, i_y, i_z)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[n_x^{\text{local}} = \frac{n_x}{p_x}, \quad n_y^{\text{local}} = \frac{n_y}{p_y}, \quad n_z^{\text{local}} = \frac{n_z}{p_z}\]</div>
+<p><strong>Subdomain Physical Size</strong>:</p>
+<div class="math notranslate nohighlight">
+\[L_x^{\text{local}} = \frac{L_x}{p_x}, \quad L_y^{\text{local}} = \frac{L_y}{p_y}, \quad L_z^{\text{local}} = \frac{L_z}{p_z}\]</div>
+<p><strong>Grid Spacing</strong> (same for all processes):</p>
+<div class="math notranslate nohighlight">
+\[\Delta x^{\text{local}} = \Delta x = \frac{L_x}{n_x}\]</div>
+</section>
+</section>
+<section id="implementation-in-hpc-scaletest">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Implementation in HPC-ScaleTest</a><a class="headerlink" href="#implementation-in-hpc-scaletest" title="Link to this heading"></a></h2>
+<section id="algorithm-overview">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Algorithm Overview</a><a class="headerlink" href="#algorithm-overview" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DomainDecomposer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decompose computational domain across MPI processes.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_size</span><span class="p">,</span> <span class="n">grid_dims</span><span class="p">,</span> <span class="n">mpi_topology</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize decomposer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain_size: (Lx, Ly, Lz) physical domain size</span>
+<span class="sd">            grid_dims: (nx, ny, nz) grid dimensions</span>
+<span class="sd">            mpi_topology: (px, py, pz) process grid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span> <span class="o">=</span> <span class="n">domain_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ny</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nz</span> <span class="o">=</span> <span class="n">grid_dims</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">px</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">py</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pz</span> <span class="o">=</span> <span class="n">mpi_topology</span>
+
+        <span class="c1"># Verify divisibility</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">nx</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Grid not divisible in X&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ny</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">py</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Grid not divisible in Y&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">nz</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">pz</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Grid not divisible in Z&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_local_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get subdomain for a process.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with local domain information</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get process coordinates</span>
+        <span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_coords</span><span class="p">(</span><span class="n">process_id</span><span class="p">)</span>
+
+        <span class="c1"># Calculate local grid size</span>
+        <span class="n">nx_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nx</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+        <span class="n">ny_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ny</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">py</span>
+        <span class="n">nz_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nz</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">pz</span>
+
+        <span class="c1"># Calculate local physical size</span>
+        <span class="n">Lx_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">px</span>
+        <span class="n">Ly_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">py</span>
+        <span class="n">Lz_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pz</span>
+
+        <span class="c1"># Calculate subdomain bounds</span>
+        <span class="n">x_start</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">*</span> <span class="n">Lx_local</span>
+        <span class="n">x_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">ix</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">Lx_local</span>
+        <span class="n">y_start</span> <span class="o">=</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">Ly_local</span>
+        <span class="n">y_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">iy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">Ly_local</span>
+        <span class="n">z_start</span> <span class="o">=</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">Lz_local</span>
+        <span class="n">z_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">iz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">Lz_local</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;process_id&#39;</span><span class="p">:</span> <span class="n">process_id</span><span class="p">,</span>
+            <span class="s1">&#39;coordinates&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span><span class="p">),</span>
+            <span class="s1">&#39;grid_size&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">nx_local</span><span class="p">,</span> <span class="n">ny_local</span><span class="p">,</span> <span class="n">nz_local</span><span class="p">),</span>
+            <span class="s1">&#39;physical_size&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">Lx_local</span><span class="p">,</span> <span class="n">Ly_local</span><span class="p">,</span> <span class="n">Lz_local</span><span class="p">),</span>
+            <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">x_start</span><span class="p">,</span> <span class="n">x_end</span><span class="p">),</span>
+                <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">y_start</span><span class="p">,</span> <span class="n">y_end</span><span class="p">),</span>
+                <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">z_start</span><span class="p">,</span> <span class="n">z_end</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="worked-example">
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Worked Example</a><a class="headerlink" href="#worked-example" title="Link to this heading"></a></h2>
+<section id="complete-domain-decomposition">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Complete Domain Decomposition</a><a class="headerlink" href="#complete-domain-decomposition" title="Link to this heading"></a></h3>
+<p><strong>Problem Setup</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Simulating ocean currents in Pacific Ocean
+
+Physical domain:
+- Lx = 10,000 km (east-west)
+- Ly = 8,000 km (north-south)
+- Lz = 4 km (depth)
+
+Computational grid:
+- nx = 1000 points (10 km resolution in X)
+- ny = 800 points (10 km resolution in Y)
+- nz = 40 points (100 m resolution in Z)
+
+Total grid points: 1000 × 800 × 40 = 32,000,000
+
+Resources:
+- 64 processes available
+- MPI topology: (4, 4, 4) [calculated using MPI topology algorithm]
+</pre></div>
+</div>
+<p><strong>Step 1: Calculate Local Grid Sizes</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Processes in each dimension:
+px = 4, py = 4, pz = 4
+
+Local grid size for each process:
+nx_local = 1000 / 4 = 250 points
+ny_local = 800 / 4 = 200 points
+nz_local = 40 / 4 = 10 points
+
+Each process handles: 250 × 200 × 10 = 500,000 points
+</pre></div>
+</div>
+<p><strong>Step 2: Calculate Local Physical Domains</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Physical size for each process:
+Lx_local = 10,000 km / 4 = 2,500 km
+Ly_local = 8,000 km / 4 = 2,000 km
+Lz_local = 4 km / 4 = 1 km
+
+Each process simulates: 2,500 × 2,000 × 1 km region
+</pre></div>
+</div>
+<p><strong>Step 3: Assign Subdomains to Processes</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Process 0 at (0,0,0):
+- X range: [0, 2500] km
+- Y range: [0, 2000] km
+- Z range: [0, 1] km
+- Grid: [0:250, 0:200, 0:10]
+
+Process 1 at (1,0,0):
+- X range: [2500, 5000] km
+- Y range: [0, 2000] km
+- Z range: [0, 1] km
+- Grid: [250:500, 0:200, 0:10]
+
+Process 17 at (1,0,1):
+- X range: [2500, 5000] km
+- Y range: [0, 2000] km
+- Z range: [1, 2] km
+- Grid: [250:500, 0:200, 10:20]
+
+[Continue for all 64 processes...]
+</pre></div>
+</div>
+<p><strong>Verification</strong>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>✓ Each process has 500,000 points (equal distribution)
+✓ All processes cover non-overlapping regions
+✓ Together they cover entire domain:
+  - X: 4 processes × 2,500 km = 10,000 km ✓
+  - Y: 4 processes × 2,000 km = 8,000 km ✓
+  - Z: 4 processes × 1 km = 4 km ✓
+</pre></div>
+</div>
+</section>
+</section>
+<section id="summary">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Summary</a><a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<section id="key-takeaways">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Key Takeaways</a><a class="headerlink" href="#key-takeaways" title="Link to this heading"></a></h3>
+<p><strong>Domain Decomposition</strong>:
+- Splits large problem into smaller subdomains
+- Each process handles one subdomain
+- Enables parallel computing</p>
+<p><strong>Benefits</strong>:
+- Solve larger problems (distribute memory)
+- Get faster results (parallel processing)
+- Use available HPC resources efficiently</p>
+<p><strong>HPC-ScaleTest Handles</strong>:
+- Automatic subdomain calculation
+- Load balancing verification
+- Boundary communication setup
+- Configuration file generation</p>
+<p><strong>Best Practices</strong>:
+- Choose process counts that evenly divide grid
+- Balance subdomain sizes
+- Minimize communication overhead
+- Verify decomposition before running</p>
+<p>This completes the domain decomposition technical reference!</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mpi_topology_complete.html" class="btn btn-neutral float-left" title="MPI Topology Calculation: Complete Technical Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../architecture.html" class="btn btn-neutral float-right" title="Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

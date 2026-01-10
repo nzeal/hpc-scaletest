@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLI Reference &mdash; HPC-ScaleTest 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            HPC-ScaleTest
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#command-line-interface">Command-Line Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#main-command-hpc-auto-py">Main Command: hpc_auto.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-syntax">Basic Syntax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#arguments">Arguments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#positional-arguments">Positional Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#options">Options</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#scaling-options">Scaling Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hardware-options">Hardware Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#scheduler-options">Scheduler Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-options">Configuration Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#build-options">Build Options</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-strong-scaling">Basic Strong Scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#weak-scaling-from-git">Weak Scaling from Git</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gpu-scaling">GPU Scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-configuration-file">Using Configuration File</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#report-generator">Report Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#validation-tool">Validation Tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exit-codes">Exit Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending HPC-ScaleTest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Technical Deep-Dive &amp; Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/weak_scaling_complete.html">Weak Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/strong_scaling_complete.html">Strong Scaling Algorithm: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/mpi_topology_complete.html">MPI Topology Calculation: Complete Technical Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms/domain_decomposition_complete.html">Domain Decomposition: Complete Technical Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">System Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/engine.html">Engine Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/backends.html">Backends Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utils Module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Additional Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPC-ScaleTest</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CLI Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cli_reference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cli-reference">
+<h1>CLI Reference<a class="headerlink" href="#cli-reference" title="Link to this heading"></a></h1>
+<section id="command-line-interface">
+<h2>Command-Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h2>
+<p>HPC-ScaleTest provides a command-line interface for quick access to common workflows.</p>
+</section>
+<section id="main-command-hpc-auto-py">
+<h2>Main Command: hpc_auto.py<a class="headerlink" href="#main-command-hpc-auto-py" title="Link to this heading"></a></h2>
+<section id="basic-syntax">
+<h3>Basic Syntax<a class="headerlink" href="#basic-syntax" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span><span class="o">[</span>SOURCE<span class="o">]</span><span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+python<span class="w"> </span>hpc_auto.py<span class="w"> </span>--config<span class="w"> </span>CONFIG_FILE
+</pre></div>
+</div>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading"></a></h3>
+<section id="positional-arguments">
+<h4>Positional Arguments<a class="headerlink" href="#positional-arguments" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">SOURCE</span></code></dt><dd><p>Path to source code directory or Git repository URL</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="options">
+<h3>Options<a class="headerlink" href="#options" title="Link to this heading"></a></h3>
+<section id="scaling-options">
+<h4>Scaling Options<a class="headerlink" href="#scaling-options" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--scaling</span> <span class="pre">{strong,weak}</span></code></dt><dd><p>Scaling type (default: strong)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--nodes</span> <span class="pre">N</span></code></dt><dd><p>Maximum number of nodes (default: 4)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--scaling-factor</span> <span class="pre">F</span></code></dt><dd><p>Scaling factor for weak scaling (default: 2)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--scaling-dimensions</span> <span class="pre">{1,2,3}</span></code></dt><dd><p>Scaling dimensions: 1=X-only, 2=X↔Y, 3=X↔Y↔Z (default: 2)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--initial-procs</span> <span class="pre">X,Y,Z</span></code></dt><dd><p>Initial process decomposition (default: 2,2,2)</p>
+</dd>
+</dl>
+</section>
+<section id="hardware-options">
+<h4>Hardware Options<a class="headerlink" href="#hardware-options" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--hardware</span> <span class="pre">{cpu,gpu}</span></code></dt><dd><p>Hardware type (default: cpu)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--procs-per-node</span> <span class="pre">N</span></code></dt><dd><p>Processes per node (default: 128)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--gpus-per-node</span> <span class="pre">N</span></code></dt><dd><p>GPUs per node (default: 0)</p>
+</dd>
+</dl>
+</section>
+<section id="scheduler-options">
+<h4>Scheduler Options<a class="headerlink" href="#scheduler-options" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--scheduler</span> <span class="pre">{slurm,pbs,local}</span></code></dt><dd><p>Job scheduler (default: slurm)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--launcher</span> <span class="pre">{srun,mpirun,simple}</span></code></dt><dd><p>MPI launcher (default: srun)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--partition</span> <span class="pre">NAME</span></code></dt><dd><p>Partition/queue name</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--account</span> <span class="pre">NAME</span></code></dt><dd><p>Account/project name</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--time-limit</span> <span class="pre">HH:MM:SS</span></code></dt><dd><p>Time limit (default: 02:00:00)</p>
+</dd>
+</dl>
+</section>
+<section id="configuration-options">
+<h4>Configuration Options<a class="headerlink" href="#configuration-options" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">FILE</span></code></dt><dd><p>Load configuration from YAML file</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--output-dir</span> <span class="pre">DIR</span></code></dt><dd><p>Output directory (default: ./output)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--auto-submit</span></code></dt><dd><p>Automatically submit jobs (default: True)</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--no-auto-submit</span></code></dt><dd><p>Generate scripts without submitting</p>
+</dd>
+</dl>
+</section>
+<section id="build-options">
+<h4>Build Options<a class="headerlink" href="#build-options" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--build-system</span> <span class="pre">{cmake,make,autotools,spack}</span></code></dt><dd><p>Build system to use</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--modules</span> <span class="pre">MODULE</span> <span class="pre">[MODULE</span> <span class="pre">...]</span></code></dt><dd><p>Environment modules to load</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<section id="basic-strong-scaling">
+<h3>Basic Strong Scaling<a class="headerlink" href="#basic-strong-scaling" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span>/path/to/code<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling<span class="w"> </span>strong<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--nodes<span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--partition<span class="w"> </span>standard<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--account<span class="w"> </span>proj123
+</pre></div>
+</div>
+</section>
+<section id="weak-scaling-from-git">
+<h3>Weak Scaling from Git<a class="headerlink" href="#weak-scaling-from-git" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span>https://github.com/user/app.git<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling<span class="w"> </span>weak<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--nodes<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling-factor<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--scaling-dimensions<span class="w"> </span><span class="m">2</span>
+</pre></div>
+</div>
+</section>
+<section id="gpu-scaling">
+<h3>GPU Scaling<a class="headerlink" href="#gpu-scaling" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span>/path/to/gpu-code<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--hardware<span class="w"> </span>gpu<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--gpus-per-node<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--partition<span class="w"> </span>gpu_queue
+</pre></div>
+</div>
+</section>
+<section id="using-configuration-file">
+<h3>Using Configuration File<a class="headerlink" href="#using-configuration-file" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>hpc_auto.py<span class="w"> </span>--config<span class="w"> </span>my_test.yaml
+</pre></div>
+</div>
+</section>
+</section>
+<section id="report-generator">
+<h2>Report Generator<a class="headerlink" href="#report-generator" title="Link to this heading"></a></h2>
+<p>Generate reports from existing results:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>utils.report_generator<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--input<span class="w"> </span>output/results<span class="w"> </span><span class="se">\\</span>
+<span class="w">    </span>--output<span class="w"> </span>efficiency_report.txt
+</pre></div>
+</div>
+</section>
+<section id="validation-tool">
+<h2>Validation Tool<a class="headerlink" href="#validation-tool" title="Link to this heading"></a></h2>
+<p>Validate configuration before running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>validate_scaling.py<span class="w"> </span>--config<span class="w"> </span>run.yaml
+</pre></div>
+</div>
+</section>
+<section id="exit-codes">
+<h2>Exit Codes<a class="headerlink" href="#exit-codes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code> - Success</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1</span></code> - Configuration error</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">2</span></code> - Build failure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">3</span></code> - Job submission failure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">4</span></code> - Results collection failure</p></li>
+</ul>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="user_guide.html"><span class="doc">User Guide</span></a> - Detailed usage guide</p></li>
+<li><p><a class="reference internal" href="configuration.html"><span class="doc">Configuration</span></a> - Configuration options</p></li>
+<li><p><a class="reference internal" href="examples.html"><span class="doc">Examples</span></a> - Example configurations</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, HPC-ScaleTest Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
